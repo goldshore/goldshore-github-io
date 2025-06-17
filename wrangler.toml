@@ -1,0 +1,23 @@
+# wrangler.toml
+name = "goldshore-org"
+account_id = "your_account_id_here"
+compatibility_date = "2025-06-30"
+
+[pages]
+project_name = "goldshore-org"
+
+[env.production]
+zone_id = "your_zone_id_here"
+route = "goldshore.org/*"
+vars = { MODE = "production" }
+
+[[ d1_databases ]]
+binding = "GOLD_DB"
+database_name = "goldshore-data"
+
+[[analytics_engine_datasets]]
+binding = "GOLD_ANALYTICS"
+dataset = "goldshore-events"
+
+[tunnel]
+name = "goldshore-tunnel"

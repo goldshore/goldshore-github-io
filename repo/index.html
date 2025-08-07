@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Gold Shore Labs – Projects Slider & Tech Stack Tiles" />
+  <title>Gold Shore Labs</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-900 font-sans">
+
+  <!-- Project Slider -->
+  <section class="py-12 bg-white">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h2 class="text-3xl font-bold mb-8">Featured Projects</h2>
+      <div class="swiper mySwiper">
+        <div class="swiper-wrapper">
+          <div class="swiper-slide"><img src="images/project1.jpg" class="mx-auto rounded shadow" alt="Project 1" /></div>
+          <div class="swiper-slide"><img src="images/project2.jpg" class="mx-auto rounded shadow" alt="Project 2" /></div>
+          <div class="swiper-slide"><img src="images/project3.jpg" class="mx-auto rounded shadow" alt="Project 3" /></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tech Stack Tiles -->
+  <section class="py-12 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h2 class="text-3xl font-bold mb-8">Tech Stack</h2>
+      <div class="grid grid-cols-3 md:grid-cols-6 gap-6">
+        <img src="icons/html5.svg" class="h-12 mx-auto" alt="HTML5" />
+        <img src="icons/css3.svg" class="h-12 mx-auto" alt="CSS3" />
+        <img src="icons/javascript.svg" class="h-12 mx-auto" alt="JavaScript" />
+        <img src="icons/bootstrap.svg" class="h-12 mx-auto" alt="Bootstrap" />
+        <img src="icons/php.svg" class="h-12 mx-auto" alt="PHP" />
+        <img src="icons/python.svg" class="h-12 mx-auto" alt="Python" />
+      </div>
+    </div>
+  </section>
+
+<script>
+  var swiper = new Swiper(".mySwiper", {
+    loop: true,
+    autoplay: { delay: 3000 },
+    slidesPerView: 1,
+    spaceBetween: 20,
+  });
+</script>
+
+</body>
+</html>

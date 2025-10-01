@@ -17,24 +17,21 @@ The Worker in `src/router.js` proxies requests to the appropriate origin. Config
 
 ```bash
 # Preview (runs on *.workers.dev)
-wrangler deploy --env preview \
-  --var PRODUCTION_ORIGIN="https://goldshore-org.pages.dev"
+wrangler deploy --env preview
 
 # Production (mapped to the apex + www)
-wrangler deploy --env production \
-  --var PRODUCTION_ORIGIN="https://goldshore-org.pages.dev" \
-  --var PREVIEW_ORIGIN="https://goldshore-org.pages.dev"
+wrangler deploy --env production
 ```
 
-- `PRODUCTION_ORIGIN` should point at the static site that already renders the full experience.
-- `PREVIEW_ORIGIN` is optional. If you leave it blank, previews fall back to the production build.
-- `CACHE_TTL` (default `300` seconds) keeps the Worker cost low by letting Cloudflare cache responses.
+- `PRODUCTION_ORIGIN` is configured in `wrangler.toml` and should point at the static site that already renders the full experience (e.g. `https://goldshore-org.pages.dev`).
+- `PREVIEW_ORIGIN` is set for the preview environment so Git branches stay on the Pages hostname without touching the Worker.
+- `CACHE_TTL` (default `300` seconds) keeps the Worker cost low by letting Cloudflare cache responses on GET/HEAD requests.
 
 ## 3. Split deployments
 
 1. Point `goldshore.org` and `www.goldshore.org` DNS records at Cloudflare (orange cloud = proxy).
-2. In the Workers Routes UI, assign the **production** environment to `goldshore.org/*` and `www.goldshore.org/*`. The preview environment stays on the default `router.<account>.workers.dev` URL so it does not intercept live traffic.
-3. For Cloudflare Pages, ensure the custom domain is attached only to the production deployment. Preview links continue to use the auto-generated `*.pages.dev` hostname.
+2. In the Workers Routes UI, assign the **production** environment to `goldshore.org/*` and `www.goldshore.org/*` only. Remove any stray domains that would otherwise consume Worker requests.
+3. For Cloudflare Pages, ensure the custom domain is attached only to the production deployment. Preview links continue to use the auto-generated `*.pages.dev` hostname and never touch the Worker.
 
 This split keeps Git branches and preview deploys from colliding with the live domain. The Worker simply shields the domain and rewrites upstream traffic while Pages handles the heavy lifting.
 

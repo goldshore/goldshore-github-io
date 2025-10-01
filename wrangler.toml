@@ -6,24 +6,24 @@ compatibility_date = "2025-06-30"
 [vars]
 UPSTREAM_PROTOCOL = "https"
 CACHE_TTL = "300"
+PRODUCTION_ORIGIN = "https://goldshore-org.pages.dev"
 
 [env.preview]
 workers_dev = true
-vars = { ENVIRONMENT = "preview" }
+
+[env.preview.vars]
+ENVIRONMENT = "preview"
+PREVIEW_ORIGIN = "https://goldshore-org.pages.dev"
 
 [env.production]
 zone_name = "goldshore.org"
 routes = [
   "goldshore.org/*",
-  "www.goldshore.org/*",
-  "gearswipe.com/*",
-  "www.gearswipe.com/*",
-  "armsway.com/*",
-  "www.armsway.com/*",
-  "banproof.com/*",
-  "www.banproof.com/*"
+  "www.goldshore.org/*"
 ]
-vars = { ENVIRONMENT = "production" }
+
+[env.production.vars]
+ENVIRONMENT = "production"
 
 [[analytics_engine_datasets]]
 binding = "GOLD_ANALYTICS"

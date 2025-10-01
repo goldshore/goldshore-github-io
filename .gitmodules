@@ -1,13 +1,13 @@
-[submodule “backend”]
+[submodule "backend"]
   path = backend
   url = https://github.com/marzton/goldshore.com-backend.git
 
-[submodule “frontend”]
+[submodule "frontend"]
   path = frontend
   url = https://github.com/marzton/goldshore-frontend.git
   branch = main
 
-[submodule “assets”]
+[submodule "assets"]
   path = assets
   url = https://github.com/marzton/goldshore-assets.git
   branch = main

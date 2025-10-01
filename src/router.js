@@ -24,6 +24,11 @@ const buildUpstreamRequest = (request, upstreamUrl) => {
   return new Request(target.toString(), request);
 };
 
+const isCacheableMethod = (method = '') => {
+  const normalized = String(method).toUpperCase();
+  return normalized === 'GET' || normalized === 'HEAD';
+};
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -45,12 +50,17 @@ export default {
     }
 
     const upstreamRequest = buildUpstreamRequest(request, upstreamOrigin);
-    const response = await fetch(upstreamRequest, {
-      cf: {
-        cacheTtl: env.CACHE_TTL ? Number(env.CACHE_TTL) : undefined,
+    const fetchInit = {};
+    const cacheTtl = Number(env.CACHE_TTL);
+
+    if (isCacheableMethod(request.method)) {
+      fetchInit.cf = {
         cacheEverything: true,
-      },
-    });
+        cacheTtl: Number.isFinite(cacheTtl) ? cacheTtl : undefined,
+      };
+    }
+
+    const response = await fetch(upstreamRequest, fetchInit);
 
     const outgoing = new Response(response.body, response);
 

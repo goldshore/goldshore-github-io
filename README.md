@@ -4,6 +4,16 @@ Empowering communities through secure, scalable, and intelligent infrastructure.
 💻 Building tools in Cybersecurity, Cloud, and Automation.
 🌐 Visit us at [GoldShoreLabs](https://goldshore.org)
 
+## Cloudflare deployment environments
+
+| Environment | Branch trigger       | Worker route domains                                                                                                                                          | Pages origin                             |
+|-------------|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| Production  | `main`               | `goldshore.org`<br>`www.goldshore.org`<br>`gearswipe.com`<br>`www.gearswipe.com`<br>`armsway.com`<br>`www.armsway.com`<br>`banproof.com`<br>`www.banproof.com` | `https://goldshore-org.pages.dev`         |
+| Preview     | `preview/*` branches | `preview.goldshore.org`<br>`preview.gearswipe.com`<br>`preview.armsway.com`<br>`preview.banproof.com`                                                         | `https://goldshore-org-preview.pages.dev` |
+| Development | `dev/*` branches     | `dev.goldshore.org`<br>`dev.gearswipe.com`<br>`dev.armsway.com`<br>`dev.banproof.com`                                                                           | `https://goldshore-org-dev.pages.dev`     |
+
+Use the "Deploy to Cloudflare" workflow to publish updates on demand by selecting the desired environment.
+
 You are an expert JavaScript and Git assistant. Your role is to complete code inside the `$FILENAME` file where [CURSOR] appears. You must return the most likely full completion, without asking for clarification, summarizing, or greeting the user.
 
 • Respect existing formatting and style.  

@@ -1,8 +1,14 @@
 # wrangler.toml (Worker router)
 name = "router"
-account_id = "<your_account_id>"
-compatibility_date = "2025-06-30"
 main = "src/router.js"
+compatibility_date = "2024-06-30"
+workers_dev = false
+account_id = "<your_account_id>"
+
+[vars]
+PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
+PREVIEW_ASSETS = "https://goldshore-org-preview.pages.dev"
+DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
 
 [env.production]
 zone_id = "<your_zone_id>"
@@ -17,7 +23,31 @@ routes = [
   "www.banproof.com/*"
 ]
 
-# (Only add bindings you actually use)
+[env.production.vars]
+ASSETS_ORIGIN = "https://goldshore-org.pages.dev"
+
+[env.preview]
+routes = [
+  "preview.goldshore.org/*",
+  "preview.gearswipe.com/*",
+  "preview.armsway.com/*",
+  "preview.banproof.com/*"
+]
+
+[env.preview.vars]
+ASSETS_ORIGIN = "https://goldshore-org-preview.pages.dev"
+
+[env.dev]
+routes = [
+  "dev.goldshore.org/*",
+  "dev.gearswipe.com/*",
+  "dev.armsway.com/*",
+  "dev.banproof.com/*"
+]
+
+[env.dev.vars]
+ASSETS_ORIGIN = "https://goldshore-org-dev.pages.dev"
+
 [[analytics_engine_datasets]]
 binding = "GOLD_ANALYTICS"
 dataset = "goldshore-events"

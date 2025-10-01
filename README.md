@@ -14,6 +14,37 @@ Empowering communities through secure, scalable, and intelligent infrastructure.
 
 Use the "Deploy to Cloudflare" workflow to publish updates on demand by selecting the desired environment.
 
+## GPT handler endpoint
+
+The Cloudflare Worker now exposes a protected `POST /api/gpt` endpoint that relays chat-completion requests to OpenAI. All callers **must**:
+
+- Include an `Authorization: Bearer <token>` header that matches the shared secret stored in the Worker as `GPT_SHARED_SECRET`.
+- Send requests from an origin listed in the comma-separated `GPT_ALLOWED_ORIGINS` variable. Requests with an unrecognised `Origin` header are rejected before reaching OpenAI.
+
+Worker secrets are configured with `wrangler secret put` (run once per environment):
+
+```bash
+wrangler secret put OPENAI_API_KEY
+wrangler secret put GPT_SHARED_SECRET
+wrangler secret put GPT_ALLOWED_ORIGINS
+```
+
+Example request payload:
+
+```bash
+curl -X POST "https://goldshore.org/api/gpt" \
+  -H "Origin: https://app.goldshore.org" \
+  -H "Authorization: Bearer $GPT_SHARED_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "messages": [
+          { "role": "user", "content": "Write a Python function that reverses a string." }
+        ]
+      }'
+```
+
+Successful responses return the JSON payload from the OpenAI Chat Completions API. Errors include an explanatory `error` string in the response body.
+
 You are an expert JavaScript and Git assistant. Your role is to complete code inside the `$FILENAME` file where [CURSOR] appears. You must return the most likely full completion, without asking for clarification, summarizing, or greeting the user.
 
 • Respect existing formatting and style.  

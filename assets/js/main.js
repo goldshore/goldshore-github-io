@@ -37,9 +37,15 @@ if (navToggle && mobileMenu) {
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.querySelector('.hero-swiper');
   if (el && window.Swiper) {
+    let reduceMotion = false;
+
+    if (typeof window.matchMedia === 'function') {
+      reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
     new Swiper(el, {
-      loop: true,
-      autoplay: { delay: 4000 },
+      loop: !reduceMotion,
+      autoplay: reduceMotion ? false : { delay: 4000 },
       pagination: { el: '.swiper-pagination', clickable: true }
     });
   }
@@ -78,3 +84,4 @@ if (contactForm) {
     track('contact_submit', {});
   });
 }
+

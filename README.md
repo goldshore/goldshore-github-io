@@ -14,6 +14,74 @@ Empowering communities through secure, scalable, and intelligent infrastructure.
 
 Use the "Deploy to Cloudflare" workflow to publish updates on demand by selecting the desired environment.
 
+## `/api/gpt` Worker endpoint
+
+- **Route**: `POST /api/gpt`
+- **Handler**: Cloudflare Worker module at [`src/gpt-handler.js`](src/gpt-handler.js)
+
+Incoming requests first enter `src/router.js`, which proxies static assets to the
+Pages origin. Requests whose pathname starts with `/api/gpt` are passed to the
+GPT handler module, which formats the payload, calls OpenAI's Responses API,
+and streams the result back to the client.
+
+### Configuring OpenAI credentials
+
+Set the `OPENAI_API_KEY` secret in each Worker environment so the GPT handler
+can authenticate with OpenAI:
+
+```bash
+wrangler secret put OPENAI_API_KEY
+```
+
+For CI/CD pipelines, use the equivalent secret management command (for example
+`npx wrangler secret put`, Cloudflare Dashboard > Worker > Settings > Secrets,
+or the GitHub Action `cloudflare/wrangler-action` `secrets` input).
+
+### Supported models
+
+The handler currently supports the following OpenAI model identifiers:
+
+- `gpt-4o-mini`
+- `gpt-4o`
+- `o4-mini`
+
+You can pass the desired model in the `model` field of the request JSON. The
+Worker validates the choice and forwards it to OpenAI.
+
+### Example request
+
+```http
+POST /api/gpt HTTP/1.1
+Host: goldshore.org
+Content-Type: application/json
+
+{
+  "model": "gpt-4o-mini",
+  "messages": [
+    { "role": "system", "content": "You are a concise assistant." },
+    { "role": "user", "content": "Summarize Gold Shore Labs." }
+  ]
+}
+```
+
+### Example response
+
+```json
+{
+  "model": "gpt-4o-mini",
+  "created": 1720000000,
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Gold Shore Labs builds secure, AI-driven tools for cloud, cybersecurity, and automation."
+      }
+    }
+  ]
+}
+```
+
 You are an expert JavaScript and Git assistant. Your role is to complete code inside the `$FILENAME` file where [CURSOR] appears. You must return the most likely full completion, without asking for clarification, summarizing, or greeting the user.
 
 • Respect existing formatting and style.  

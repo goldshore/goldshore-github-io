@@ -24,6 +24,8 @@ routes = [
 
 [env.production.vars]
 ENVIRONMENT = "production"
+ALLOWED_HOSTNAMES = "goldshore.org,www.goldshore.org"
+CANONICAL_HOSTNAME = "goldshore.org"
 
 [[analytics_engine_datasets]]
 binding = "GOLD_ANALYTICS"

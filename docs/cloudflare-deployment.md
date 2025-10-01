@@ -26,6 +26,8 @@ wrangler deploy --env production
 - `PRODUCTION_ORIGIN` is configured in `wrangler.toml` and should point at the static site that already renders the full experience (e.g. `https://goldshore-org.pages.dev`).
 - `PREVIEW_ORIGIN` is set for the preview environment so Git branches stay on the Pages hostname without touching the Worker.
 - `CACHE_TTL` (default `300` seconds) keeps the Worker cost low by letting Cloudflare cache responses on GET/HEAD requests.
+- `ALLOWED_HOSTNAMES` is a comma-separated allow list enforced in production so only `goldshore.org` routes can consume Worker invocations.
+- `CANONICAL_HOSTNAME` controls the redirect target when requests arrive on an unexpected host; set it to `goldshore.org` to collapse stray traffic back to the primary domain.
 
 ## 3. Split deployments
 

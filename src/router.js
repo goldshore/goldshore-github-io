@@ -29,6 +29,15 @@ const isCacheableMethod = (method = '') => {
   return normalized === 'GET' || normalized === 'HEAD';
 };
 
+const parseHostList = (value) => {
+  if (!value) return [];
+
+  return value
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+};
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -36,6 +45,23 @@ export default {
 
     const productionOrigin = normalizeOrigin(env.PRODUCTION_ORIGIN, env.UPSTREAM_PROTOCOL);
     const previewOrigin = normalizeOrigin(env.PREVIEW_ORIGIN, env.UPSTREAM_PROTOCOL);
+
+    const allowedHostnames = parseHostList(env.ALLOWED_HOSTNAMES);
+    const canonicalHostname = (env.CANONICAL_HOSTNAME || '').trim().toLowerCase();
+
+    if (environment === 'production' && allowedHostnames.length > 0) {
+      const requestHost = url.hostname.toLowerCase();
+
+      if (!allowedHostnames.includes(requestHost)) {
+        if (canonicalHostname) {
+          const redirectTarget = new URL(request.url);
+          redirectTarget.hostname = canonicalHostname;
+          return Response.redirect(redirectTarget.toString(), 301);
+        }
+
+        return new Response('Forbidden host', { status: 403 });
+      }
+    }
 
     const upstreamOrigin = environment === 'production'
       ? productionOrigin

@@ -3,7 +3,7 @@ name = "router"
 main = "src/router.js"
 compatibility_date = "2024-06-30"
 workers_dev = false
-account_id = "<your_account_id>"
+account_id = "f77de112d2019e5456a3198a8bb50bd2"
 
 [vars]
 PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
@@ -14,16 +14,15 @@ DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
 # `wrangler secret put …` or `.dev.vars` in local development.
 
 [env.production]
-zone_id = "<your_zone_id>"
 routes = [
-  "goldshore.org/*",
-  "www.goldshore.org/*",
-  "gearswipe.com/*",
-  "www.gearswipe.com/*",
-  "armsway.com/*",
-  "www.armsway.com/*",
-  "banproof.com/*",
-  "www.banproof.com/*"
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "gearswipe.com/*", zone_name = "gearswipe.com" },
+  { pattern = "www.gearswipe.com/*", zone_name = "gearswipe.com" },
+  { pattern = "armsway.com/*", zone_name = "armsway.com" },
+  { pattern = "www.armsway.com/*", zone_name = "armsway.com" },
+  { pattern = "banproof.com/*", zone_name = "banproof.com" },
+  { pattern = "www.banproof.com/*", zone_name = "banproof.com" }
 ]
 
 [env.production.vars]
@@ -31,10 +30,10 @@ ASSETS_ORIGIN = "https://goldshore-org.pages.dev"
 
 [env.preview]
 routes = [
-  "preview.goldshore.org/*",
-  "preview.gearswipe.com/*",
-  "preview.armsway.com/*",
-  "preview.banproof.com/*"
+  { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "preview.gearswipe.com/*", zone_name = "gearswipe.com" },
+  { pattern = "preview.armsway.com/*", zone_name = "armsway.com" },
+  { pattern = "preview.banproof.com/*", zone_name = "banproof.com" }
 ]
 
 [env.preview.vars]
@@ -42,10 +41,10 @@ ASSETS_ORIGIN = "https://goldshore-org-preview.pages.dev"
 
 [env.dev]
 routes = [
-  "dev.goldshore.org/*",
-  "dev.gearswipe.com/*",
-  "dev.armsway.com/*",
-  "dev.banproof.com/*"
+  { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "dev.gearswipe.com/*", zone_name = "gearswipe.com" },
+  { pattern = "dev.armsway.com/*", zone_name = "armsway.com" },
+  { pattern = "dev.banproof.com/*", zone_name = "banproof.com" }
 ]
 
 [env.dev.vars]

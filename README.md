@@ -26,6 +26,11 @@ The `/api/contact` Pages Function depends on two environment variables:
 
 Values added with `wrangler secret put` are encrypted and **not** committed to the repository. When running `wrangler pages dev` locally you can copy `.dev.vars.example` to `.dev.vars` and provide temporary development credentials. The public Turnstile site key used in the homepage markup can remain versioned because it is intentionally exposed to browsers.
 
+### Analytics
+
+- Google Analytics 4 measurement ID: `G-6208QFYB08`
+- Cloudflare Web Analytics token: set via the `data-cf-beacon` attribute in `index.html`
+
 ### GPT handler API
 
 Gold Shore's Worker router exposes a `/api/gpt` endpoint that proxies requests to OpenAI. The handler accepts either a `prompt` string or a `messages` array following the Chat Completions format. Optional fields include:

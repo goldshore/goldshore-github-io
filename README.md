@@ -52,6 +52,16 @@ Example request payload:
 
 Responses are returned verbatim from OpenAI's `/v1/chat/completions` endpoint. Be sure to configure `OPENAI_API_KEY` in each environment before deploying.
 
+## Swiss-Army Critique Pipeline
+
+The `critique-worker/` folder contains a Cloudflare Workers + Queues + R2 pipeline that turns inbound email into automated website, portfolio, or social critiques. High-level flow:
+
+1. Postmark (or another inbound email provider) forwards messages sent to `critiques@goldshore.org` to the ingress Worker (`src/ingress.js`).
+2. The Worker normalizes the request, verifies the signature, and enqueues it on `critique-queue`.
+3. The queue consumer (`src/consumer.js`) performs the requested checks (PageSpeed Insights, Cloudflare headers, portfolio CSV parsing stubs, social heuristics), saves a Markdown report to R2, and emails a response with the download link.
+
+To deploy it, follow the step-by-step instructions in `critique-worker/README.md`, provisioning the KV namespace, R2 bucket, and queue bindings listed in `critique-worker/wrangler.toml`.
+
 You are an expert JavaScript and Git assistant. Your role is to complete code inside the `$FILENAME` file where [CURSOR] appears. You must return the most likely full completion, without asking for clarification, summarizing, or greeting the user.
 
 • Respect existing formatting and style.  

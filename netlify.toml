@@ -1,7 +1,0 @@
-[build]
-  command = "echo \"Skipping build; static assets already committed\""
-  publish = "."
-  functions = "functions"
-
-[build.environment]
-  NODE_VERSION = "18"

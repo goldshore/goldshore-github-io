@@ -1,0 +1,53 @@
+name: Deploy goldshore + infra
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "wrangler.toml"
+      - "package.json"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: [production, preview, dev]
+    env:
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_API_TOKEN:  ${{ secrets.CF_API_TOKEN }}
+      CF_SECRET_STORE_ID: ${{ secrets.CF_SECRET_STORE_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-package-lock
+
+      - name: Process images
+        run: npm run process:images
+
+      - name: Build web (Astro)
+        run: npm run build:web
+
+      - name: Deploy Worker (${{ matrix.env }})
+        run: npx wrangler deploy --env=${{ matrix.env }} --minify
+
+      - name: Rebuild Access (goldshore only; idempotent)
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          bash infra/scripts/rebuild-goldshore-access.sh
+
+      - name: Sync DNS
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: bash infra/scripts/upsert-goldshore-dns.sh

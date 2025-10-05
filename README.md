@@ -14,6 +14,18 @@ Empowering communities through secure, scalable, and intelligent infrastructure.
 
 Use the "Deploy to Cloudflare" workflow to publish updates on demand by selecting the desired environment.
 
+## `/api/gpt` configuration
+
+The GPT relay worker requires explicit authentication and origin allow-listing. Set the following variables in each Cloudflare Worker environment:
+
+| Variable | Purpose |
+|----------|---------|
+| `OPENAI_API_KEY` | Server-side OpenAI API key used to fulfil chat completions. |
+| `GPT_SERVICE_TOKEN` | Bearer token that callers must present in the `Authorization: Bearer <token>` header. |
+| `GPT_ALLOWED_ORIGINS` | Comma-separated list of origins permitted to call the endpoint (e.g. `https://goldshore.org,https://www.goldshore.org`). |
+
+Requests without a matching `Origin` header or a valid bearer token receive `403`/`401` responses. Update any front-end client to supply the configured token when posting to `/api/gpt`.
+
 You are an expert JavaScript and Git assistant. Your role is to complete code inside the `$FILENAME` file where [CURSOR] appears. You must return the most likely full completion, without asking for clarification, summarizing, or greeting the user.
 
 • Respect existing formatting and style.  

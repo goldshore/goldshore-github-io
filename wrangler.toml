@@ -17,13 +17,13 @@ GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https:/
 [env.production]
 routes = [
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
-  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "*.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "gearswipe.com/*", zone_name = "gearswipe.com" },
-  { pattern = "www.gearswipe.com/*", zone_name = "gearswipe.com" },
+  { pattern = "*.gearswipe.com/*", zone_name = "gearswipe.com" },
   { pattern = "armsway.com/*", zone_name = "armsway.com" },
-  { pattern = "www.armsway.com/*", zone_name = "armsway.com" },
+  { pattern = "*.armsway.com/*", zone_name = "armsway.com" },
   { pattern = "banproof.com/*", zone_name = "banproof.com" },
-  { pattern = "www.banproof.com/*", zone_name = "banproof.com" }
+  { pattern = "*.banproof.com/*", zone_name = "banproof.com" }
 ]
 
 [env.production.vars]

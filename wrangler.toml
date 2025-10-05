@@ -1,5 +1,5 @@
 # wrangler.toml (Worker router)
-name = "router"
+name = "goldshore"
 main = "src/router.js"
 compatibility_date = "2024-06-30"
 workers_dev = false

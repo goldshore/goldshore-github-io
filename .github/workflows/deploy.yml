@@ -16,11 +16,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     strategy:
-      matrix: { env: [production, preview, dev] }
+      matrix:
+        environment: [production, preview, dev]
     env:
       CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-      CF_API_TOKEN:  ${{ secrets.CF_API_TOKEN }}
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
       CF_SECRET_STORE_ID: ${{ secrets.CF_SECRET_STORE_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -51,6 +53,28 @@ jobs:
           bash infra/scripts/rebuild-goldshore-access.sh
 
       - name: Sync DNS
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-package-lock
+
+      - name: Process images
+        run: npm run process-images
+
+      - name: Build web (Astro)
+        run: npm run build:web
+
+      - name: Deploy Worker (${{ matrix.environment }})
+        run: npx wrangler deploy --env=${{ matrix.environment }} --minify
+
+      - name: Rebuild Access (goldshore)
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: bash infra/scripts/rebuild-goldshore-access.sh
+
+      - name: Sync DNS records
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: bash infra/scripts/upsert-goldshore-dns.sh

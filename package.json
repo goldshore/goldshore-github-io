@@ -2,6 +2,7 @@
   "name": "goldshore",
   "private": true,
   "version": "0.0.0",
+  "version": "0.1.0",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -13,5 +14,12 @@
   "devDependencies": {
     "sharp": "^0.33.3",
     "@cloudflare/workers-types": "^4.20240512.0"
+    "build:web": "npm --workspace apps/web run build",
+    "process-images": "node apps/web/scripts/process-images.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240821.0",
+    "sharp": "^0.33.4",
+    "wrangler": "^3.80.1"
   }
 }

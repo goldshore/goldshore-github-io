@@ -38,39 +38,60 @@ jobs:
       - name: Build site (Astro)
         working-directory: apps/web
         run: |
-          npm i astro@latest --no-save
+          npm install --no-package-lock
           npx astro build
 
       - name: Lighthouse smoke (static)
+        env:
+          LH_THRESHOLD: "0.85"
         run: |
-          npm i -g http-server
-          http-server apps/web/dist -p 4173 & sleep 2
-          npx lighthouse http://localhost:4173 --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=./lh.json --quiet
+          npx http-server apps/web/dist -p 4173 &
+          SERVER_PID=$!
+          sleep 2
+          npx lighthouse http://localhost:4173 \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --output=json \
+            --output-path=./lh.json \
+            --quiet
+          kill $SERVER_PID
           score=$(jq '[.categories.performance.score,.categories.accessibility.score,.categories.seo.score] | add/3' lh.json)
           echo "Average score: $score"
-          awk 'BEGIN {exit !( '"$score"' >= 0.85 )}'
+          node -e "const score=parseFloat(process.argv[1]);const threshold=parseFloat(process.env.LH_THRESHOLD);if(!(score>=threshold)){console.error('Lighthouse average below threshold');process.exit(1);}" "$score"
 
       - name: AI copy/link suggestions (PR only)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node - <<'JS'
-          const fs=require('fs');
+          const fs = require('fs');
           const { execSync } = require('child_process');
+
           const files = ['apps/web/src/pages/index.astro'];
-          let patch = '';
-          for (const f of files) {
-            const original = fs.readFileSync(f,'utf-8');
-            let updated = original.replace(/we steer markets, not money/gi, 'We build market tools that respect capital and context.');
+          let changed = false;
+
+          for (const file of files) {
+            const original = fs.readFileSync(file, 'utf-8');
+            const updated = original.replace(/we steer markets, not money/gi, 'We build market tools that respect capital and context.');
             if (updated !== original) {
-              fs.writeFileSync(f, updated);
-              patch += `\n[MODIFIED] ${f}`;
+              fs.writeFileSync(file, updated);
+              changed = true;
             }
           }
-          if (!patch) { console.log('No edits.'); process.exit(0); }
+
+          if (!changed) {
+            console.log('No edits suggested.');
+            process.exit(0);
+          }
+
           execSync('git config user.email "bot@goldshore.org"');
           execSync('git config user.name "goldshore-ai"');
-          execSync('git checkout -b chore/ai-maint');
+          try {
+            execSync('git checkout -b chore/ai-maint');
+          } catch (error) {
+            execSync('git checkout chore/ai-maint');
+          }
           execSync('git add -A');
           execSync('git commit -m "AI: copy polish + link graph refresh"');
-          execSync('git push -u origin chore/ai-maint');
+          execSync('git push --set-upstream origin chore/ai-maint');
           console.log('PR branch pushed.');
           JS

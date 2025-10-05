@@ -11,5 +11,16 @@
   },
   "dependencies": {
     "astro": "^4.10.2"
+  "name": "@goldshore/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^4.13.0"
   }
 }

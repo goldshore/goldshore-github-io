@@ -1,3 +1,3 @@
-# GoldShore AI Maintenance
+# AI maintenance helpers
 
-This package is reserved for AI-assisted maintenance scripts. Workflows call into these scripts to prepare copy updates, validate link graphs, and stage review branches. Add Node utilities here when expanding the automated maintenance pipeline.
+This package will house richer AI-driven maintenance scripts and utilities. The scheduled workflow currently performs guarded copy updates directly in CI; additional tooling (OpenAI orchestrators, sitemap/link graph analyzers, etc.) can live here as the automation grows.

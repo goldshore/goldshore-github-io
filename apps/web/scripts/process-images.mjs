@@ -15,6 +15,13 @@ for (const file of files) {
   if (!/\.(png|jpe?g)$/i.test(inputPath)) continue;
   const base = path.parse(file.name).name;
   const image = sharp(inputPath)
+for (const entry of fs.readdirSync(srcDir)) {
+  const absolute = path.join(srcDir, entry);
+  if (!fs.statSync(absolute).isFile()) continue;
+  if (!/\.(png|jpe?g)$/i.test(entry)) continue;
+
+  const base = path.parse(entry).name;
+  const pipeline = sharp(absolute)
     .modulate({ brightness: 0.95, saturation: 0.9 })
     .composite([
       {
@@ -27,6 +34,8 @@ for (const file of files) {
 
   await image.webp({ quality: 82 }).toFile(path.join(outDir, `${base}.webp`));
   await image.avif({ quality: 60 }).toFile(path.join(outDir, `${base}.avif`));
+  await pipeline.webp({ quality: 82 }).toFile(path.join(outDir, `${base}.webp`));
+  await pipeline.avif({ quality: 60 }).toFile(path.join(outDir, `${base}.avif`));
 }
 
 console.log('Images processed →', outDir);

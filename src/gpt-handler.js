@@ -187,6 +187,12 @@ async function handlePost(request, env, allowedOrigin) {
 export default {
   async fetch(request, env) {
     const allowedOrigin = resolveAllowedOrigin(request, env);
+    const requestOrigin = request.headers.get("Origin");
+    const hasAllowedOriginsConfigured = parseAllowedOrigins(env).length > 0;
+
+    if (hasAllowedOriginsConfigured && requestOrigin && !allowedOrigin) {
+      return jsonResponse({ error: "Origin not allowed." }, { status: 403 }, allowedOrigin);
+    }
 
     if (request.method === "OPTIONS") {
       return new Response(null, {

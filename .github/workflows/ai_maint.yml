@@ -1,0 +1,105 @@
+name: AI maintenance (safe)
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_PROJECT_ID: ${{ secrets.OPENAI_PROJECT_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install tooling
+        run: |
+          npm install --no-package-lock --no-save \
+            stylelint stylelint-config-standard htmlhint eslint lighthouse http-server
+
+      - name: Lint CSS/HTML/JS
+        run: |
+          npx stylelint "apps/web/src/**/*.css"
+          npx htmlhint "apps/web/src/**/*.astro" || true
+          npx eslint "apps/web/src/**/*.{js,ts,astro}" || true
+
+      - name: CSS guardrails
+        run: |
+          bad=$(find apps/web -name "*.css" -size +500k -print -o -type f -name "*.css" -exec file -bi {} \; | grep -v "text/") || true
+          if [ -n "$bad" ]; then
+            echo "❌ Bad CSS detected"
+            echo "$bad"
+            exit 1
+          fi
+
+      - name: Build site (Astro)
+        working-directory: apps/web
+        run: |
+          npm install --no-package-lock
+          npx astro build
+
+      - name: Lighthouse smoke (static)
+        env:
+          LH_THRESHOLD: "0.85"
+        run: |
+          npx http-server apps/web/dist -p 4173 &
+          SERVER_PID=$!
+          sleep 2
+          npx lighthouse http://localhost:4173 \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --output=json \
+            --output-path=./lh.json \
+            --quiet
+          kill $SERVER_PID
+          score=$(jq '[.categories.performance.score,.categories.accessibility.score,.categories.seo.score] | add/3' lh.json)
+          echo "Average score: $score"
+          node -e "const score=parseFloat(process.argv[1]);const threshold=parseFloat(process.env.LH_THRESHOLD);if(!(score>=threshold)){console.error('Lighthouse average below threshold');process.exit(1);}" "$score"
+
+      - name: AI copy/link suggestions (PR only)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node - <<'JS'
+          const fs = require('fs');
+          const { execSync } = require('child_process');
+
+          const files = ['apps/web/src/pages/index.astro'];
+          let changed = false;
+
+          for (const file of files) {
+            const original = fs.readFileSync(file, 'utf-8');
+            const updated = original.replace(/we steer markets, not money/gi, 'We build market tools that respect capital and context.');
+            if (updated !== original) {
+              fs.writeFileSync(file, updated);
+              changed = true;
+            }
+          }
+
+          if (!changed) {
+            console.log('No edits suggested.');
+            process.exit(0);
+          }
+
+          execSync('git config user.email "bot@goldshore.org"');
+          execSync('git config user.name "goldshore-ai"');
+          try {
+            execSync('git checkout -b chore/ai-maint');
+          } catch (error) {
+            execSync('git checkout chore/ai-maint');
+          }
+          execSync('git add -A');
+          execSync('git commit -m "AI: copy polish + link graph refresh"');
+          execSync('git push --set-upstream origin chore/ai-maint');
+          console.log('PR branch pushed.');
+          JS

@@ -1,0 +1,49 @@
+---
+import BaseLayout from "../layouts/Base.astro";
+
+const meta = {
+  title: "Contact Gold Shore — Book a strategy session",
+  description: "Request a working session with Gold Shore to plan your launch, narrative defense, or growth initiative.",
+  canonical: "https://goldshore.org/contact"
+};
+---
+<BaseLayout {...meta}>
+  <h1 class="section-title">Let’s build momentum</h1>
+  <p class="section-subtitle">
+    Share your focus area and timeline. We’ll align on scope within one business day and route you to the right operator.
+  </p>
+
+  <form class="card" action="https://formspree.io/f/your-form-id" method="POST" style="display: grid; gap: 20px;">
+    <div>
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" required placeholder="Ada Lovelace" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);" />
+    </div>
+    <div>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required placeholder="you@example.com" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);" />
+    </div>
+    <div>
+      <label for="focus">What do you need?</label>
+      <select id="focus" name="focus" required style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);">
+        <option value="">Select a track</option>
+        <option>Launch architecture</option>
+        <option>Reputation defense</option>
+        <option>Intelligence ops</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div>
+      <label for="message">Context</label>
+      <textarea id="message" name="message" rows="5" required placeholder="Tell us about the product, timeline, and any material we should review." style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);"></textarea>
+    </div>
+    <button class="btn" type="submit">Submit request</button>
+  </form>
+
+  <section style="margin-top: clamp(48px, 8vw, 96px);">
+    <h2 class="section-title">Availability</h2>
+    <p class="section-subtitle">We host strategy calls on Tuesdays and Thursdays. Urgent reputation work is on-call 24/7.</p>
+    <div class="card">
+      <p style="margin: 0;">Prefer async? Email <a href="mailto:intake@goldshore.org">intake@goldshore.org</a> with decks, briefs, or data rooms.</p>
+    </div>
+  </section>
+</BaseLayout>

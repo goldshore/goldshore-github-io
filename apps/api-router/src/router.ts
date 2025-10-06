@@ -7,116 +7,47 @@ type Env = {
   DEV_ASSETS?: string;
 };
 
-const DEFAULT_ORIGINS = {
-  production: 'https://goldshore-org.pages.dev',
-  preview: 'https://goldshore-org-preview.pages.dev',
-  dev: 'https://goldshore-org-dev.pages.dev'
-} as const;
-
-const splitCandidates = (raw: string): string[] => raw
-  .split(/[\n,]/)
-  .map((value) => value.trim())
-  .filter(Boolean);
-
-const normaliseOrigin = (candidate: string): string | null => {
-  const trimmed = candidate.trim();
-  if (!trimmed) {
-    return null;
+const pickOrigin = (host: string, env: Env): string => {
+  if (host.startsWith('preview.')) {
+    return env.PREVIEW_ASSETS ?? 'https://goldshore-org-preview.pages.dev';
   }
 
-  if (trimmed.includes('*')) {
-    // Wildcard origins are placeholders (e.g. "*-goldshore-org...") that cannot
-    // be dereferenced directly by the proxy. Skip them and continue searching.
-    return null;
+  if (host.startsWith('dev.')) {
+    return env.DEV_ASSETS ?? 'https://goldshore-org-dev.pages.dev';
   }
 
-  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
-    ? trimmed
-    : `https://${trimmed}`;
-
-  try {
-    const url = new URL(withScheme);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return null;
-    }
-
-    const pathname = url.pathname.endsWith('/') && url.pathname !== '/'
-      ? url.pathname.slice(0, -1)
-      : url.pathname;
-
-    return `${url.protocol}//${url.host}${pathname}`;
-  } catch (error) {
-    return null;
-  }
+  return env.PRODUCTION_ASSETS ?? 'https://goldshore-org.pages.dev';
 };
 
-const selectOrigin = (raw: string | undefined, fallback: string): string => {
-  if (!raw) {
-    return fallback;
-  }
-
-  const candidates = splitCandidates(raw);
-  for (const candidate of candidates) {
-    const normalised = normaliseOrigin(candidate);
-    if (normalised) {
-      return normalised;
-    }
-  }
-
-  return fallback;
-};
-
-const mapHostToAssets = (host: string, env: Env): string =>
-  host.startsWith('preview.')
-    ? selectOrigin(env.PREVIEW_ASSETS, DEFAULT_ORIGINS.preview)
-    : host.startsWith('dev.')
-      ? selectOrigin(env.DEV_ASSETS, DEFAULT_ORIGINS.dev)
-      : selectOrigin(env.PRODUCTION_ASSETS, DEFAULT_ORIGINS.production);
-
-const buildCorsHeaders = (origin: string): Headers => {
-  const headers = new Headers();
-  headers.set('access-control-allow-origin', origin);
-  headers.set('access-control-allow-methods', 'GET,HEAD,POST,OPTIONS');
-  headers.set('access-control-allow-headers', 'accept,content-type');
-  headers.set('access-control-max-age', '86400');
-  return headers;
-};
+const cachePolicy = (pathname: string): string =>
+  /\.(?:js|css|png|jpg|jpeg|webp|avif|svg|woff2?)$/i.test(pathname)
+    ? 'public, max-age=31536000, immutable'
+    : 'public, s-maxage=600, stale-while-revalidate=86400';
 
 export default {
-  async fetch(req, env): Promise<Response> {
-    const url = new URL(req.url);
+  async fetch(request, env): Promise<Response> {
+    const url = new URL(request.url);
+    const origin = pickOrigin(url.hostname, env);
+    const upstream = new URL(request.url.replace(url.origin, origin));
 
-    if (req.method === 'OPTIONS') {
-      const cors = buildCorsHeaders(`${url.protocol}//${url.host}`);
-      cors.set('content-length', '0');
-      return new Response(null, { status: 204, headers: cors });
+    const init: RequestInit = {
+      method: request.method,
+      headers: request.headers,
+      redirect: 'follow',
+    };
+
+    if (!['GET', 'HEAD'].includes(request.method)) {
+      init.body = request.body;
     }
 
-    const assetsOrigin = mapHostToAssets(url.hostname, env);
-    const proxyUrl = new URL(req.url.replace(url.origin, assetsOrigin));
+    const response = await fetch(upstream.toString(), init);
+    const headers = new Headers(response.headers);
+    headers.set('x-served-by', env.APP_NAME);
+    headers.set('cache-control', cachePolicy(url.pathname));
 
-    const headers = new Headers(req.headers);
-    headers.delete('host');
-
-    const body = req.method === 'GET' || req.method === 'HEAD'
-      ? undefined
-      : await req.arrayBuffer();
-
-    const proxiedResponse = await fetch(proxyUrl.toString(), {
-      method: req.method,
+    return new Response(response.body, {
+      status: response.status,
       headers,
-      body,
-      redirect: 'follow'
     });
-
-    const responseHeaders = new Headers(proxiedResponse.headers);
-    responseHeaders.set('x-served-by', env.APP_NAME);
-    const cors = buildCorsHeaders(`${url.protocol}//${url.host}`);
-    cors.forEach((value, key) => responseHeaders.set(key, value));
-
-    return new Response(proxiedResponse.body, {
-      status: proxiedResponse.status,
-      headers: responseHeaders
-    });
-  }
+  },
 } satisfies ExportedHandler<Env>;

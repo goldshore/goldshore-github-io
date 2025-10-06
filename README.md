@@ -10,8 +10,7 @@ goldshore/
 │  ├─ api-router/          # Cloudflare Worker entry point
 │  └─ web/                 # Astro site, vanilla CSS theme
 ├─ packages/
-│  ├─ db/                  # D1 schema & Drizzle entry point (future)
-│  └─ ai-maint/            # Reserved for AI maintenance helpers
+│  └─ image-tools/         # Sharp image optimisation scripts
 ├─ infra/
 │  └─ scripts/             # DNS & Access automation
 ├─ .github/workflows/      # Deploy / maintenance CI
@@ -21,16 +20,19 @@ goldshore/
 
 Key entry points:
 
-- `apps/api-router/src/router.ts` — Worker proxy that selects the correct asset origin per host, applies strict CORS, and passes the request through without mutating CSS or binary assets.
-- `apps/web/src` — Astro site with a shared theme (`styles/theme.css`) and starter homepage content (`pages/index.astro`). Additional routes (blog, store, admin, etc.) can be added here using Astro collections or standard `.astro` pages.
-- `packages/db/schema.sql` — Cloudflare D1 schema for blog posts and store products.
+- `apps/api-router/src/router.ts` — Worker proxy that selects the correct asset origin per host and stamps immutable cache headers for assets.
+- `apps/web/src` — Astro site with a shared theme (`styles/theme.css`), reusable components, and hero animation.
+- `packages/image-tools/process-images.mjs` — Sharp pipeline that emits AVIF/WEBP variants before every build.
 - `infra/scripts/*.sh` — Shell scripts that upsert required DNS records and ensure Cloudflare Access policies for `/admin`.
+
+For a deeper end-to-end playbook that covers design, accessibility, deployment, DNS, and Cloudflare configuration, see [Gold Shore implementation playbook](./GOLDSHORE_IMPLEMENTATION_GUIDE.md).
 
 ## Workflows
 
 | Workflow | Purpose | Trigger |
 | --- | --- | --- |
-| `deploy.yml` | Builds the Astro site, deploys the Worker to `production`, `preview`, and `dev`, refreshes Access, and syncs DNS. | Push to `main` (selected paths) or manual run |
+| `deploy.yml` | Builds the Astro site, deploys the Worker to `production`, `preview`, and `dev`, then syncs DNS. | Push to `main` (selected paths) or manual run |
+| `qa.yml` | Runs Lighthouse to keep performance/accessibility/SEO above 90%. | Pull requests or manual run |
 | `ai_maint.yml` | Runs linting, Lighthouse smoke tests, and guarded AI copy suggestions that open PRs. | Nightly (05:00 UTC) or manual run |
 | `sync_dns.yml` | Manually replays the DNS upsert script. | Manual run |
 
@@ -54,13 +56,15 @@ These secrets are consumed by the Worker (via the Secrets Store binding) and Git
    ```
 2. Start Astro locally:
    ```bash
-   cd apps/web
-   npm install
    npm run dev
    ```
-3. Deploy the Worker preview when ready:
+3. Optimise images and build for production:
    ```bash
-   npx wrangler dev
+   npm run build
+   ```
+4. Deploy the Worker preview when ready:
+   ```bash
+   npm run deploy:preview
    ```
 
 The image optimisation script expects source assets in `apps/web/public/images/raw` and emits AVIF/WEBP variants into `apps/web/public/images/optimized`.
@@ -77,7 +81,7 @@ Future Drizzle integration can live in `packages/db` alongside the schema.
 
 ## Contact form configuration
 
-The public contact form posts to `/api/contact`, which forwards to Formspree after passing Cloudflare Turnstile validation. To finish wiring the production form:
+The public contact form posts to Formspree after passing Cloudflare Turnstile validation. To finish wiring the production form:
 
 1. Log into the Formspree dashboard and copy the live form endpoint (for example `https://formspree.io/f/abcd1234`).
 2. Store the endpoint as a secret so the Worker can forward submissions:
@@ -93,4 +97,4 @@ Once the secret is present, successful submissions will redirect visitors back t
 - The Worker deploy relies on the Cloudflare Secrets Store; be sure the store already contains the mapped secrets (`OPENAI_API_KEY`, `OPENAI_PROJECT_ID`, `CF_API_TOKEN`).
 - Cloudflare Access automation defaults to allowing `@goldshore.org` addresses. Adjust `ALLOWED_DOMAIN` when running the script if your allowlist differs.
 - The AI maintenance workflow is conservative and only opens pull requests when copy changes are suggested. Merge decisions stay in human hands.
-- Worker asset environment variables (`PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, `DEV_ASSETS`) accept either a single origin or a comma-/newline-separated list. The router skips wildcard placeholders (such as `*-goldshore-org...`), selects the first valid HTTPS origin, and automatically prepends `https://` when a scheme is omitted so you can rotate between legacy and renamed domains without downtime.
+- Worker asset environment variables (`PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, `DEV_ASSETS`) map to Cloudflare Pages projects and can be rotated without code changes.

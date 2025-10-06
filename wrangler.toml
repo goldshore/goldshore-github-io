@@ -1,3 +1,26 @@
-[env]
-name = "goldshore-org"
-# Other settings remain unchanged
+name = "goldshore"
+main = "apps/api-router/src/router.ts"
+compatibility_date = "2025-10-05"
+workers_dev = false
+
+[vars]
+APP_NAME = "GoldShore"
+PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
+PREVIEW_ASSETS = "https://goldshore-org-preview.pages.dev"
+DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
+
+[env.production]
+routes = [
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
+[env.preview]
+routes = [
+  { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
+[env.dev]
+routes = [
+  { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" }
+]

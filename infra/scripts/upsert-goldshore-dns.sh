@@ -18,10 +18,10 @@ if [[ -z "$zone_id" || "$zone_id" == "null" ]]; then
 fi
 
 declare -A RECORDS
-RECORDS["${ZONE_NAME}|A"]=192.0.2.1
+RECORDS["${ZONE_NAME}|CNAME"]=goldshore-org.pages.dev
 RECORDS["www.${ZONE_NAME}|CNAME"]=${ZONE_NAME}
-RECORDS["preview.${ZONE_NAME}|CNAME"]=${ZONE_NAME}
-RECORDS["dev.${ZONE_NAME}|CNAME"]=${ZONE_NAME}
+RECORDS["preview.${ZONE_NAME}|CNAME"]=goldshore-org-preview.pages.dev
+RECORDS["dev.${ZONE_NAME}|CNAME"]=goldshore-org-dev.pages.dev
 
 upsert_record() {
   local name="$1"

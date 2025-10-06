@@ -1,43 +1,74 @@
 ---
-const hero = {
-  title: "Tools for real traders.",
-  subtitle: "We build market tools that respect capital and context.",
-  cta: { text: "Explore the suite", href: "/products" }
+import BaseLayout from "../layouts/Base.astro";
+import Hero from "../components/Hero.astro";
+
+const meta = {
+  title: "Gold Shore — Shaping waves that move markets",
+  description: "Premium capital-market storytelling, launch operations, and growth playbooks for founders moving faster than their competition.",
+  canonical: "https://goldshore.org/",
+  ogImage: "https://goldshore.org/images/og-goldshore.png"
 };
-const year = new Date().getFullYear();
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <link rel="stylesheet" href="/styles/theme.css" />
-    <title>GoldShore</title>
-  </head>
-  <body>
-    <header class="container grid grid-2">
-      <div>
-        <h1>{hero.title}</h1>
-        <p style="color:var(--muted)">{hero.subtitle}</p>
-        <a class="btn" href={hero.cta.href}>{hero.cta.text}</a>
+<BaseLayout {...meta}>
+  <Hero title="Shaping waves that move markets — and reputations." kicker="Impact studio">
+    <p class="section-subtitle" style="max-width: 48ch;">
+      We partner with high-velocity teams to launch, scale, and defend the products that move modern markets.
+      From positioning to investor decks, we build systems that compound.
+    </p>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+      <a class="btn" href="/services">Explore services</a>
+      <a class="btn ghost" href="/contact">Book a session</a>
+    </div>
+  </Hero>
+
+  <section style="margin-top: clamp(48px, 8vw, 96px);">
+    <div class="container" style="padding-inline: 0;">
+      <h2 class="section-title">What we deliver</h2>
+      <p class="section-subtitle">
+        Ship-ready campaigns, investor collateral, automated launch infrastructure, and founder enablement designed for the
+        next market move.
+      </p>
+      <div class="grid grid-2">
+        <article class="card">
+          <h3>Launch architecture</h3>
+          <p>Messaging arcs, GTM plans, and channel choreography tuned for your founder’s pace.</p>
+          <a href="/services/bridgekeeper">See the Bridgekeeper blueprint →</a>
+        </article>
+        <article class="card">
+          <h3>Reputation defense</h3>
+          <p>Always-on monitoring, rapid comms, and content to keep your story ahead of the cycle.</p>
+          <a href="/services/banproof">Learn about Banproof →</a>
+        </article>
+        <article class="card">
+          <h3>Capital raise packages</h3>
+          <p>Decks, memos, and data rooms crafted to win limited attention and secure durable capital.</p>
+          <a href="/contact">Start a raise sprint →</a>
+        </article>
+        <article class="card">
+          <h3>Operational intelligence</h3>
+          <p>Dashboards, automations, and reporting that equip your team and investors in real-time.</p>
+          <a href="/team">Meet the operators →</a>
+        </article>
       </div>
-      <div class="card">Charts/CTA image slot</div>
-    </header>
+    </div>
+  </section>
 
-    <main class="container grid grid-2">
-      <section class="card">
-        <h2>Blog</h2>
-        <p>Insights, research, and release notes.</p>
-        <a href="/blog">Read the blog →</a>
-      </section>
-      <section class="card">
-        <h2>Store</h2>
-        <p>Pro tools and add-ons.</p>
-        <a href="/store">Go to store →</a>
-      </section>
-    </main>
-
-    <footer class="container" style="opacity:.7;margin-top:40px">
-      <small>© {year} GoldShore</small>
-    </footer>
-  </body>
-</html>
+  <section style="margin-top: clamp(48px, 8vw, 96px);">
+    <div class="container" style="padding-inline: 0;">
+      <h2 class="section-title">Signals &amp; research</h2>
+      <p class="section-subtitle">Insights from the desk. Fresh drops land weekly and are archived in the Gold Shore repo.</p>
+      <div class="grid grid-2">
+        <article class="card">
+          <h3>Signals report</h3>
+          <p>Macro and micro catalysts decoded for founders who price-in momentum.</p>
+          <a href="/blog">Read the latest analysis →</a>
+        </article>
+        <article class="card">
+          <h3>Office hours</h3>
+          <p>Live workshops to tune your launch or narrative. Access code required.</p>
+          <a href="/store">Request an access code →</a>
+        </article>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,4 +1,6 @@
 name: QA (Lighthouse + a11y)
+permissions:
+  contents: read
 on: [pull_request, workflow_dispatch]
 jobs:
   qa:

@@ -77,7 +77,7 @@ document.querySelectorAll('a[href^="http"]').forEach(a => {
 });
 
 // Contact form submit
-const contactForm = document.getElementById('contactForm');
+const contactForm = document.getElementById('primaryContactForm');
 if (contactForm) {
   contactForm.addEventListener('submit', () => {
     track('contact_submit', {});

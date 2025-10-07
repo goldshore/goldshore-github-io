@@ -245,7 +245,7 @@
         <h2 class="text-2xl md:text-3xl font-bold">Contact</h2>
         <p class="mt-2 text-white/80">Have a project or idea? Reach out anytime.</p>
         
-        <form id="contactForm" class="mt-6 grid gap-4" method="POST" action="/api/contact">
+        <form id="primaryContactForm" class="mt-6 grid gap-4" method="POST" action="/api/contact">
           <label class="grid gap-1">
             <span class="text-sm text-white/70">Your email</span>
             <input name="email" type="email" required class="bg-neutral-900 border border-neutral-800 rounded px-3 py-2" />
@@ -279,7 +279,7 @@
             }
             if (window.gtagTrack) {
               window.gtagTrack('contact_form_submit', {
-                form_id: 'contactForm',
+                form_id: 'primaryContactForm',
                 transport_type: 'redirect'
               });
             }

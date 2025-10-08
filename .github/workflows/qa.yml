@@ -1,4 +1,6 @@
 name: QA (a11y + SEO + links)
+permissions:
+  contents: read
 
 on:
   pull_request:

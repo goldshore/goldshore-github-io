@@ -1,0 +1,49 @@
+name: Deploy goldshore + infra
+permissions:
+  contents: read
+- name: Upload a Build Artifact
+  uses: actions/upload-artifact@v4.6.2
+  //name: Deploy Gold Shore Store platform
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "infra/**"
+      - "wrangler.toml"
+      - "package.json"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CF_API_TOKEN:  ${{ secrets.CF_API_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-package-lock
+
+      - name: Build site + assets
+        run: npm run build
+
+      - name: Deploy Worker (${{ matrix.environment }})
+        run: npx wrangler deploy --config wrangler.worker.toml --env=${{ matrix.environment }} --minify
+
+      - name: Sync DNS records
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      - name: Deploy Worker (prod)
+        run: npx wrangler deploy --env=production
+
+      - name: Sync DNS
+        run: bash infra/scripts/upsert-goldshore-dns.sh

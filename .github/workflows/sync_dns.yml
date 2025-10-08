@@ -1,4 +1,6 @@
 name: Sync DNS records
+permissions:
+  contents: read
 
 on:
   workflow_dispatch:

@@ -14,6 +14,20 @@ Pages origin. Requests whose pathname starts with `/api/gpt` are passed to the
 GPT handler module, which formats the payload, calls OpenAI's Responses API,
 and streams the result back to the client.
 
+## GPT handler endpoint
+
+The Cloudflare Worker now exposes a protected `POST /api/gpt` endpoint that relays chat-completion requests to OpenAI. All callers **must**:
+
+- Include an `Authorization: Bearer <token>` header that matches the shared secret stored in the Worker as `GPT_SHARED_SECRET`.
+- Send requests from an origin listed in the comma-separated `GPT_ALLOWED_ORIGINS` variable. Requests with an unrecognised `Origin` header are rejected before reaching OpenAI.
+
+Worker secrets are configured with `wrangler secret put` (run once per environment):
+
+```bash
+wrangler secret put OPENAI_API_KEY
+wrangler secret put GPT_SHARED_SECRET
+wrangler secret put GPT_ALLOWED_ORIGINS
+```
 ### Configuring OpenAI credentials
 
 Set the `OPENAI_API_KEY` secret in each Worker environment so the GPT handler
@@ -133,6 +147,19 @@ The `critique-worker/` folder contains a Cloudflare Workers + Queues + R2 pipeli
 Requests missing the header (or using the wrong secret) are rejected with HTTP 401.
 ### Example response
 
+```bash
+curl -X POST "https://goldshore.org/api/gpt" \
+  -H "Origin: https://app.goldshore.org" \
+  -H "Authorization: Bearer $GPT_SHARED_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "messages": [
+          { "role": "user", "content": "Write a Python function that reverses a string." }
+        ]
+      }'
+```
+
+Successful responses return the JSON payload from the OpenAI Chat Completions API. Errors include an explanatory `error` string in the response body.
 ```json
 {
   "model": "gpt-4o-mini",

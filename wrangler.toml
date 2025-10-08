@@ -37,14 +37,8 @@ routes = [
   { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
-[env.preview.vars]
-ASSETS_ORIGIN = "https://goldshore-org-preview.pages.dev"
-
 [env.dev]
 name = "goldshore-dev"
 routes = [
   { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" }
 ]
-
-[env.dev.vars]
-ASSETS_ORIGIN = "https://goldshore-org-dev.pages.dev"

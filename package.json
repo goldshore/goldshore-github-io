@@ -23,5 +23,6 @@
     "stylelint": "^16.8.0",
     "stylelint-config-standard": "^36.0.0",
     "wrangler": "^3.80.1"
-  }
+  },
+  "packageManager": "npm@11.4.2"
 }

@@ -37,10 +37,10 @@ if (navToggle && mobileMenu) {
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.querySelector('.hero-swiper');
   if (el && window.Swiper) {
-    let reduceMotion = false;
-    if (typeof window.matchMedia === 'function') {
-      reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    }
+    const hasMatchMedia = typeof window.matchMedia === 'function';
+    const reduceMotion = hasMatchMedia
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false;
 
     new Swiper(el, {
       loop: !reduceMotion,
@@ -83,12 +83,4 @@ if (contactForm) {
     track('contact_submit', {});
   });
 }
-
-window.addEventListener('contact:success', (event) => {
-  const detail = event && event.detail ? event.detail : {};
-  track('contact_submit_success', {
-    form_id: detail.formId || 'primaryContactForm',
-    transport_type: detail.transportType || 'redirect'
-  });
-});
 

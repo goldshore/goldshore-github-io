@@ -14,20 +14,6 @@ Pages origin. Requests whose pathname starts with `/api/gpt` are passed to the
 GPT handler module, which formats the payload, calls OpenAI's Responses API,
 and streams the result back to the client.
 
-## GPT handler endpoint
-
-The Cloudflare Worker now exposes a protected `POST /api/gpt` endpoint that relays chat-completion requests to OpenAI. All callers **must**:
-
-- Include an `Authorization: Bearer <token>` header that matches the shared secret stored in the Worker as `GPT_SHARED_SECRET`.
-- Send requests from an origin listed in the comma-separated `GPT_ALLOWED_ORIGINS` variable. Requests with an unrecognised `Origin` header are rejected before reaching OpenAI.
-
-Worker secrets are configured with `wrangler secret put` (run once per environment):
-
-```bash
-wrangler secret put OPENAI_API_KEY
-wrangler secret put GPT_SHARED_SECRET
-wrangler secret put GPT_ALLOWED_ORIGINS
-```
 ### Configuring OpenAI credentials
 
 Set the `OPENAI_API_KEY` secret in each Worker environment so the GPT handler
@@ -147,19 +133,6 @@ The `critique-worker/` folder contains a Cloudflare Workers + Queues + R2 pipeli
 Requests missing the header (or using the wrong secret) are rejected with HTTP 401.
 ### Example response
 
-```bash
-curl -X POST "https://goldshore.org/api/gpt" \
-  -H "Origin: https://app.goldshore.org" \
-  -H "Authorization: Bearer $GPT_SHARED_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "messages": [
-          { "role": "user", "content": "Write a Python function that reverses a string." }
-        ]
-      }'
-```
-
-Successful responses return the JSON payload from the OpenAI Chat Completions API. Errors include an explanatory `error` string in the response body.
 ```json
 {
   "model": "gpt-4o-mini",
@@ -376,6 +349,7 @@ These secrets are consumed by the Worker (via the Secrets Store binding) and Git
 
 If either secret is missing the deploy workflow will fail early, prompting the operator to add them before proceeding.
 
+Provision a Cloudflare D1 database named `goldshore-db` and copy its ID into `wrangler.worker.toml` under the `[[d1_databases]]` block. Initial seed tables can be created by running:
 The public contact form posts to Formspree after passing Cloudflare Turnstile validation. To finish wiring the production form:
 
 The Worker expects Cloudflare Pages projects mapped to:
@@ -395,6 +369,7 @@ The DNS upsert script keeps these hostnames pointed at the correct Pages project
 `goldshore.org`, `www.goldshore.org`, `preview.goldshore.org`, and `dev.goldshore.org`.
 
 - The Worker deploy relies on the Cloudflare Secrets Store; be sure the store already contains the mapped secrets (`OPENAI_API_KEY`, `OPENAI_PROJECT_ID`, `CF_API_TOKEN`).
+- Worker-related commands should pass `--config wrangler.worker.toml` so they continue to load bindings and routes, while Cloudflare Pages reads the root `wrangler.toml` for its build output directory.
 - Cloudflare Access automation defaults to allowing `@goldshore.org` addresses. Adjust `ALLOWED_DOMAIN` when running the script if your allowlist differs.
 - The AI maintenance workflow is conservative and only opens pull requests when copy changes are suggested. Merge decisions stay in human hands.
 - Worker asset environment variables (`PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, `DEV_ASSETS`) accept either a single origin or a comma-separated list. The router will select the first valid HTTPS origin and will automatically prepend `https://` when a scheme is omitted, which makes it easy to rotate between legacy and renamed domains without downtime.

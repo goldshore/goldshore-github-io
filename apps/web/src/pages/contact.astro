@@ -6,8 +6,6 @@ const meta = {
   description: "Request a working session with Gold Shore to plan your launch, narrative defense, or growth initiative.",
   canonical: "https://goldshore.org/contact"
 };
-
-const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 ---
 <BaseLayout {...meta}>
   <h1 class="section-title">Let’s build momentum</h1>
@@ -15,13 +13,7 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
     Share your focus area and timeline. We’ll align on scope within one business day and route you to the right operator.
   </p>
 
-  <form
-    class="card"
-    action="/api/contact"
-    method="POST"
-    style="display: grid; gap: 20px;"
-  >
-    <input type="hidden" name="_redirect" value="/contact#contact-success" />
+  <form class="card" action="https://formspree.io/f/your-form-id" method="POST" style="display: grid; gap: 20px;">
     <div>
       <label for="name">Name</label>
       <input id="name" name="name" type="text" required placeholder="Ada Lovelace" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);" />
@@ -44,29 +36,8 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
       <label for="message">Context</label>
       <textarea id="message" name="message" rows="5" required placeholder="Tell us about the product, timeline, and any material we should review." style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);"></textarea>
     </div>
-    {turnstileSiteKey && (
-      <div style="display: flex; justify-content: center;">
-        <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="dark"></div>
-      </div>
-    )}
     <button class="btn" type="submit">Submit request</button>
   </form>
-
-  <div id="contact-success" class="card" style="margin-top: 24px; display: none; background: rgba(0, 64, 32, 0.35); color: #c9f7d4;">
-    <p style="margin: 0;">Thanks for the note—we’ll reach out within one business day.</p>
-  </div>
-
-  {turnstileSiteKey && (
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  )}
-  <script>
-    if (typeof window !== 'undefined' && window.location.hash === '#contact-success') {
-      const success = document.getElementById('contact-success');
-      if (success) {
-        success.style.display = 'block';
-      }
-    }
-  </script>
 
   <section style="margin-top: clamp(48px, 8vw, 96px);">
     <h2 class="section-title">Availability</h2>

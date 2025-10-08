@@ -22,5 +22,14 @@
   },
   "dependencies": {
     "astro": "^4.13.0"
+  "name": "@goldshore/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "dev": "astro dev"
+  },
+  "dependencies": {
+    "astro": "^4.15.0"
   }
 }

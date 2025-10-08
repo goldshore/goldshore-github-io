@@ -5,6 +5,7 @@ on:
   schedule:
     - cron: "0 12 * * *"
 name: Sync DNS (manual)
+name: Sync DNS records
 permissions:
   contents: read
 
@@ -19,4 +20,9 @@ jobs:
       - name: Sync DNS
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+    env:
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upsert goldshore DNS
         run: bash infra/scripts/upsert-goldshore-dns.sh

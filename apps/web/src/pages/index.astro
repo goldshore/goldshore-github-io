@@ -7,6 +7,13 @@ const hero = {
   cta: { text: "Explore the suite", href: "/products" }
 };
 const year = new Date().getFullYear();
+import '../styles/theme.css';
+
+const hero = {
+  title: 'Tools for real traders.',
+  subtitle: 'We build market tools that respect capital and context.',
+  cta: { text: 'Explore the suite', href: '/products' }
+};
 ---
 <html lang="en">
   <head>
@@ -40,6 +47,7 @@ const year = new Date().getFullYear();
 
     <footer class="container" style="opacity:.7;margin-top:40px">
       <small>© {year} GoldShore</small>
+      <small>© {new Date().getFullYear()} GoldShore</small>
     </footer>
   </body>
 </html>

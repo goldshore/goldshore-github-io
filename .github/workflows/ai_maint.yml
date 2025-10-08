@@ -23,6 +23,11 @@ jobs:
       - name: Install tooling
         run: |
           npm i -D stylelint stylelint-config-standard htmlhint eslint lighthouse @actions/core @actions/github
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-package-lock
 
       - name: Lint CSS/HTML/JS
         run: |
@@ -93,5 +98,40 @@ jobs:
           execSync('git add -A');
           execSync('git commit -m "AI: copy polish + link graph refresh"');
           execSync('git push --set-upstream origin chore/ai-maint');
+        run: npm run build:web
+
+      - name: Lighthouse smoke (static)
+        run: |
+          npx http-server apps/web/dist -p 4173 & sleep 2
+          npx lighthouse http://localhost:4173 --only-categories=performance,accessibility,best-practices,seo --output=json --output-path=./lh.json --quiet
+          score=$(jq '[.categories.performance.score,.categories.accessibility.score,.categories.seo.score] | add/3' lh.json)
+          echo "Average score: $score"
+          awk 'BEGIN {exit !( '"$score"' >= 0.85 )}'
+
+      - name: AI copy/link suggestions (PR only)
+        run: |
+          node - <<'JS'
+          const fs=require('fs');
+          const { execSync } = require('child_process');
+          const files = ['apps/web/src/pages/index.astro'];
+          let changed = false;
+          for (const f of files) {
+            const content = fs.readFileSync(f,'utf-8');
+            const updated = content.replace(/we steer markets, not money/gi, 'We build market tools that respect capital and context.');
+            if (updated !== content) {
+              fs.writeFileSync(f, updated);
+              changed = true;
+            }
+          }
+          if (!changed) {
+            console.log('No edits.');
+            process.exit(0);
+          }
+          execSync('git config user.email "bot@goldshore.org"');
+          execSync('git config user.name "goldshore-ai"');
+          execSync('git checkout -B chore/ai-maint');
+          execSync('git add -A');
+          execSync('git commit -m "AI: copy polish + link graph refresh"');
+          execSync('git push -u origin chore/ai-maint');
           console.log('PR branch pushed.');
           JS

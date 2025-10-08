@@ -84,3 +84,11 @@ if (contactForm) {
   });
 }
 
+window.addEventListener('contact:success', (event) => {
+  const detail = event && event.detail ? event.detail : {};
+  track('contact_submit_success', {
+    form_id: detail.formId || 'primaryContactForm',
+    transport_type: detail.transportType || 'redirect'
+  });
+});
+

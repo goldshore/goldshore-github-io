@@ -14,38 +14,36 @@ Empowering communities through secure, scalable, and intelligent infrastructure.
 
 Use the "Deploy to Cloudflare" workflow to publish updates on demand by selecting the desired environment.
 
-## Environment configuration
+## GPT handler endpoint
 
-The `/api/contact` Pages Function depends on two environment variables:
+The Cloudflare Worker now exposes a protected `POST /api/gpt` endpoint that relays chat-completion requests to OpenAI. All callers **must**:
 
-| Variable | Purpose | How to set |
-| --- | --- | --- |
-| `FORMSPREE_ENDPOINT` | Destination endpoint provided by Formspree | `wrangler secret put FORMSPREE_ENDPOINT` (or add to `.dev.vars` for local previews) |
-| `TURNSTILE_SECRET` | Server-side Turnstile verification secret | `wrangler secret put TURNSTILE_SECRET` (or add to `.dev.vars`) |
-| `OPENAI_API_KEY` | Authenticates calls to the `/api/gpt` handler | `wrangler secret put OPENAI_API_KEY` (or add to `.dev.vars`) |
+- Include an `Authorization: Bearer <token>` header that matches the shared secret stored in the Worker as `GPT_SHARED_SECRET`.
+- Send requests from an origin listed in the comma-separated `GPT_ALLOWED_ORIGINS` variable. Requests with an unrecognised `Origin` header are rejected before reaching OpenAI.
 
-Values added with `wrangler secret put` are encrypted and **not** committed to the repository. When running `wrangler pages dev` locally you can copy `.dev.vars.example` to `.dev.vars` and provide temporary development credentials. The public Turnstile site key used in the homepage markup can remain versioned because it is intentionally exposed to browsers.
+Worker secrets are configured with `wrangler secret put` (run once per environment):
 
-### GPT handler API
-
-Gold Shore's Worker router exposes a `/api/gpt` endpoint that proxies requests to OpenAI. The handler accepts either a `prompt` string or a `messages` array following the Chat Completions format. Optional fields include:
-
-- `purpose`: set to `"coding"` to target the `gpt-5-codex` model optimized for agentic coding workflows; defaults to conversational `gpt-5` when omitted.
-- `model`: overrides the automatic selection if you want full control.
-- `temperature`: defaults to `0.2` for coding prompts and `0.7` for general chat, but any numeric value can be supplied.
-- Any other parameters supported by the OpenAI Chat Completions API (e.g., `max_tokens`, `response_format`).
+```bash
+wrangler secret put OPENAI_API_KEY
+wrangler secret put GPT_SHARED_SECRET
+wrangler secret put GPT_ALLOWED_ORIGINS
+```
 
 Example request payload:
 
-```json
-{
-  "purpose": "coding",
-  "prompt": "Write a Python function that returns the factorial of n",
-  "max_tokens": 512
-}
+```bash
+curl -X POST "https://goldshore.org/api/gpt" \
+  -H "Origin: https://app.goldshore.org" \
+  -H "Authorization: Bearer $GPT_SHARED_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "messages": [
+          { "role": "user", "content": "Write a Python function that reverses a string." }
+        ]
+      }'
 ```
 
-Responses are returned verbatim from OpenAI's `/v1/chat/completions` endpoint. Be sure to configure `OPENAI_API_KEY` in each environment before deploying.
+Successful responses return the JSON payload from the OpenAI Chat Completions API. Errors include an explanatory `error` string in the response body.
 
 You are an expert JavaScript and Git assistant. Your role is to complete code inside the `$FILENAME` file where [CURSOR] appears. You must return the most likely full completion, without asking for clarification, summarizing, or greeting the user.
 

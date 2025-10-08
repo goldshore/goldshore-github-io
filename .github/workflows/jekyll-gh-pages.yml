@@ -46,7 +46,8 @@ jobs:
       ZONE_ID: ${{ secrets.CF_ZONE_ID }}
       RECORD_ID: ${{ secrets.CF_RECORD_ID }}
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GPT_SHARED_SECRET: ${{ secrets.GPT_SHARED_SECRET }}
+      GPT_API_URL: ${{ vars.GPT_API_URL }}
 
     steps:
       - name: Checkout Code
@@ -75,18 +76,29 @@ jobs:
         run: wrangler tunnel run goldshore-tunnel
 
       - name: Auto-Summarize Commits w/ GPT
+        env:
+          WORKER_ENDPOINT: ${{ env.GPT_API_URL }}
         run: |
+          set -euo pipefail
           COMMIT_LOG=$(git log -5 --pretty=format:'%h - %s (%an)')
-          SUMMARY=$(curl https://api.openai.com/v1/chat/completions \
-            -H "Authorization: Bearer $OPENAI_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "model": "gpt-4",
-              "messages": [
-                {"role": "system", "content": "You are an AI release assistant."},
-                {"role": "user", "content": "Summarize these recent commits into a changelog:\n'"'$COMMIT_LOG'"'"}
+          PAYLOAD=$(jq -n --arg log "$COMMIT_LOG" '{
+              messages: [
+                {role: "system", content: "You are an AI release assistant."},
+                {role: "user", content: "Summarize these recent commits into a changelog:\n" + $log}
               ]
-            }' | jq -r '.choices[0].message.content')
+            }')
+
+          ENDPOINT=${WORKER_ENDPOINT:-https://goldshore.org/api/gpt}
+          RESPONSE=$(curl -sS "$ENDPOINT" \
+            -H "Authorization: Bearer $GPT_SHARED_SECRET" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          SUMMARY=$(echo "$RESPONSE" | jq -er '.choices[0].message.content') || {
+            echo "GPT handler response:" >&2
+            echo "$RESPONSE" >&2
+            exit 1
+          }
           echo "$SUMMARY" > release-summary.txt
 
       - name: Notify Discord with AI Summary

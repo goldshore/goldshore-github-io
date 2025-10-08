@@ -1,0 +1,27 @@
+---
+import BaseLayout from "../layouts/Base.astro";
+
+const meta = {
+  title: "Gold Shore Terms",
+  description: "The engagement terms and acceptable use guidelines for Gold Shore services.",
+  canonical: "https://goldshore.org/terms"
+};
+---
+<BaseLayout {...meta}>
+  <h1 class="section-title">Terms of service</h1>
+  <p class="section-subtitle">These terms govern your use of Gold Shore products, services, and digital assets.</p>
+
+  <div class="card">
+    <h2>Highlights</h2>
+    <ul>
+      <li>Engagements are scoped in writing and billed per the agreed schedule.</li>
+      <li>Confidential information shared with Gold Shore remains protected.</li>
+      <li>We reserve the right to pause services if security risks are detected.</li>
+    </ul>
+  </div>
+
+  <section style="margin-top: clamp(48px, 8vw, 96px);">
+    <h2 class="section-title">Questions</h2>
+    <p>Email <a href="mailto:legal@goldshore.org">legal@goldshore.org</a> for clarifications or custom agreements.</p>
+  </section>
+</BaseLayout>

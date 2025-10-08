@@ -1,0 +1,95 @@
+<style>
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand img {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, .15));
+}
+
+.title {
+  font: 800 18px/1.1 "Inter", system-ui, sans-serif;
+  letter-spacing: .12em;
+}
+
+.nav {
+  display: flex;
+  gap: 20px;
+}
+
+.nav a {
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+
+.hamburger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .1);
+  position: relative;
+}
+
+.hamburger span {
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+}
+
+.hamburger span:nth-child(1) { top: 12px; }
+.hamburger span:nth-child(2) { top: 19px; }
+.hamburger span:nth-child(3) { top: 26px; }
+
+@media (max-width: 900px) {
+  .nav {
+    display: none;
+  }
+
+  .hamburger {
+    display: block;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .brand {
+    margin-inline: auto;
+  }
+}
+</style>
+
+<header class="container header" role="banner">
+  <a class="brand" href="/" aria-label="Gold Shore home">
+    <img src="/logo.svg" alt="" role="presentation" />
+    <span class="title">GOLD&nbsp;SHORE</span>
+  </a>
+  <nav class="nav" aria-label="Primary">
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+    <a href="/team">Team</a>
+    <a href="/services">Services</a>
+    <a href="/contact">Contact</a>
+  </nav>
+  <button class="hamburger" type="button" aria-label="Open navigation menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+</header>

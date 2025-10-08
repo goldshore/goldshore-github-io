@@ -263,6 +263,7 @@ goldshore/
 - `packages/image-tools/process-images.mjs` — Sharp pipeline that emits AVIF/WEBP variants before every build.
 - `infra/scripts/*.sh` — Shell scripts that upsert required DNS records and ensure Cloudflare Access policies for `/admin`.
 
+For a deeper end-to-end playbook that covers design, accessibility, deployment, DNS, and Cloudflare configuration, see [GoldShore Web & Worker Implementation Guide](./GOLDSHORE_IMPLEMENTATION_GUIDE.md).
 For a deeper end-to-end playbook that covers design, accessibility, deployment, DNS, and Cloudflare configuration, see [Gold Shore implementation playbook](./GOLDSHORE_IMPLEMENTATION_GUIDE.md).
 
 ## Workflows

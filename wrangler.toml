@@ -3,7 +3,6 @@ name = "router"
 main = "src/router.js"
 compatibility_date = "2024-06-30"
 workers_dev = false
-account_id = "$CLOUDFLARE_ACCOUNT_ID"
 
 [vars]
 PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
@@ -14,7 +13,6 @@ DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
 # `wrangler secret put …` or `.dev.vars` in local development.
 
 [env.production]
-zone_id = "$ZONE_ID"
 routes = [
   "goldshore.org/*",
   "www.goldshore.org/*",

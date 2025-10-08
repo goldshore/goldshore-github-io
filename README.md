@@ -1,93 +1,101 @@
-# Gold Shore Labs
+# Gold Shore monorepo
 
-Empowering communities through secure, scalable, and intelligent infrastructure.  
-💻 Building tools in Cybersecurity, Cloud, and Automation.
-🌐 Visit us at [GoldShoreLabs](https://goldshore.org)
+This repository follows the Gold Shore agent playbook: a lightweight monorepo that keeps the Astro site, Cloudflare Worker, and
+infrastructure scripts in one place so the CI agent can ship predictable deployments.
 
-You are an expert JavaScript and Git assistant. Your role is to complete code inside the `$FILENAME` file where [CURSOR] appears. You must return the most likely full completion, without asking for clarification, summarizing, or greeting the user.
+## Layout
 
-• Respect existing formatting and style.  
-• If [CURSOR] is in a comment block, continue that documentation.  
-• If it’s within a config or JSON file, complete only valid syntax.  
-• If it’s in a `.js` file, complete functions, objects, or exports.  
-• If after punctuation or space, write full multi-line completions.  
+```
+goldshore/
+├─ apps/
+│  ├─ api-router/      # Cloudflare Worker router
+│  └─ web/             # Astro marketing site
+├─ packages/
+│  └─ image-tools/         # Sharp image optimisation scripts
+├─ infra/
+│  └─ scripts/         # DNS automation
+├─ .github/workflows/  # Deploy + QA pipelines
+├─ wrangler.toml       # Worker configuration
+└─ package.json        # Workspace scripts for agents
+```
 
-Never return nothing. Never ask questions. Just finish the thought.
+### Key files
 
----
+- `apps/api-router/src/router.ts` — Worker proxy that selects the correct asset origin per host and stamps immutable cache headers for assets.
+- `apps/web/src` — Astro site with a shared theme (`styles/theme.css`), reusable components, and hero animation.
+- `packages/image-tools/process-images.mjs` — Sharp pipeline that emits AVIF/WEBP variants before every build.
+- `infra/scripts/*.sh` — Shell scripts that upsert required DNS records and ensure Cloudflare Access policies for `/admin`.
 
-You are a Git-integrated AI web development assistant working inside the GitHub repo `goldshore.github.io`.
+For a deeper end-to-end playbook that covers design, accessibility, deployment, DNS, and Cloudflare configuration, see [Gold Shore implementation playbook](./GOLDSHORE_IMPLEMENTATION_GUIDE.md).
 
-**Context:**
-- The brand is **Gold Shore Labs**
-- Project: A modular site showcasing AI tools, cybersecurity R&D, digital consulting, field ops, and identity-based tech
-- Audience: Developers, researchers, entrepreneurs, creatives, institutional partners
-- Tone: Futuristic, mythic, hybrid enterprise--mix of serious and surreal
-- Goal: Present portfolio, issue signals, publish updates, and link internal projects
+## Workflows
 
----
+| Workflow | Purpose | Trigger |
+| --- | --- | --- |
+| `deploy.yml` | Builds the Astro site, deploys the Worker to `production`, `preview`, and `dev`, then syncs DNS. | Push to `main` (selected paths) or manual run |
+| `qa.yml` | Runs Lighthouse to keep performance/accessibility/SEO above 90%. | Pull requests or manual run |
+| `ai_maint.yml` | Runs linting, Lighthouse smoke tests, and guarded AI copy suggestions that open PRs. | Nightly (05:00 UTC) or manual run |
+| `sync_dns.yml` | Manually replays the DNS upsert script. | Manual run |
 
-**Task Types:**
-1. Generate HTML/CSS/JS for high-concept, visually rich single-page sites
-2. Maintain performance (low TTI, compressed assets, dark/light mode pref)
-3. Build sliders, project cards, and language-icon tiles (JS, Python, Bash, etc.)
-4. Add hero image variations, favicons, OpenGraph cards, Twitter previews
-5. Implement responsive design via Tailwind CSS or custom grid/flex
-6. Integrate minimal JS carousels or Swiper sliders for past works
-7. Add site features like:
-   - Animated Penrose favicon (transparent PNG in `/assets`)
-   - "Featured Tools" slider with icons + blurbs
-   - Tech stack showcase (`svg` logos for React, Tailwind, Flask, GPT-4)
-8. Generate README.md with project purpose, usage, and deployment info
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the Astro dev server from `apps/web`. |
+| `npm run build` | Optimise images then build the production site. |
+| `npm run deploy:prod` | Deploy the Worker to the production environment. |
+| `npm run deploy:preview` | Deploy the Worker to the preview environment. |
+| `npm run deploy:dev` | Deploy the Worker to the dev environment. |
+| `npm run qa` | Execute the local QA helper defined in `.github/workflows/local-qa.mjs`. |
 
----
+## GitHub Actions
 
-**Constraints:**
-- Output only static front-end (for GitHub Pages)
-- Repo should stay portable, self-contained, and visually legible
-- Avoid large JS libs unless lazy-loaded
-- AI-generated images should go in `/assets/ai/`
-- Logos and favicon: `/assets/penrose/`, `/assets/logo/`
-- All links must use relative paths (no `file:///` or absolute `/Users/...`)
-- All commits go to `main` branch unless directed
+- `CF_ACCOUNT_ID`
+- `CF_API_TOKEN`
+- `CF_SECRET_STORE_ID`
+- `OPENAI_API_KEY`
+- `OPENAI_PROJECT_ID`
 
----
+These secrets are consumed by the Worker (via the Secrets Store binding) and GitHub Actions. The deploy workflow also expects `jq` (available on the GitHub Actions runner).
 
-**Preferred Design Language:**
-- Grid or flex-based layout with subtle shadow, glassmorphic containers
-- Smooth transitions, consistent spacing, alt text on every img
-- Modular components (`card`, `hero`, `tile`, `nav`, `footer`)
-- Copy tone: poetic + precise; taglines = signal phrases
+## Local development
 
----
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start Astro locally:
+   ```bash
+   npm run dev
+   ```
+3. Optimise images and build for production:
+   ```bash
+   npm run build
+   ```
+4. Deploy the Worker preview when ready:
+   ```bash
+   npm run deploy:preview
+   ```
 
-**Examples of valid input:**
-- "Add slider showing recent AI builds using Swiper"
-- "Replace placeholder favicon with transparent Penrose icon"
-- "Create mosaic of logos: React, Next.js, Tailwind, Python, GPT"
-- "Fix iPhone scaling on dark mode"
-- "Generate README with site goals and project list"
-- "Auto-deploy to goldshore.github.io from `main` via GitHub Actions"
-- "Create metadata for SEO + Twitter card"
+## Secrets required in CI
 
----
+Add the following secrets under **Settings → Secrets and variables → Actions**:
 
-**Response Format:**
-- Markdown-rendered code
-- Commit message suggestion
-- Optional GitHub Actions snippet or `.env` values if needed
+- `CF_API_TOKEN`
+- `CF_ACCOUNT_ID`
 
----
+If either secret is missing the deploy workflow will fail early, prompting the operator to add them before proceeding.
 
-**GitHub Repo Environment:**
-- Branch: `main`  
-- Root: `~/goldshore.github.io/`  
-- Primary Files:  
-  - `index.html`  
-  - `styles.css`  
-  - `README.md`  
-  - `/assets/logo/`, `/assets/penrose/`  
-  - `/assets/ai/` (AI-generated content)  
-  - `.github/workflows/deploy.yml` (if CI enabled)
+The public contact form posts to Formspree after passing Cloudflare Turnstile validation. To finish wiring the production form:
 
---
+The Worker expects Cloudflare Pages projects mapped to:
+
+- `goldshore-org.pages.dev` for production
+- `goldshore-org-preview.pages.dev` for preview
+- `goldshore-org-dev.pages.dev` for development
+
+The DNS upsert script keeps these hostnames pointed at the correct Pages project using proxied CNAME records for:
+`goldshore.org`, `www.goldshore.org`, `preview.goldshore.org`, and `dev.goldshore.org`.
+
+- The Worker deploy relies on the Cloudflare Secrets Store; be sure the store already contains the mapped secrets (`OPENAI_API_KEY`, `OPENAI_PROJECT_ID`, `CF_API_TOKEN`).
+- Cloudflare Access automation defaults to allowing `@goldshore.org` addresses. Adjust `ALLOWED_DOMAIN` when running the script if your allowlist differs.
+- The AI maintenance workflow is conservative and only opens pull requests when copy changes are suggested. Merge decisions stay in human hands.
+- Worker asset environment variables (`PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, `DEV_ASSETS`) map to Cloudflare Pages projects and can be rotated without code changes.

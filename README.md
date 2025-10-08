@@ -349,7 +349,6 @@ These secrets are consumed by the Worker (via the Secrets Store binding) and Git
 
 If either secret is missing the deploy workflow will fail early, prompting the operator to add them before proceeding.
 
-Provision a Cloudflare D1 database named `goldshore-db` and copy its ID into `wrangler.worker.toml` under the `[[d1_databases]]` block. Initial seed tables can be created by running:
 The public contact form posts to Formspree after passing Cloudflare Turnstile validation. To finish wiring the production form:
 
 The Worker expects Cloudflare Pages projects mapped to:
@@ -369,7 +368,6 @@ The DNS upsert script keeps these hostnames pointed at the correct Pages project
 `goldshore.org`, `www.goldshore.org`, `preview.goldshore.org`, and `dev.goldshore.org`.
 
 - The Worker deploy relies on the Cloudflare Secrets Store; be sure the store already contains the mapped secrets (`OPENAI_API_KEY`, `OPENAI_PROJECT_ID`, `CF_API_TOKEN`).
-- Worker-related commands should pass `--config wrangler.worker.toml` so they continue to load bindings and routes, while Cloudflare Pages reads the root `wrangler.toml` for its build output directory.
 - Cloudflare Access automation defaults to allowing `@goldshore.org` addresses. Adjust `ALLOWED_DOMAIN` when running the script if your allowlist differs.
 - The AI maintenance workflow is conservative and only opens pull requests when copy changes are suggested. Merge decisions stay in human hands.
 - Worker asset environment variables (`PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, `DEV_ASSETS`) accept either a single origin or a comma-separated list. The router will select the first valid HTTPS origin and will automatically prepend `https://` when a scheme is omitted, which makes it easy to rotate between legacy and renamed domains without downtime.

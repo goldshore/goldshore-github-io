@@ -370,4 +370,4 @@ The DNS upsert script keeps these hostnames pointed at the correct Pages project
 - The Worker deploy relies on the Cloudflare Secrets Store; be sure the store already contains the mapped secrets (`OPENAI_API_KEY`, `OPENAI_PROJECT_ID`, `CF_API_TOKEN`).
 - Cloudflare Access automation defaults to allowing `@goldshore.org` addresses. Adjust `ALLOWED_DOMAIN` when running the script if your allowlist differs.
 - The AI maintenance workflow is conservative and only opens pull requests when copy changes are suggested. Merge decisions stay in human hands.
-- Worker asset environment variables (`PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, `DEV_ASSETS`) map to Cloudflare Pages projects and can be rotated without code changes.
+- Worker asset environment variables (`PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, `DEV_ASSETS`) accept either a single origin or a comma-separated list. The router will select the first valid HTTPS origin and will automatically prepend `https://` when a scheme is omitted, which makes it easy to rotate between legacy and renamed domains without downtime.

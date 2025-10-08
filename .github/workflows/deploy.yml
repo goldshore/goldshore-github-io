@@ -1,25 +1,29 @@
-- name: Upload a Build Artifact
-  uses: actions/upload-artifact@v4.6.2
-  //name: Deploy Gold Shore Store platform
+name: Deploy Pages + Worker
 
 on:
   push:
-    branches: [ "main" ]
-    paths:
-      - "apps/**"
-      - "packages/**"
-      - "infra/**"
-      - "wrangler.toml"
-      - "package.json"
-      - ".github/workflows/deploy.yml"
+    branches:
+      - main
+      - staging/**
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      CF_API_TOKEN:  ${{ secrets.CF_API_TOKEN }}
       CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+    strategy:
+      matrix:
+        app:
+          - kind: pages
+            name: goldshore-org
+            path: apps/site
+            project: goldshore-org
+          - kind: worker
+            name: api-goldshore
+            path: apps/api-worker
+            project: api-goldshore
     steps:
       - uses: actions/checkout@v4
 
@@ -27,20 +31,22 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm install --no-package-lock
+      - name: Install workspace dependencies
+        run: npm ci
 
-      - name: Build site + assets
+      - name: Install Wrangler CLI
+        run: npm install --global wrangler@3
+
+      - name: Build site assets
+        if: ${{ matrix.app.kind == 'pages' }}
         run: npm run build
 
-      - name: Deploy Worker (${{ matrix.environment }})
-        run: npx wrangler deploy --config wrangler.worker.toml --env=${{ matrix.environment }} --minify
+      - name: Deploy Pages project
+        if: ${{ matrix.app.kind == 'pages' }}
+        working-directory: ${{ matrix.app.path }}
+        run: wrangler pages deploy dist --project-name="${{ matrix.app.project }}" --commit-dirty=true
 
-      - name: Sync DNS records
-        env:
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-      - name: Deploy Worker (prod)
-        run: npx wrangler deploy --env=production
-
-      - name: Sync DNS
-        run: bash infra/scripts/upsert-goldshore-dns.sh
+      - name: Deploy Worker project
+        if: ${{ matrix.app.kind == 'worker' }}
+        working-directory: ${{ matrix.app.path }}
+        run: wrangler deploy

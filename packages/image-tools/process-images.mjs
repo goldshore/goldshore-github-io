@@ -2,8 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import sharp from "sharp";
 
-const srcDir = "apps/web/public/images/raw";
-const outDir = "apps/web/public/images/optimized";
+const srcDir = "apps/site/public/images/raw";
+const outDir = "apps/site/public/images/optimized";
 
 if (!fs.existsSync(srcDir)) {
   console.log("Source directory missing, skipping image optimisation.");

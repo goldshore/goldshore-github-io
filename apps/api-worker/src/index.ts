@@ -42,7 +42,7 @@ export default {
 
     const response = await fetch(upstream.toString(), init);
     const headers = new Headers(response.headers);
-    headers.set('x-served-by', env.APP_NAME);
+    headers.set('x-served-by', env.APP_NAME ?? 'GoldShore');
     headers.set('cache-control', cachePolicy(url.pathname));
 
     return new Response(response.body, {

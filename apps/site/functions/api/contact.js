@@ -34,8 +34,15 @@ export async function onRequestPost({ request, env }) {
     }
 
     const forward = new FormData();
-    forward.set('email', form.get('email') || '');
-    forward.set('message', form.get('message') || '');
+    const email = form.get('email') || '';
+    const message = form.get('message') || '';
+    const name = form.get('name') || '';
+    const focus = form.get('focus') || '';
+
+    forward.set('email', email);
+    forward.set('message', message);
+    if (name) forward.set('name', name);
+    if (focus) forward.set('focus', focus);
     forward.set('_subject', 'Gold Shore Contact');
 
     const fsRes = await fetch(formspreeEndpoint, { method: 'POST', body: forward });
@@ -47,7 +54,12 @@ export async function onRequestPost({ request, env }) {
       });
     }
 
-    return Response.redirect('/#contact-success', 303);
+    const redirectRaw = form.get('_redirect');
+    const redirect = typeof redirectRaw === 'string' && redirectRaw.startsWith('/')
+      ? redirectRaw
+      : '/#contact-success';
+
+    return Response.redirect(redirect, 303);
   } catch (err) {
     return new Response(JSON.stringify({ ok: false, error: String(err) }), {
       status: 500,

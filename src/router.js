@@ -5,7 +5,7 @@ import GPTHandler from "./gpt-handler.js";
  * the appropriate Cloudflare Pages deployment.
  *
  * Each Worker environment (production, preview, dev) defines an
- * `ASSETS_ORIGIN` variable in `wrangler.toml`. The Worker rewrites the incoming
+ * `ASSETS_ORIGIN` variable in `apps/api-worker/wrangler.toml`. The Worker rewrites the incoming
  * request so it is fetched from that origin while preserving the original
  * path, query string, and method.
  */

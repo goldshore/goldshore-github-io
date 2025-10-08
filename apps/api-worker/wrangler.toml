@@ -1,0 +1,11 @@
+name = "api-goldshore"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+routes = [
+  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
+[vars]
+APP_NAME = "GoldShore"
+GPT_ALLOWED_ORIGINS = "https://goldshore.org,https://trade.goldshore.org"

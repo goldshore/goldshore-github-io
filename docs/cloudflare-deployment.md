@@ -13,21 +13,17 @@ These origin domains stay on the free tier and do not incur Worker usage.
 
 ## 2. Worker configuration
 
-The Worker in `src/router.js` proxies requests to the appropriate origin. Configure its environment variables with Wrangler so only production traffic touches the Worker.
+The Worker in `apps/api-worker/src/index.ts` proxies requests to the appropriate origin. Configure its environment variables with Wrangler so only production traffic touches the Worker.
 
 ```bash
-# Preview (runs on *.workers.dev)
-wrangler deploy --env preview
-
-# Production (mapped to the apex + www)
-wrangler deploy --env production
+cd apps/api-worker
+wrangler deploy
 ```
 
-- `PRODUCTION_ORIGIN` is configured in `wrangler.toml` and should point at the static site that already renders the full experience (e.g. `https://goldshore-org.pages.dev`).
-- `PREVIEW_ORIGIN` is set for the preview environment so Git branches stay on the Pages hostname without touching the Worker.
-- `CACHE_TTL` (default `300` seconds) keeps the Worker cost low by letting Cloudflare cache responses on GET/HEAD requests.
-- `ALLOWED_HOSTNAMES` is a comma-separated allow list enforced in production so only `goldshore.org` routes can consume Worker invocations.
-- `CANONICAL_HOSTNAME` controls the redirect target when requests arrive on an unexpected host; set it to `goldshore.org` to collapse stray traffic back to the primary domain.
+- `PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, and `DEV_ASSETS` are configured in `apps/api-worker/wrangler.toml` and should point at the static Pages projects that render the full experience (e.g. `https://goldshore-org.pages.dev`).
+- Use Wrangler secrets (for example `wrangler secret put OPENAI_API_KEY`) to keep GPT credentials and contact form endpoints out of version control; the config file only stores non-sensitive defaults under `[vars]`.
+- `GPT_ALLOWED_ORIGINS` is a comma-separated allow list enforced so only approved front-ends can consume Worker invocations.
+- `CACHE` directives are set inside the Worker response to keep static assets immutable while letting HTML revalidate quickly; adjust them in `apps/api-worker/src/index.ts` if product requirements change.
 
 ## 3. Split deployments
 
@@ -41,6 +37,6 @@ This split keeps Git branches and preview deploys from colliding with the live d
 
 - The Worker runs only on the production routes you assign. Leave preview testing to the free Pages domain.
 - Remove any unused wildcard routes (e.g. other domains) if you no longer serve content there—each request would count toward the Worker quota.
-- Monitor analytics with the `GOLD_ANALYTICS` dataset; it is already defined in `wrangler.toml`.
+- Monitor analytics with the `GOLD_ANALYTICS` dataset; define any bindings in `apps/api-worker/wrangler.toml` before deploying.
 
 With this layout, Cloudflare Pages delivers the site, Workers protects the domain, and billing stays predictable.

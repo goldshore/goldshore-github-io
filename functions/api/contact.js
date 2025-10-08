@@ -7,14 +7,7 @@ export async function onRequestPost({ request, env }) {
 
     if (!turnstileSecret || !formspreeEndpoint) {
       return new Response(
-        JSON.stringify({
-          ok: false,
-          reason: 'missing_environment',
-          missing: {
-            turnstile: !turnstileSecret,
-            formspree: !formspreeEndpoint
-          }
-        }),
+        JSON.stringify({ ok: false, reason: 'missing_environment', missing: { turnstile: !turnstileSecret, formspree: !formspreeEndpoint } }),
         {
           status: 500,
           headers: { 'content-type': 'application/json' }
@@ -23,15 +16,6 @@ export async function onRequestPost({ request, env }) {
     }
 
     const token = form.get('cf-turnstile-response');
-    if (!token) {
-      return new Response(
-        JSON.stringify({ ok: false, reason: 'missing_token' }),
-        {
-          status: 400,
-          headers: { 'content-type': 'application/json' }
-        }
-      );
-    }
     const ip = request.headers.get('CF-Connecting-IP');
     const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',

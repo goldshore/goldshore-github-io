@@ -1,53 +1,29 @@
-# wrangler.toml (Worker router)
-name = "router"
-main = "src/router.js"
-compatibility_date = "2024-06-30"
+name = "goldshore"
+main = "apps/api-router/src/router.ts"
+compatibility_date = "2025-10-05"
 workers_dev = false
-account_id = "<your_account_id>"
 
 [vars]
+APP_NAME = "GoldShore"
 PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
 PREVIEW_ASSETS = "https://goldshore-org-preview.pages.dev"
 DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
 
 [env.production]
-zone_id = "<your_zone_id>"
+name = "goldshore-production"
 routes = [
-  "goldshore.org/*",
-  "www.goldshore.org/*",
-  "gearswipe.com/*",
-  "www.gearswipe.com/*",
-  "armsway.com/*",
-  "www.armsway.com/*",
-  "banproof.com/*",
-  "www.banproof.com/*"
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" }
 ]
-
-[env.production.vars]
-ASSETS_ORIGIN = "https://goldshore-org.pages.dev"
 
 [env.preview]
+name = "goldshore-preview"
 routes = [
-  "preview.goldshore.org/*",
-  "preview.gearswipe.com/*",
-  "preview.armsway.com/*",
-  "preview.banproof.com/*"
+  { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
 ]
-
-[env.preview.vars]
-ASSETS_ORIGIN = "https://goldshore-org-preview.pages.dev"
 
 [env.dev]
+name = "goldshore-dev"
 routes = [
-  "dev.goldshore.org/*",
-  "dev.gearswipe.com/*",
-  "dev.armsway.com/*",
-  "dev.banproof.com/*"
+  { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" }
 ]
-
-[env.dev.vars]
-ASSETS_ORIGIN = "https://goldshore-org-dev.pages.dev"
-
-[[analytics_engine_datasets]]
-binding = "GOLD_ANALYTICS"
-dataset = "goldshore-events"

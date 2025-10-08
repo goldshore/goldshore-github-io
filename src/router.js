@@ -1,3 +1,5 @@
+import GPTHandler from "./gpt-handler.js";
+
 /**
  * Cloudflare Worker router that forwards traffic for goldshore properties to
  * the appropriate Cloudflare Pages deployment.
@@ -8,12 +10,17 @@
  * path, query string, and method.
  */
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
+    const incomingURL = new URL(request.url);
+
+    if (incomingURL.pathname === "/api/gpt") {
+      return GPTHandler.fetch(request, env, ctx);
+    }
+
     const targetOrigin = env.ASSETS_ORIGIN || env.PRODUCTION_ASSETS || "https://goldshore-org.pages.dev";
 
     try {
       const origin = new URL(targetOrigin);
-      const incomingURL = new URL(request.url);
       const assetURL = new URL(request.url);
 
       assetURL.protocol = origin.protocol;

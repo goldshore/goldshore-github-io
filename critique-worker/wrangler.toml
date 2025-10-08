@@ -1,0 +1,31 @@
+name = "goldshore-critique"
+main = "src/ingress.js"
+compatibility_date = "2024-10-01"
+account_id = "<YOUR_CF_ACCOUNT_ID>"
+
+[vars]
+PSI_API_KEY = "<GOOGLE_PAGESPEED_INSIGHTS_API_KEY>"
+POSTMARK_SERVER_TOKEN = "<POSTMARK_OUTBOUND_SERVER_TOKEN>"
+POSTMARK_INBOUND_TOKEN = "<POSTMARK_INBOUND_SECRET>"
+REPORT_FROM = "reports@goldshore.org"
+
+[[queues.producers]]
+queue = "critique-queue"
+binding = "CRITIQUE_QUEUE"
+
+[[queues.consumers]]
+queue = "critique-queue"
+max_batch_timeout = 10
+max_retries = 3
+dead_letter_queue = "critique-dead"
+
+[[r2_buckets]]
+binding = "REPORTS_BUCKET"
+bucket_name = "goldshore-reports"
+
+[[kv_namespaces]]
+binding = "CONFIG_KV"
+id = "<CONFIG_KV_NAMESPACE_ID>"
+
+[observability]
+enabled = true

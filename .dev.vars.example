@@ -1,0 +1,5 @@
+# Copy to .dev.vars for local development
+# Never commit .dev.vars; it is ignored via .gitignore
+FORMSPREE_ENDPOINT=https://formspree.io/f/your-form-id
+TURNSTILE_SECRET=your-turnstile-secret
+OPENAI_API_KEY=sk-your-openai-key

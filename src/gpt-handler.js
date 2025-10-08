@@ -144,7 +144,14 @@ async function handlePost(request, env, corsOrigin) {
     return jsonResponse({ error: "Invalid JSON body." }, { status: 400 }, corsOrigin);
   }
 
-  const { messages, prompt, ...rest } = payload || {};
+  const {
+    messages,
+    prompt,
+    model,
+    purpose: rawPurpose = DEFAULT_PURPOSE,
+    temperature,
+    ...rest
+  } = payload || {};
 
   if (!Array.isArray(messages) && typeof prompt !== "string") {
     return jsonResponse(
@@ -157,6 +164,8 @@ async function handlePost(request, env, corsOrigin) {
     );
   }
 
+  const purpose = resolvePurpose(rawPurpose);
+
   const chatMessages = Array.isArray(messages)
     ? messages
     : [
@@ -166,10 +175,20 @@ async function handlePost(request, env, corsOrigin) {
         },
       ];
 
+  const selectedModel = model || MODEL_BY_PURPOSE[purpose] || MODEL_BY_PURPOSE[DEFAULT_PURPOSE];
+
+  const openAIOptions = { ...rest };
+
+  if (typeof temperature === "number" && !Number.isNaN(temperature)) {
+    openAIOptions.temperature = temperature;
+  } else if (!("temperature" in openAIOptions)) {
+    openAIOptions.temperature = purpose === CODING_PURPOSE ? 0.2 : 0.7;
+  }
+
   const requestBody = {
-    model: "gpt-4.1-mini",
+    model: selectedModel,
     messages: chatMessages,
-    ...rest,
+    ...openAIOptions,
   };
 
   try {

@@ -37,9 +37,14 @@ if (navToggle && mobileMenu) {
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.querySelector('.hero-swiper');
   if (el && window.Swiper) {
+    const hasMatchMedia = typeof window.matchMedia === 'function';
+    const reduceMotion = hasMatchMedia
+      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      : false;
+
     new Swiper(el, {
-      loop: true,
-      autoplay: { delay: 4000 },
+      loop: !reduceMotion,
+      autoplay: reduceMotion ? false : { delay: 4000 },
       pagination: { el: '.swiper-pagination', clickable: true }
     });
   }
@@ -72,9 +77,10 @@ document.querySelectorAll('a[href^="http"]').forEach(a => {
 });
 
 // Contact form submit
-const contactForm = document.getElementById('contactForm');
+const contactForm = document.getElementById('primaryContactForm');
 if (contactForm) {
   contactForm.addEventListener('submit', () => {
     track('contact_submit', {});
   });
 }
+

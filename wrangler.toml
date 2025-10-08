@@ -1,25 +1,29 @@
-# wrangler.toml (Worker router)
-name = "router"
-account_id = "<your_account_id>"
-compatibility_date = "2025-06-30"
-main = "src/router.js"
+name = "goldshore"
+main = "apps/api-router/src/router.ts"
+compatibility_date = "2025-10-05"
+workers_dev = false
+
+[vars]
+APP_NAME = "GoldShore"
+PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
+PREVIEW_ASSETS = "https://goldshore-org-preview.pages.dev"
+DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
 
 [env.production]
-zone_id = "<your_zone_id>"
+name = "goldshore-production"
 routes = [
-  "goldshore.org/*",
-  "www.goldshore.org/*",
-  "goldshore.foundation/*",
-  "www.goldshore.foundation/*",
-  "gearswipe.com/*",
-  "www.gearswipe.com/*",
-  "armsway.com/*",
-  "www.armsway.com/*",
-  "banproof.com/*",
-  "www.banproof.com/*"
+  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
-# (Only add bindings you actually use)
-[[analytics_engine_datasets]]
-binding = "GOLD_ANALYTICS"
-dataset = "goldshore-events"
+[env.preview]
+name = "goldshore-preview"
+routes = [
+  { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
+]
+
+[env.dev]
+name = "goldshore-dev"
+routes = [
+  { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" }
+]

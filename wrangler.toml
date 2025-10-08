@@ -12,7 +12,7 @@ APP_NAME = "GoldShore"
 PRODUCTION_ASSETS = "https://goldshore.org"
 PREVIEW_ASSETS = "https://goldshore.org"
 DEV_ASSETS = "https://goldshore.org"
-GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https:/*.goldshore.org, https://trade.goldshore.org"
+GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https://preview.goldshore.org, https://dev.goldshore.org, https://trade.goldshore.org"
 
 # Secrets such as FORMSPREE_ENDPOINT, TURNSTILE_SECRET, OPENAI_API_KEY, and
 # GPT_PROXY_SECRET are provided via
@@ -35,6 +35,7 @@ CF_ACCESS_JWKS_URL = "https://rmarston.cloudflareaccess.com/cdn-cgi/access/certs
 name = "goldshore-preview"
 routes = [
   "goldshore.org/*",
+  "preview.goldshore.org/*",
   "fortune-fund.com",
   "fortune-fund.games",
   "goldshore.foundation",
@@ -49,8 +50,6 @@ routes = [
 [[analytics_engine_datasets]]
 binding = "GOLD_ANALYTICS"
 dataset = "goldshore-events"
-  { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
-]
 
 [env.dev]
 name = "goldshore-dev"

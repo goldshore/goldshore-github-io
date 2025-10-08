@@ -1,25 +1,48 @@
 ---
-import "../../styles/theme.css";
-import Header from "../../components/Header.astro";
+import BaseLayout from "../../layouts/Base.astro";
+
+const meta = {
+  title: "Gold Shore Services — Launch, defend, and scale",
+  description: "Explore Gold Shore’s modular services spanning launch architecture, reputation defense, and intelligence operations.",
+  canonical: "https://goldshore.org/services"
+};
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Gold Shore Services</title>
-    <meta name="description" content="Overview of Gold Shore service tracks and engagement models." />
-    <link rel="canonical" href="https://goldshore.org/services" />
-  </head>
-  <body>
-    <Header />
-    <main class="container" style="padding-block: clamp(40px, 6vw, 80px);">
-      <h1 class="glow">Services</h1>
-      <p>Choose the engagement track that matches your current market push.</p>
-      <ul>
-        <li>Launch architecture — GTM sequencing, messaging, and asset production.</li>
-        <li>Reputation defense — Monitoring, response playbooks, and proactive storytelling.</li>
-        <li>Intelligence ops — Dashboards, investor reporting, and automation.</li>
-      </ul>
-    </main>
-  </body>
-</html>
+<BaseLayout {...meta}>
+  <h1 class="section-title">Services</h1>
+  <p class="section-subtitle">
+    Start with a single blueprint or stitch tracks together for an always-on partnership. Every engagement includes a dedicated
+    operator, access to our research desk, and Cloudflare-secured infrastructure.
+  </p>
+
+  <div class="grid grid-2">
+    <article class="card">
+      <h2>Bridgekeeper</h2>
+      <p>Launch architecture from positioning to activation with a four-week playbook.</p>
+      <a href="/services/bridgekeeper">View service overview →</a>
+    </article>
+    <article class="card">
+      <h2>Banproof</h2>
+      <p>Reputation defense and incident response designed for regulated and frontier markets.</p>
+      <a href="/services/banproof">View service overview →</a>
+    </article>
+    <article class="card">
+      <h2>Fractional comms desk</h2>
+      <p>Embed a senior strategist and creative pod to manage launches, announcements, and stakeholder comms.</p>
+      <a href="/contact">Book a discovery call →</a>
+    </article>
+    <article class="card">
+      <h2>Intelligence ops</h2>
+      <p>Dashboards, analytics, and revenue reporting to keep your GTM machine accountable.</p>
+      <a href="/contact">Request a scope →</a>
+    </article>
+  </div>
+
+  <section style="margin-top: clamp(48px, 8vw, 96px);">
+    <h2 class="section-title">How we work</h2>
+    <ul>
+      <li>Preview every deliverable in a Cloudflare Pages environment before it ships to production.</li>
+      <li>Protect sensitive dashboards behind Cloudflare Access with hardware key support.</li>
+      <li>Pair founders with asynchronous updates delivered via Notion or Linear.</li>
+    </ul>
+  </section>
+</BaseLayout>

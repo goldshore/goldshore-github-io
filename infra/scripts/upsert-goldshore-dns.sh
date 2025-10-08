@@ -5,7 +5,28 @@ set -euo pipefail
 
 ZONE=goldshore.org
 API=https://api.cloudflare.com/client/v4
-AUTH=(-H "Authorization: Bearer $CF_API_TOKEN" -H "Content-Type: application/json")
+AUTH_HEADER=("-H" "Authorization: Bearer ${CF_API_TOKEN}" "-H" "Content-Type: application/json")
+
+zone_response=$(curl -sS -X GET "${API}/zones?name=${ZONE_NAME}" "${AUTH_HEADER[@]}")
+zone_id=$(echo "$zone_response" | jq -r '.result[0].id')
+if [[ -z "$zone_id" || "$zone_id" == "null" ]]; then
+  echo "Unable to find zone ${ZONE_NAME}" >&2
+  exit 1
+fi
+
+declare -A RECORDS
+RECORDS["${ZONE_NAME}|CNAME"]=goldshore-org.pages.dev
+RECORDS["www.${ZONE_NAME}|CNAME"]=${ZONE_NAME}
+RECORDS["preview.${ZONE_NAME}|CNAME"]=goldshore-org-preview.pages.dev
+RECORDS["dev.${ZONE_NAME}|CNAME"]=goldshore-org-dev.pages.dev
+
+upsert_record() {
+  local name="$1"
+  local type="$2"
+  local content="$3"
+
+  existing=$(curl -sS -X GET "${API}/zones/${zone_id}/dns_records?name=${name}&type=${type}" "${AUTH_HEADER[@]}")
+  record_id=$(echo "$existing" | jq -r '.result[0].id')
 
 ZONE_ID=$(curl -s "${AUTH[@]}" "$API/zones?name=$ZONE" | jq -r '.result[0].id')
 

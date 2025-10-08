@@ -37,10 +37,10 @@ if (navToggle && mobileMenu) {
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.querySelector('.hero-swiper');
   if (el && window.Swiper) {
-    const hasMatchMedia = typeof window.matchMedia === 'function';
-    const reduceMotion = hasMatchMedia
-      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      : false;
+    let reduceMotion = false;
+    if (typeof window.matchMedia === 'function') {
+      reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
 
     new Swiper(el, {
       loop: !reduceMotion,

@@ -17,27 +17,21 @@ export default {
       return GPTHandler.fetch(request, env, ctx);
     }
 
-    const splitCandidates = (raw) => raw
-      .split(/[\n,]/)
-      .map((value) => value.trim())
-      .filter(Boolean);
-
     const parseOriginList = (value, fallback) => {
       if (!value) {
         return fallback;
       }
 
-      const candidates = splitCandidates(value);
+      const candidates = value.split(",");
       for (const candidate of candidates) {
-        if (candidate.includes("*")) {
-          // Wildcard placeholders (e.g. "*-goldshore-org...") can't be fetched
-          // directly by the proxy, so skip them.
+        const trimmed = candidate.trim();
+        if (!trimmed) {
           continue;
         }
 
-        const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(candidate)
-          ? candidate
-          : `https://${candidate}`;
+        const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+          ? trimmed
+          : `https://${trimmed}`;
 
         try {
           const url = new URL(withScheme);

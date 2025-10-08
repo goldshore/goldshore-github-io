@@ -1,17 +1,37 @@
-name: QA (Lighthouse + a11y)
+name: QA (a11y + SEO + links)
 permissions:
   contents: read
-on: [pull_request, workflow_dispatch]
+
+on:
+  pull_request:
+  workflow_dispatch:
+
 jobs:
   qa:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: npm i -D http-server lighthouse
-      - name: Build
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install tooling
+        run: npm install --no-package-lock --save-dev html-validate axe-core puppeteer lighthouse http-server
+
+      - name: Build site
         run: npm run build
-      - name: Lighthouse
+
+      - name: Lighthouse (static)
         run: |
-          http-server apps/web/dist -p 4173 & sleep 2
-          npx lighthouse http://localhost:4173 --only-categories=performance,accessibility,seo --output=json --output-path=./lh.json --quiet
-          node -e "const s=require('./lh.json');const ok=[s.categories.performance,s.categories.accessibility,s.categories.seo].every(x=>x.score>=0.9);if(!ok){console.error('Lighthouse gate failed');process.exit(1)}"
+          npx http-server apps/web/dist -p 4173 &
+          sleep 5
+          npx lighthouse http://localhost:4173 \
+            --only-categories=performance,accessibility,seo \
+            --output=json \
+            --output-path=./lh.json \
+            --quiet
+          node -e "const s=require('./lh.json');const pass=[s.categories.performance,s.categories.accessibility,s.categories.seo].every(x=>x.score>=0.9);if(!pass)process.exit(1);"

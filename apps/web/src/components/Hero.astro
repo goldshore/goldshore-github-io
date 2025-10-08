@@ -1,12 +1,42 @@
+---
+const { title = "", kicker = "" } = Astro.props as { title?: string; kicker?: string };
+---
 <style>
-.hero{position:relative;isolation:isolate;overflow:hidden;border-radius:var(--radius-lg);box-shadow:var(--shadow);min-height:70vh;background:var(--bg)}
-.bg{position:absolute;inset:0;width:100%;height:100%;transform:translateZ(0)}
-.content{position:relative;z-index:1}
-@media (prefers-reduced-motion: reduce){ .hero *{animation:none !important;transition:none !important} }
+.hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  min-height: 70vh;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+}
+
+.bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: translateZ(0);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
 </style>
 
 <section class="hero">
-  <svg class="bg" viewBox="0 0 1600 900" aria-hidden="true">
+  <svg class="bg" viewBox="0 0 1600 900" aria-hidden="true" focusable="false">
     <defs>
       <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0%" stop-color="#0b1220">
@@ -17,33 +47,41 @@
         </stop>
       </linearGradient>
       <linearGradient id="glint" x1="-0.2" y1="0" x2="1.2" y2="0">
-        <stop offset="0%" stop-color="rgba(255,255,255,0)"/>
-        <stop offset="50%" stop-color="rgba(255,255,255,.85)"/>
-        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+        <stop offset="0%" stop-color="rgba(255,255,255,0)" />
+        <stop offset="50%" stop-color="rgba(255,255,255,.85)" />
+        <stop offset="100%" stop-color="rgba(255,255,255,0)" />
       </linearGradient>
       <mask id="glintMask">
-        <rect width="1600" height="900" fill="black"/>
+        <rect width="1600" height="900" fill="black" />
         <rect id="stripe" x="-400" y="0" width="420" height="900" rx="220" fill="white">
           <animate attributeName="x" dur="18s" values="-400;1800;-400" repeatCount="indefinite" />
         </rect>
       </mask>
-      <filter id="noise"><feTurbulence baseFrequency="0.8" numOctaves="2" seed="7" type="fractalNoise"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="table" tableValues="0 0.6"/></feComponentTransfer></filter>
+      <filter id="noise">
+        <feTurbulence baseFrequency="0.8" numOctaves="2" seed="7" type="fractalNoise" />
+        <feColorMatrix type="saturate" values="0" />
+        <feComponentTransfer>
+          <feFuncA type="table" tableValues="0 0.6" />
+        </feComponentTransfer>
+      </filter>
     </defs>
 
-    <rect width="1600" height="900" fill="url(#sky)"/>
+    <rect width="1600" height="900" fill="url(#sky)" />
     <g opacity=".45">
-      <rect x="260" y="350" width="110" height="430" rx="22" fill="#22294a">
-        <animateTransform attributeName="transform" type="translate" dur="6s" values="-8,0;8,-4;-8,0" repeatCount="indefinite"/>
+      <rect x="250" y="350" width="110" height="430" rx="22" fill="#22294a">
+        <animateTransform attributeName="transform" type="translate" dur="6s" values="-8,0;8,-4;-8,0" repeatCount="indefinite" />
       </rect>
       <rect x="960" y="300" width="140" height="480" rx="22" fill="#2a2f5a">
-        <animateTransform attributeName="transform" type="translate" dur="8s" values="10,-4;-6,2;10,-4" repeatCount="indefinite"/>
+        <animateTransform attributeName="transform" type="translate" dur="8s" values="10,-4;-6,2;10,-4" repeatCount="indefinite" />
       </rect>
     </g>
-    <rect width="1600" height="900" fill="url(#glint)" mask="url(#glintMask)" opacity=".32"/>
-    <rect width="1600" height="900" filter="url(#noise)" opacity=".06"/>
+    <rect width="1600" height="900" fill="url(#glint)" mask="url(#glintMask)" opacity=".32" />
+    <rect width="1600" height="900" filter="url(#noise)" opacity=".06" />
   </svg>
 
   <div class="content container">
+    {kicker && <p class="tag" style="margin-bottom: 16px;">{kicker}</p>}
+    <h1 class="glow" style="font-size: clamp(2.6rem, 5vw, 4rem); max-width: 18ch;">{title}</h1>
     <slot />
   </div>
 </section>

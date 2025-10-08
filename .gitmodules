@@ -1,4 +1,3 @@
-# Ensure submodule headers use ASCII double quotes for compatibility
 [submodule "backend"]
   path = backend
   url = https://github.com/marzton/goldshore.com-backend.git

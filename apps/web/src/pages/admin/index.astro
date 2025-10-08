@@ -1,27 +1,35 @@
 ---
-import "../../styles/theme.css";
-import Header from "../../components/Header.astro";
+import BaseLayout from "../../layouts/Base.astro";
+
+const meta = {
+  title: "Gold Shore Admin",
+  description: "Operational dashboard shell for authenticated Gold Shore staff via Cloudflare Access.",
+  canonical: "https://goldshore.org/admin",
+  noIndex: true
+};
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>Gold Shore Admin</title>
-    <meta name="robots" content="noindex" />
-    <meta name="description" content="Access-controlled admin area for Gold Shore operations." />
-    <link rel="canonical" href="https://goldshore.org/admin" />
-  </head>
-  <body>
-    <Header />
-    <main class="container" style="padding-block: clamp(40px, 6vw, 80px);">
-      <h1 class="glow">Admin</h1>
-      <p>
-        This area is intended for Gold Shore operators. Protect this path with Cloudflare Access to restrict visibility to
-        approved accounts.
-      </p>
-      <p>
-        Suggested modules once authenticated: engagement tracker, publication queue, and DNS/cache controls.
-      </p>
-    </main>
-  </body>
-</html>
+<BaseLayout {...meta}>
+  <h1 class="section-title">Admin control room</h1>
+  <p class="section-subtitle">
+    This area is protected by Cloudflare Access. Use it to review launch runbooks, monitor reputation alerts, and trigger cache
+    purges across environments.
+  </p>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Launch runbooks</h2>
+      <p>Check status of upcoming drops, approvals, and asset readiness.</p>
+      <a href="https://notion.so" rel="noopener" target="_blank">Open runbooks →</a>
+    </section>
+    <section class="card">
+      <h2>Reputation console</h2>
+      <p>View incidents synced from Workers KV and trigger response playbooks.</p>
+      <button class="btn ghost" type="button">Open console</button>
+    </section>
+    <section class="card">
+      <h2>Cache &amp; deploy</h2>
+      <p>Run cache purges or promote previews to production with one click.</p>
+      <button class="btn" type="button">Launch Wrangler</button>
+    </section>
+  </div>
+</BaseLayout>

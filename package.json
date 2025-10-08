@@ -9,14 +9,17 @@
   "scripts": {
     "dev": "cd apps/web && astro dev",
     "build": "node packages/image-tools/process-images.mjs && cd apps/web && astro build",
+    "build:web": "npm run build",
+    "process-images": "node packages/image-tools/process-images.mjs",
     "deploy:prod": "wrangler deploy --env=production",
     "deploy:preview": "wrangler deploy --env=preview",
     "deploy:dev": "wrangler deploy --env=dev",
     "qa": "node .github/workflows/local-qa.mjs"
   },
   "devDependencies": {
-    "wrangler": "^4.42.0",
+    "@cloudflare/workers-types": "^4.20240821.0",
+    "astro": "^4.13.0",
     "sharp": "^0.33.5",
-    "astro": "^4.0.0"
+    "wrangler": "^4.42.0"
   }
 }

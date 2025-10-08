@@ -3,5 +3,12 @@
 FORMSPREE_ENDPOINT=https://formspree.io/f/your-form-id
 TURNSTILE_SECRET=your-turnstile-secret
 OPENAI_API_KEY=sk-your-openai-key
+GPT_PROXY_SECRET=local-dev-shared-secret
+GPT_ALLOWED_ORIGINS=https://localhost:8787
+# Optional: Cloudflare Access settings are typically provided only in deployed environments
+# CF_ACCESS_AUD=your-access-audience
+# CF_ACCESS_ISS=https://your-team.cloudflareaccess.com
+# CF_ACCESS_JWKS_URL=https://your-team.cloudflareaccess.com/cdn-cgi/access/certs
+GPT_PROXY_SECRET=your-shared-secret
 GPT_PROXY_TOKEN=local-dev-shared-secret
 GPT_ALLOWED_ORIGINS=https://localhost:8787

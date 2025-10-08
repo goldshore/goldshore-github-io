@@ -1,30 +1,68 @@
 ---
-import "../styles/theme.css";
-import Header from "../components/Header.astro";
+import BaseLayout from "../layouts/Base.astro";
+
+const meta = {
+  title: "About Gold Shore — Market makers for narrative velocity",
+  description: "Gold Shore is a studio of operators, storytellers, and analysts building momentum systems for founders on the verge of breakout scale.",
+  canonical: "https://goldshore.org/about"
+};
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>About Gold Shore</title>
-    <meta
-      name="description"
-      content="Gold Shore pairs narrative strategy with operational rigor to help founders launch and defend their markets."
-    />
-    <link rel="canonical" href="https://goldshore.org/about" />
-  </head>
-  <body>
-    <Header />
-    <main class="container" style="padding-block: clamp(40px, 6vw, 80px);">
-      <h1 class="glow">About Gold Shore</h1>
+<BaseLayout {...meta}>
+  <h1 class="section-title">The Gold Shore thesis</h1>
+  <p class="section-subtitle">
+    Founded by operators who have shipped global campaigns across finance, gaming, and emerging tech, Gold Shore merges
+    capital-markets fluency with creative precision. We design launch systems that compound into durable narrative equity.
+  </p>
+
+  <div class="grid" style="gap: clamp(24px, 5vw, 48px);">
+    <section class="card">
+      <h2>What we believe</h2>
+      <ul>
+        <li>Stories win when they are documented, automated, and measured.</li>
+        <li>Speed and rigour can coexist; the right playbooks unlock both.</li>
+        <li>Transparency and security keep founders, investors, and communities aligned.</li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Operator DNA</h2>
       <p>
-        Gold Shore operates as a focused studio aligning market intelligence, reputation design, and launch execution so high
-        velocity teams can move with clarity.
+        We’ve run comms for IPO-bound companies, scaled enterprise partnerships, and led creative studios. Every engagement pairs
+        strategic counsel with on-call execution so you never lose momentum.
       </p>
-      <p>
-        The collective blends campaign strategy, product storytelling, and capital market insight. Every engagement stays
-        lightweight, measurable, and accessible for distributed teams.
-      </p>
-    </main>
-  </body>
-</html>
+    </section>
+  </div>
+
+  <section style="margin-top: clamp(48px, 8vw, 96px);">
+    <h2 class="section-title">Structured to grow with you</h2>
+    <p class="section-subtitle">
+      Gold Shore operates across three tracks: launch architecture, reputation defense, and intelligence ops. Each track is
+      modular, letting founders engage at the pace and depth they need.
+    </p>
+    <table class="table" role="presentation">
+      <thead>
+        <tr>
+          <th scope="col">Track</th>
+          <th scope="col">Focus</th>
+          <th scope="col">Signals of success</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Launch architecture</td>
+          <td>Positioning, GTM sequencing, product storytelling, and activation assets.</td>
+          <td>Accelerated pipeline velocity, higher close rates, cohesive messaging.</td>
+        </tr>
+        <tr>
+          <td>Reputation defense</td>
+          <td>24/7 monitoring, response playbooks, and proactive thought leadership.</td>
+          <td>Stabilised sentiment, faster recovery, greater executive visibility.</td>
+        </tr>
+        <tr>
+          <td>Intelligence ops</td>
+          <td>Analytics, automation, and reporting that inform stakeholder decisions.</td>
+          <td>Confident investors, empowered teams, fewer last-minute fire drills.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</BaseLayout>

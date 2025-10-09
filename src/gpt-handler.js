@@ -1,5 +1,6 @@
 const ALLOWED_METHODS = "POST, OPTIONS";
-const ALLOWED_HEADERS = "Content-Type, Authorization";
+const ALLOWED_HEADERS =
+  "Content-Type, Authorization, X-GPT-Proxy-Token, CF-Access-Jwt-Assertion";
 const DEFAULT_MODEL = "gpt-4o-mini";
 const SUPPORTED_MODELS = new Set(["gpt-4o-mini", "gpt-4o", "o4-mini"]);
 const ALLOWED_CHAT_COMPLETION_OPTIONS = new Set([

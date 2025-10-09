@@ -7,7 +7,7 @@ const meta = {
   canonical: "https://goldshore.org/contact"
 };
 
-const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+const buildTimeTurnstileKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 ---
 <BaseLayout {...meta}>
   <h1 class="section-title">Let’s build momentum</h1>
@@ -44,11 +44,13 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
       <label for="message">Context</label>
       <textarea id="message" name="message" rows="5" required placeholder="Tell us about the product, timeline, and any material we should review." style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);"></textarea>
     </div>
-    {turnstileSiteKey && (
-      <div style="display: flex; justify-content: center;">
-        <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="dark"></div>
-      </div>
-    )}
+    <div
+      id="turnstile-wrapper"
+      data-build-sitekey={buildTimeTurnstileKey ?? ""}
+      style="display: none; justify-content: center;"
+    >
+      <div id="turnstile-container" class="cf-turnstile" data-theme="dark"></div>
+    </div>
     <button class="btn" type="submit">Submit request</button>
   </form>
 
@@ -56,9 +58,68 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
     <p style="margin: 0;">Thanks for the note—we’ll reach out within one business day.</p>
   </div>
 
-  {turnstileSiteKey && (
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  )}
+  <script>
+    (function () {
+      const revealWidget = (siteKey) => {
+        if (!siteKey) {
+          return;
+        }
+
+        const wrapper = document.getElementById('turnstile-wrapper');
+        if (wrapper) {
+          wrapper.style.display = 'flex';
+        }
+
+        const renderWidget = () => {
+          if (typeof turnstile === 'undefined') {
+            setTimeout(renderWidget, 100);
+            return;
+          }
+
+          try {
+            turnstile.render('#turnstile-container', {
+              sitekey: siteKey,
+              theme: 'dark'
+            });
+          } catch (error) {
+            console.error('Failed to render Turnstile widget', error);
+          }
+        };
+
+        renderWidget();
+      };
+
+      const bootstrap = async () => {
+        const wrapper = document.getElementById('turnstile-wrapper');
+        const buildTimeKey = wrapper?.dataset?.buildSitekey;
+        if (buildTimeKey) {
+          revealWidget(buildTimeKey);
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/turnstile/site-key');
+          if (!response.ok) {
+            return;
+          }
+
+          const payload = await response.json();
+          if (payload && payload.siteKey) {
+            revealWidget(payload.siteKey);
+          }
+        } catch (error) {
+          console.error('Failed to fetch Turnstile site key', error);
+        }
+      };
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootstrap);
+      } else {
+        bootstrap();
+      }
+    })();
+  </script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <script>
     if (typeof window !== 'undefined' && window.location.hash === '#contact-success') {
       const success = document.getElementById('contact-success');

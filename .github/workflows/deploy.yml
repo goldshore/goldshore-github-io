@@ -20,6 +20,7 @@ jobs:
       CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
       CF_API_TOKEN:  ${{ secrets.CF_API_TOKEN }}
       CF_SECRET_STORE_ID: ${{ secrets.CF_SECRET_STORE_ID }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
 
     steps:
       - uses: actions/checkout@v4

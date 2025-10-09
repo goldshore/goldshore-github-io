@@ -47,6 +47,7 @@ jobs:
           awk 'BEGIN {exit !( '"$score"' >= 0.85 )}'
 
       - name: AI copy/link suggestions (PR only)
+        if: github.event_name == 'pull_request'
         run: |
           node - <<'JS'
           const fs=require('fs');

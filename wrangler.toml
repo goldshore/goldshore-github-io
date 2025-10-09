@@ -2,6 +2,7 @@ name = "goldshore"
 main = "apps/api-router/src/router.ts"
 compatibility_date = "2025-10-05"
 workers_dev = false
+# The Cloudflare account ID is injected via the deploy workflow as CLOUDFLARE_ACCOUNT_ID.
 
 # Bind your Secrets Store (from your screenshot)
 [[secrets_store_secrets]]

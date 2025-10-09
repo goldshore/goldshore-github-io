@@ -67,17 +67,19 @@ ensure_policy() {
   local app_id=$1
   local policy_name="Allow Goldshore"
   local payload
-  payload=$(jq -n '{
+  payload=$(jq -n --arg name "$policy_name" '{
     name: $name,
     precedence: 1,
     decision: "allow",
     include: [{ everyone: {} }],
     require: [],
     exclude: []
-  }' --arg name "$policy_name")
+  }')
 
   local existing
-  existing=$(api_request GET "/accounts/$CF_ACCOUNT_ID/access/apps/$app_id/policies" | jq -r '.result[] | select(.name == "'$policy_name'") | .id' | head -n1)
+  existing=$(api_request GET "/accounts/$CF_ACCOUNT_ID/access/apps/$app_id/policies" \
+    | jq -r --arg name "$policy_name" '.result[]? | select(.name == $name) | .id' \
+    | head -n1)
 
   if [[ -n "$existing" ]]; then
     api_request PUT "/accounts/$CF_ACCOUNT_ID/access/apps/$app_id/policies/$existing" "$payload" >/dev/null

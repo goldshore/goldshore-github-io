@@ -7,7 +7,6 @@ const meta = {
   canonical: "https://goldshore.org/contact"
 };
 
-const buildTimeTurnstileKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 ---
 <BaseLayout {...meta}>
   <h1 class="section-title">Let’s build momentum</h1>
@@ -46,7 +45,6 @@ const buildTimeTurnstileKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
     </div>
     <div
       id="turnstile-wrapper"
-      data-build-sitekey={buildTimeTurnstileKey ?? ""}
       style="display: none; justify-content: center;"
     >
       <div id="turnstile-container" class="cf-turnstile" data-theme="dark"></div>
@@ -91,11 +89,6 @@ const buildTimeTurnstileKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 
       const bootstrap = async () => {
         const wrapper = document.getElementById('turnstile-wrapper');
-        const buildTimeKey = wrapper?.dataset?.buildSitekey;
-        if (buildTimeKey) {
-          revealWidget(buildTimeKey);
-          return;
-        }
 
         try {
           const response = await fetch('/api/turnstile/site-key');
@@ -106,9 +99,14 @@ const buildTimeTurnstileKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
           const payload = await response.json();
           if (payload && payload.siteKey) {
             revealWidget(payload.siteKey);
+            return;
           }
         } catch (error) {
           console.error('Failed to fetch Turnstile site key', error);
+        }
+
+        if (wrapper) {
+          wrapper.style.display = 'none';
         }
       };
 

@@ -200,7 +200,7 @@ package.json      # npm workspaces and shared dev dependencies
 
 ## Scripts
 
-- `infra/scripts/upsert-goldshore-dns.sh` — idempotently ensures the apex, `www`, `preview`, and `dev` DNS records exist and are proxied through Cloudflare.
+- `infra/scripts/upsert-goldshore-dns.sh` — idempotently ensures the apex, `www`, `preview`, and `dev` DNS A/AAAA records point at the configured origin (set `IPv4_TARGET` and optional `IPv6_TARGET`) and remain proxied through Cloudflare while clearing any stale CNAMEs.
 - `infra/scripts/rebuild-goldshore-access.sh` — recreates Access applications for production, preview, and development admin surfaces with a default allow policy.
 - `apps/web/scripts/process-images.mjs` — optimizes raw hero/gallery images into WebP and AVIF variants with subtle overlays.
 

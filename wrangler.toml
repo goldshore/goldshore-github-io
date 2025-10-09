@@ -20,6 +20,10 @@ binding     = "CF_API_TOKEN"
 store_id    = "b9824d3280c54573a24137c7e7143b33"
 secret_name = "CF_API_TOKEN"
 
+[[analytics_engine_datasets]]
+binding = "GOLDSHORE_ENV"
+dataset = "goldshore_analytics"
+
 [vars]
 APP_NAME = "GoldShore"
 

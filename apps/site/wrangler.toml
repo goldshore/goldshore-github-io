@@ -5,3 +5,4 @@ compatibility_date = "2024-12-01"
 [vars]
 GPT_ALLOWED_ORIGINS = "https://goldshore.org,https://trade.goldshore.org"
 GA4_MEASUREMENT_ID = "G-6208QFYB08"
+PUBLIC_TURNSTILE_SITE_KEY = "0X4AAAAAABpjj·p050UPFCrE"

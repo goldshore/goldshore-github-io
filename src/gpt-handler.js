@@ -2,7 +2,7 @@ const TOKEN_HEADER_NAME = "x-gpt-proxy-token";
 const ACCESS_JWT_HEADER = "cf-access-jwt-assertion";
 const BASE_CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-GPT-Proxy-Token",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-GPT-Proxy-Token, CF-Access-Jwt-Assertion",
 };
 const DEFAULT_CF_ACCESS_JWKS_URL = "https://rmarston.cloudflareaccess.com/cdn-cgi/access/certs";
 

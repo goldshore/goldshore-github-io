@@ -29,9 +29,11 @@ const normaliseOrigin = (candidate: string): string | null => {
       return null;
     }
 
-    const pathname = url.pathname.endsWith('/') && url.pathname !== '/'
-      ? url.pathname.slice(0, -1)
-      : url.pathname;
+    const pathname = url.pathname === '/'
+      ? ''
+      : url.pathname.endsWith('/')
+        ? url.pathname.slice(0, -1)
+        : url.pathname;
 
     return `${url.protocol}//${url.host}${pathname}`;
   } catch (error) {

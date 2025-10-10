@@ -32,14 +32,14 @@ CF_ACCESS_JWKS_URL = "https://rmarston.cloudflareaccess.com/cdn-cgi/access/certs
 name = "goldshore-preview"
 routes = [
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
-  { pattern = "fortune-fund.com", zone_name = "fortune-fund.com" },
-  { pattern = "fortune-fund.games", zone_name = "fortune-fund.games" },
-  { pattern = "goldshore.foundation", zone_name = "goldshore.foundation" },
+  { pattern = "fortune-fund.com/*", zone_name = "fortune-fund.com" },
+  { pattern = "fortune-fund.games/*", zone_name = "fortune-fund.games" },
+  { pattern = "goldshore.foundation/*", zone_name = "goldshore.foundation" },
   { pattern = "rmarston.com/*", zone_name = "rmarston.com" },
-  { pattern = "gearswipe.com", zone_name = "gearswipe.com" },
+  { pattern = "gearswipe.com/*", zone_name = "gearswipe.com" },
   { pattern = "armsway.com/*", zone_name = "armsway.com" },
-  { pattern = "armsway.net", zone_name = "armsway.net" },
-  { pattern = "banproof.me", zone_name = "banproof.me" },
+  { pattern = "armsway.net/*", zone_name = "armsway.net" },
+  { pattern = "banproof.me/*", zone_name = "banproof.me" },
   { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 

@@ -7,13 +7,6 @@ const MODEL_BY_PURPOSE = {
   [DEFAULT_PURPOSE]: "gpt-5",
 };
 
-const CODING_PURPOSE = "coding";
-const DEFAULT_PURPOSE = "chat";
-const MODEL_BY_PURPOSE = {
-  [CODING_PURPOSE]: "gpt-5-codex",
-  [DEFAULT_PURPOSE]: "gpt-5",
-};
-
 function resolvePurpose(value) {
   if (typeof value !== "string") {
     return DEFAULT_PURPOSE;
@@ -83,15 +76,6 @@ function extractBearerToken(header) {
 
   const match = header.match(/^Bearer\s+(.+)$/i);
   return match ? match[1].trim() : null;
-}
-
-function resolvePurpose(value) {
-  if (typeof value !== "string") {
-    return DEFAULT_PURPOSE;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  return normalized === CODING_PURPOSE ? CODING_PURPOSE : DEFAULT_PURPOSE;
 }
 
 function validateOrigin(request, env) {

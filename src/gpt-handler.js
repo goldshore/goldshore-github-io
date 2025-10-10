@@ -1,6 +1,22 @@
 const ALLOWED_METHODS = "POST, OPTIONS";
 const ALLOWED_HEADERS = "Content-Type, Authorization";
 
+const CODING_PURPOSE = "coding";
+const DEFAULT_PURPOSE = "chat";
+const MODEL_BY_PURPOSE = {
+  [CODING_PURPOSE]: "gpt-5-codex",
+  [DEFAULT_PURPOSE]: "gpt-5",
+};
+
+function resolvePurpose(value) {
+  if (typeof value !== "string") {
+    return DEFAULT_PURPOSE;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === CODING_PURPOSE ? CODING_PURPOSE : DEFAULT_PURPOSE;
+}
+
 function getAllowedOrigins(env) {
   return (env.GPT_ALLOWED_ORIGINS || "")
     .split(",")

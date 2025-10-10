@@ -4,6 +4,38 @@ Empowering communities through secure, scalable, and intelligent infrastructure.
 💻 Building tools in Cybersecurity, Cloud, and Automation.
 🌐 Visit us at [GoldShoreLabs](https://goldshore.org) — compatible with [goldshore.foundation](https://goldshore.foundation)
 
+## Keeping `main` in sync
+
+To make sure all pull and push operations target the `main` branch, configure your
+local clone once and use the same workflow for every update:
+
+1. **Check out `main`**
+   ```bash
+   git checkout main
+   ```
+2. **Track the remote `main` branch** (only needed the first time)
+   ```bash
+   git branch --set-upstream-to=origin/main main
+   ```
+3. **Pull the latest changes** before starting work to avoid divergence
+   ```bash
+   git pull --ff-only
+   ```
+4. **Push new commits back to `main`** when you are ready to share changes
+   ```bash
+   git push origin main
+   ```
+5. **Keep your remotes current** so `git pull`/`git push` always talk to the
+   right branch
+   ```bash
+   git fetch --prune
+   git config push.default current
+   ```
+
+Running the fetch/prune command periodically removes deleted remote branches, and
+setting `push.default` to `current` makes `git push` default to the branch you have
+checked out (which should be `main` for direct deployments).
+
 ## `/api/gpt` Worker endpoint
 
 - **Route**: `POST /api/gpt`

@@ -35,10 +35,6 @@
   <!-- Tailwind CDN (fine for static GitHub Pages / Working Copy) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Swiper -->
-  <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
-  <script defer src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-
   <!-- App CSS -->
   <link rel="stylesheet" href="/assets/css/styles.css" />
 </head>
@@ -100,41 +96,91 @@
   <main id="main">
     <!-- Hero -->
     <section class="relative overflow-hidden">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
-        <div>
-          <p class="text-sm uppercase tracking-widest text-white/60">Innovating the Future</p>
-          <h1 class="mt-3 text-4xl/tight md:text-5xl/tight font-extrabold">
-            We steer capital, not manage it.
+      <div class="hero-gradient" aria-hidden="true"></div>
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 md:py-24 grid gap-12 items-center lg:grid-cols-[minmax(0,1fr)_420px]">
+        <div class="relative z-10">
+          <span class="badge-press">As seen in <span class="font-semibold text-white">Forbes</span> + <span class="font-semibold text-white">Lattice</span></span>
+          <h1 class="mt-6 text-4xl/tight md:text-5xl/tight font-extrabold leading-tight">
+            Private office intelligence for founders who can&apos;t wait for consensus.
           </h1>
-          <p class="mt-4 text-white/80 max-w-prose">
-            Integrated wealth analysis, invitation-only relationship intelligence, and disciplined IT enablement quietly reinforce leaders who need leverage without noise.
+          <p class="mt-5 text-lg text-white/80 max-w-2xl">
+            Gold Shore Labs keeps capital operators ahead of the ripple — delivering discreet signal briefings, trusted operator pathways, and resilient launch infrastructure when every hour matters.
           </p>
-          <div class="mt-8 flex flex-wrap gap-3">
-            <a href="#work" data-cta="hero-see-work" class="inline-flex items-center rounded bg-white text-neutral-900 px-4 py-2 font-semibold hover:bg-white/90">Explore our integrated playbooks</a>
-            <a href="#contact" data-cta="hero-join-lore" class="inline-flex items-center rounded border border-white/20 px-4 py-2 font-semibold hover:bg-neutral-900">Request a discreet network briefing</a>
-            Integrated wealth analysis, trusted relationship pathways, and IT product enablement give decision-makers leverage without inviting noise.
-          </p>
-          <div class="mt-8 flex flex-wrap gap-3">
-            <a href="#work" data-cta="hero-see-work" class="inline-flex items-center rounded bg-white text-neutral-900 px-4 py-2 font-semibold hover:bg-white/90">Review capital, network, and enablement briefs</a>
-            <a href="#contact" data-cta="hero-join-lore" class="inline-flex items-center rounded border border-white/20 px-4 py-2 font-semibold hover:bg-neutral-900">Request a confidential alignment session</a>
+          <div class="mt-8 flex flex-wrap gap-4">
+            <a href="/assets/docs/gold-shore-syllabus.pdf" download data-cta="hero-download-syllabus" data-hero-cta="syllabus" class="hero-cta-primary">Download Gold Shore Syllabus</a>
+            <a href="#contact" data-cta="hero-book-private-desk" data-hero-cta="private-desk" class="hero-cta-secondary">Book a Private Desk</a>
           </div>
+          <ul class="mt-10 space-y-4 text-base text-white/80">
+            <li class="flex items-start gap-3">
+              <span class="check-bullet" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5">
+                  <path d="M8.333 13.083 5.25 10l1.178-1.178 1.905 1.905 5.238-5.239L14.75 6.667l-6.417 6.416Z" fill="currentColor" />
+                </svg>
+              </span>
+              <span>Confidential signal briefings aligned to your capital posture each Monday before markets open.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="check-bullet" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5">
+                  <path d="M8.333 13.083 5.25 10l1.178-1.178 1.905 1.905 5.238-5.239L14.75 6.667l-6.417 6.416Z" fill="currentColor" />
+                </svg>
+              </span>
+              <span>Invitation-only operator map with verified introductions in under 48 hours.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="check-bullet" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5">
+                  <path d="M8.333 13.083 5.25 10l1.178-1.178 1.905 1.905 5.238-5.239L14.75 6.667l-6.417 6.416Z" fill="currentColor" />
+                </svg>
+              </span>
+              <span>Resilient enablement spine that keeps launches compliant without revealing your playbook.</span>
+            </li>
+          </ul>
         </div>
 
-        <!-- Swiper Slider -->
-        <div class="md:-mr-8">
-          <div class="swiper hero-swiper rounded-xl ring-1 ring-white/10 overflow-hidden">
-            <div class="swiper-wrapper">
-              <div class="swiper-slide">
-                <img src="/assets/img/hero/hero-1.jpg" alt="AI fintech dashboards and signal tooling" class="w-full h-80 object-cover" />
-              </div>
-              <div class="swiper-slide">
-                <img src="/assets/img/hero/hero-2.jpg" alt="Field Manual creative systems in production" class="w-full h-80 object-cover" />
-              </div>
-              <div class="swiper-slide">
-                <img src="/assets/img/hero/hero-3.jpg" alt="E-commerce infrastructure and automation" class="w-full h-80 object-cover" />
-              </div>
+        <!-- Pricing / plan card -->
+        <div class="relative z-10">
+          <div class="plan-card" data-plan-card>
+            <div class="plan-card-header">
+              <span class="plan-card-badge">Flagship residency</span>
+              <h2 class="plan-card-title">Private Desk Residency</h2>
+              <p class="plan-card-subtitle">Priority intelligence retainer</p>
             </div>
-            <div class="swiper-pagination"></div>
+            <div class="plan-card-price">
+              <span class="plan-card-amount">$9,500</span>
+              <span class="plan-card-term">USD / month</span>
+            </div>
+            <p class="plan-card-description">
+              Reserve a desk inside the Gold Shore exchange with analyst-on-call, discreet operator sourcing, and sealed launch infrastructure.
+            </p>
+            <ul class="plan-card-list">
+              <li>Weekly private market field briefings</li>
+              <li>Concierge diligence &amp; compliance surge team</li>
+              <li>Secure network of vetted operators on speed dial</li>
+            </ul>
+            <div class="plan-card-actions">
+              <a href="#contact" data-cta="plan-book-private-desk" data-plan-cta="book" class="plan-card-primary">Book a Private Desk</a>
+              <button
+                type="button"
+                class="plan-card-secondary"
+                data-plan-toggle
+                data-plan-toggle-target="#planDeliverables"
+                data-plan-toggle-label-open="Preview deliverables"
+                data-plan-toggle-label-close="Hide deliverables"
+                aria-expanded="false"
+              >
+                Preview deliverables
+              </button>
+            </div>
+            <div id="planDeliverables" class="plan-card-details hidden">
+              <p class="plan-card-details-label">Deliverables preview</p>
+              <ul>
+                <li>30-day immersion with bespoke signal models</li>
+                <li>Unlimited secure war-room sessions with founders-in-residence</li>
+                <li>Priority access to new market corridors and product launch sprints</li>
+              </ul>
+            </div>
+            <p class="plan-card-footnote">Limited 12 seat cohort · Annual retainers available upon request.</p>
           </div>
         </div>
       </div>

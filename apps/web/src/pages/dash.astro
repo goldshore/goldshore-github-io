@@ -1,0 +1,153 @@
+---
+import Base from "../layouts/Base.astro";
+const metrics = [
+  { label: "Net Liquidity", value: "$2.43M", change: "+3.8%" },
+  { label: "Daily P&L", value: "+$42,180", change: "+1.9%" },
+  { label: "Open Positions", value: "18", change: "5 hedged" },
+  { label: "Margin Utilization", value: "57%", change: "Within limits" }
+];
+const watchlist = [
+  { symbol: "XAU/USD", price: "2,432.10", change: "+0.84%" },
+  { symbol: "BTC/USD", price: "64,115.22", change: "-1.12%" },
+  { symbol: "ETH/BTC", price: "0.0512", change: "+0.32%" },
+  { symbol: "SOL/USD", price: "182.44", change: "+4.25%" }
+];
+const positions = [
+  { symbol: "XAU", type: "Long Futures", size: "120 oz", basis: "2,375.00", mark: "2,432.10", pnl: "+$6,852" },
+  { symbol: "BTC", type: "Short Perp", size: "-50 BTC", basis: "65,980.00", mark: "64,115.22", pnl: "+$93,241" },
+  { symbol: "ETH", type: "Call Spread", size: "300", basis: "1,835.00", mark: "1,912.36", pnl: "+$23,208" }
+];
+const orders = [
+  { id: "#5480", side: "Buy", symbol: "SOL", size: "25,000", type: "Limit", status: "Working" },
+  { id: "#5472", side: "Sell", symbol: "BTC", size: "10", type: "Stop", status: "Triggered" },
+  { id: "#5470", side: "Buy", symbol: "XAU", size: "50", type: "Market", status: "Filled" }
+];
+---
+<Base>
+  <main class="mx-auto max-w-6xl p-6 space-y-10">
+    <header class="flex flex-col gap-2">
+      <p class="text-sm uppercase tracking-wide text-[var(--muted)]">Dashboard</p>
+      <h1 class="font-display text-3xl">GoldShore Trading Control Center</h1>
+      <p class="text-base text-[var(--muted)]">
+        Real-time oversight across liquidity, exposure, and automated hedging. Streaming data and risk controls
+        update continuously when you connect your live trading accounts.
+      </p>
+    </header>
+
+    <section class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {metrics.map((metric) => (
+        <article class="rounded border border-[var(--border)] bg-[var(--card)] p-4 shadow-sm" aria-live="polite">
+          <p class="text-sm text-[var(--muted)]">{metric.label}</p>
+          <p class="mt-2 text-2xl font-semibold">{metric.value}</p>
+          <p class="mt-1 text-xs text-[var(--brand)]">{metric.change}</p>
+        </article>
+      ))}
+    </section>
+
+    <section class="grid gap-6 lg:grid-cols-[2fr,1fr]">
+      <article class="rounded border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+        <header class="flex items-center justify-between">
+          <div>
+            <h2 class="font-display text-xl">Portfolio Performance</h2>
+            <p class="text-sm text-[var(--muted)]">Mark-to-market, VaR, and drift projections</p>
+          </div>
+          <div class="flex gap-2 text-xs">
+            <button class="rounded border border-[var(--border)] px-3 py-1">1D</button>
+            <button class="rounded border border-[var(--border)] px-3 py-1">1W</button>
+            <button class="rounded border border-[var(--border)] px-3 py-1 bg-[var(--brand)] text-[var(--brand-contrast)]">
+              1M
+            </button>
+          </div>
+        </header>
+        <div class="mt-6 h-64 rounded bg-[var(--panel)]">
+          <div class="flex h-full flex-col items-center justify-center text-sm text-[var(--muted)]">
+            <span>Streaming chart placeholder</span>
+            <span>Connect a broker account to view live pricing.</span>
+          </div>
+        </div>
+      </article>
+
+      <aside class="rounded border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+        <h2 class="font-display text-xl">Watchlist</h2>
+        <ul class="mt-4 space-y-3">
+          {watchlist.map((asset) => (
+            <li class="flex items-center justify-between text-sm">
+              <div>
+                <p class="font-semibold">{asset.symbol}</p>
+                <p class="text-[var(--muted)]">Last trade</p>
+              </div>
+              <div class="text-right">
+                <p class="font-mono">{asset.price}</p>
+                <p class={"text-xs font-semibold " + (asset.change.startsWith("-") ? "text-red-500" : "text-green-500")}>
+                  {asset.change}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </aside>
+    </section>
+
+    <section class="grid gap-6 lg:grid-cols-[3fr,2fr]">
+      <article class="overflow-hidden rounded border border-[var(--border)] bg-[var(--card)] shadow-sm">
+        <header class="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel)] px-6 py-3">
+          <h2 class="font-display text-xl">Open Positions</h2>
+          <span class="text-xs text-[var(--muted)]">Auto-hedging engaged</span>
+        </header>
+        <table class="min-w-full divide-y divide-[var(--border)] text-sm">
+          <thead class="bg-[var(--panel)] text-left uppercase tracking-wide text-[10px] text-[var(--muted)]">
+            <tr>
+              <th class="px-6 py-3 font-medium">Symbol</th>
+              <th class="px-6 py-3 font-medium">Type</th>
+              <th class="px-6 py-3 font-medium">Size</th>
+              <th class="px-6 py-3 font-medium">Basis</th>
+              <th class="px-6 py-3 font-medium">Mark</th>
+              <th class="px-6 py-3 font-medium">P&amp;L</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[var(--border)]">
+            {positions.map((position) => (
+              <tr>
+                <td class="px-6 py-3 font-semibold">{position.symbol}</td>
+                <td class="px-6 py-3">{position.type}</td>
+                <td class="px-6 py-3 font-mono">{position.size}</td>
+                <td class="px-6 py-3 font-mono">{position.basis}</td>
+                <td class="px-6 py-3 font-mono">{position.mark}</td>
+                <td class="px-6 py-3 font-mono text-green-500">{position.pnl}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </article>
+
+      <article class="rounded border border-[var(--border)] bg-[var(--card)] p-6 shadow-sm">
+        <header class="flex items-center justify-between">
+          <div>
+            <h2 class="font-display text-xl">Order Blotter</h2>
+            <p class="text-sm text-[var(--muted)]">Syncs with FIX and REST endpoints</p>
+          </div>
+          <button class="rounded border border-[var(--border)] px-3 py-1 text-xs">Export CSV</button>
+        </header>
+        <ul class="mt-4 space-y-4 text-sm">
+          {orders.map((order) => (
+            <li class="flex items-center justify-between rounded border border-[var(--border)] bg-[var(--panel)] px-4 py-3">
+              <div class="flex flex-col">
+                <span class="font-mono text-xs text-[var(--muted)]">{order.id}</span>
+                <span class="font-semibold">{order.side} {order.symbol}</span>
+                <span class="text-xs text-[var(--muted)]">{order.size} • {order.type}</span>
+              </div>
+              <span class="rounded bg-[var(--brand)] px-3 py-1 text-xs font-semibold text-[var(--brand-contrast)]">
+                {order.status}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </article>
+    </section>
+
+    <footer class="rounded border border-dashed border-[var(--border)] bg-[var(--panel)] p-6 text-sm text-[var(--muted)]">
+      Connect execution venues, risk services, and surveillance in minutes. Provision sandbox credentials in the admin
+      portal or reach out to GoldShore support for a guided onboarding session.
+    </footer>
+  </main>
+</Base>

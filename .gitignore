@@ -6,3 +6,5 @@ _site/
 .bundle/
 vendor/
 .dev.vars
+# Generated asset outputs
+packages/assets/*/dist/

@@ -41,10 +41,32 @@ while IFS= read -r record; do
   content=$(echo "$record" | jq -r '.content')
   proxied=$(echo "$record" | jq '.proxied // false')
 
-  existing=$(curl -sS -X GET "$API/zones/$CF_ZONE_ID/dns_records?type=$type&name=$name" \
+  existing=$(curl -sS -X GET "$API/zones/$CF_ZONE_ID/dns_records?name=$name" \
     -H "Authorization: Bearer $CF_API_TOKEN" \
     -H "Content-Type: application/json")
-  record_id=$(echo "$existing" | jq -r '.result[0].id // ""')
+  if [[ $(echo "$existing" | jq -r '.success') != "true" ]]; then
+    echo "Failed to query DNS records for $name" >&2
+    echo "$existing" >&2
+    exit 1
+  fi
+
+  record_id=$(echo "$existing" | jq -r --arg type "$type" '.result[] | select(.type == $type) | .id' | head -n1)
+  conflicts=$(echo "$existing" | jq -r --arg type "$type" '.result[] | select(.type != $type) | "\(.id) \(.type)"')
+
+  if [[ -n "$conflicts" ]]; then
+    while read -r conflict_id conflict_type; do
+      [[ -z "$conflict_id" ]] && continue
+      response=$(curl -sS -X DELETE "$API/zones/$CF_ZONE_ID/dns_records/$conflict_id" \
+        -H "Authorization: Bearer $CF_API_TOKEN" \
+        -H "Content-Type: application/json")
+      if [[ $(echo "$response" | jq -r '.success') != "true" ]]; then
+        echo "Failed to delete conflicting $conflict_type record for $name" >&2
+        echo "$response" >&2
+        exit 1
+      fi
+      echo "Deleted conflicting $conflict_type record for $name"
+    done <<< "$conflicts"
+  fi
 
   payload=$(jq -n \
     --arg type "$type" \

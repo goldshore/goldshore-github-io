@@ -35,7 +35,9 @@ jobs:
 
       - name: CSS Guardrails (block binaries/huge files)
         run: |
-          bad=$(find apps/web -name "*.css" -size +500k -print -o -type f -name "*.css" -exec file -bi {} \; | grep -v "text/" || true)
+          oversized=$(find apps/web -name "*.css" -size +500k -print)
+          binaries=$(find apps/web -type f -name "*.css" -exec sh -c 'for f in "$@"; do mime=$(file -bi "$f"); case $mime in text/*) ;; *) echo "$f: $mime";; esac; done' sh {} +)
+          bad=$(printf '%s\n%s' "$oversized" "$binaries" | sed '/^$/d')
           if [ -n "$bad" ]; then echo "❌ Bad CSS detected"; echo "$bad"; exit 1; fi
 
       - name: Build site (Astro)

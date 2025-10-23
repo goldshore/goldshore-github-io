@@ -44,10 +44,10 @@ jobs:
             packages/**/dist
 
       - name: Deploy Worker (preview)
-        run: npx wrangler deploy --config wrangler.worker.toml --env=preview --minify
+        run: npx wrangler deploy --env=preview --minify
 
       - name: Deploy Worker (dev)
-        run: npx wrangler deploy --config wrangler.worker.toml --env=dev --minify
+        run: npx wrangler deploy --env=dev --minify
 
       - name: Deploy Worker (production)
         run: npx wrangler deploy --env=production

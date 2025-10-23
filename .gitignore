@@ -6,4 +6,10 @@ _site/
 .bundle/
 vendor/
 .dev.vars
+# Generated asset outputs
+packages/assets/*/dist/
 node_modules/
+**/node_modules/
+package-lock.json
+.pnpm-store/
+.wrangler/

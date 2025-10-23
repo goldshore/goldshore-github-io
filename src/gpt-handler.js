@@ -1,12 +1,22 @@
+const TOKEN_HEADER_NAME = "x-api-key";
+const PROXY_TOKEN_HEADER_NAME = "x-gpt-proxy-token";
+const BASE_CORS_HEADERS = {
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-GPT-Proxy-Token, X-API-Key, CF-Access-Jwt-Assertion",
+};
+
+const DEFAULT_MODEL = "gpt-4o-mini";
 const ALLOWED_METHODS = "POST, OPTIONS";
 const ALLOWED_HEADERS =
-  "Content-Type, Authorization, X-GPT-Proxy-Token, CF-Access-Jwt-Assertion";
+  "Content-Type, Authorization, X-GPT-Proxy-Token, X-Api-Key, CF-Access-Jwt-Assertion";
 const DEFAULT_MODEL = "gpt-4o-mini";
 const SUPPORTED_MODELS = new Set(["gpt-4o-mini", "gpt-4o", "o4-mini"]);
 const ALLOWED_CHAT_COMPLETION_OPTIONS = new Set([
   "frequency_penalty",
   "logit_bias",
   "logprobs",
+  "max_tokens",
+  "modalities",
   "top_logprobs",
   "max_tokens",
   "n",
@@ -15,6 +25,11 @@ const ALLOWED_CHAT_COMPLETION_OPTIONS = new Set([
   "seed",
   "stop",
   "stream",
+  "temperature",
+  "top_logprobs",
+  "top_p",
+  "tool_choice",
+  "tools",
   "temperature",
   "top_p",
   "user",
@@ -116,13 +131,38 @@ function validateOrigin(request, env) {
   return { ok: true, origin: requestOrigin };
 }
 
+function getExpectedSecret(env) {
+  return env.GPT_SHARED_SECRET ?? env.GPT_PROXY_SECRET ?? null;
+}
+
+function extractProvidedToken(request) {
+  const authorization = request.headers.get("Authorization");
+  const bearerToken = extractBearerToken(authorization);
+  if (bearerToken) {
+    return bearerToken;
+  }
+
+  const proxyHeader = request.headers.get("X-GPT-Proxy-Token");
+  if (proxyHeader && proxyHeader.trim() !== "") {
+    return proxyHeader.trim();
+  }
+
+  const apiKeyHeader = request.headers.get("x-api-key");
+  if (apiKeyHeader && apiKeyHeader.trim() !== "") {
+    return apiKeyHeader.trim();
+  }
+
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : null;
+}
+
 function authenticateRequest(request, env, corsOrigin) {
-  const expectedToken = env.GPT_SHARED_SECRET;
+  const expectedToken = getExpectedSecret(env);
   if (!expectedToken) {
     return {
       ok: false,
       response: errorResponse(
-        "Server misconfigured: GPT_SHARED_SECRET is not set.",
+        "Server misconfigured: GPT_SHARED_SECRET or GPT_PROXY_SECRET is not set.",
         500,
         undefined,
         corsOrigin,
@@ -130,12 +170,12 @@ function authenticateRequest(request, env, corsOrigin) {
     };
   }
 
-  const providedToken = extractBearerToken(request.headers.get("Authorization"));
+  const providedToken = extractProvidedToken(request);
   if (!providedToken) {
     return {
       ok: false,
       response: jsonResponse(
-        { error: "Missing bearer token." },
+        { error: "Missing authentication token." },
         { status: 401, headers: { "WWW-Authenticate": "Bearer" } },
         corsOrigin,
       ),
@@ -246,30 +286,35 @@ function buildChatCompletionPayload(payload) {
       ])
     .map((message, index) => normalizeMessage(message, index));
 
+  if (Object.prototype.hasOwnProperty.call(rest, "stream")) {
+    throw new Error("stream option is not supported by this proxy.");
+  }
+
   const requestBody = {
     model: trimmedModel,
     messages: normalizedMessages,
   };
 
   for (const [key, value] of Object.entries(rest)) {
-    if (ALLOWED_CHAT_COMPLETION_OPTIONS.has(key)) {
-      requestBody[key] = value;
+    if (!ALLOWED_CHAT_COMPLETION_OPTIONS.has(key) || value === undefined) {
+      continue;
     }
+    requestBody[key] = value;
   }
 
   return requestBody;
 }
 
-async function handlePost(request, env, origin) {
+async function handlePost(request, env, corsOrigin) {
   if (!env.OPENAI_API_KEY) {
-    return errorResponse("Missing OpenAI API key.", 500, undefined, origin);
+    return errorResponse("Missing OpenAI API key.", 500, undefined, corsOrigin);
   }
 
   let payload;
   try {
     payload = await request.json();
   } catch (error) {
-    return errorResponse("Invalid JSON body.", 400, undefined, origin);
+    return errorResponse("Invalid JSON body.", 400, undefined, corsOrigin);
   }
 
   let requestBody;
@@ -280,7 +325,7 @@ async function handlePost(request, env, origin) {
       error instanceof Error ? error.message : String(error),
       400,
       undefined,
-      origin,
+      corsOrigin,
     );
   }
 
@@ -294,10 +339,10 @@ async function handlePost(request, env, origin) {
       body: JSON.stringify(requestBody),
     });
 
-    const text = await response.text();
+    const responseText = await response.text();
     let data;
     try {
-      data = JSON.parse(text);
+      data = JSON.parse(responseText);
     } catch (error) {
       return errorResponse(
         "Unexpected response from OpenAI API.",
@@ -311,7 +356,7 @@ async function handlePost(request, env, origin) {
       return errorResponse("OpenAI API request failed.", response.status, data, origin);
     }
 
-    return jsonResponse(data, { status: response.status }, origin);
+    return jsonResponse(data, { status: response.status }, corsOrigin);
   } catch (error) {
     return errorResponse(
       "Failed to contact OpenAI API.",

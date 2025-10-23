@@ -47,6 +47,10 @@ routes = [
 ASSETS_ORIGIN = "https://goldshore-org-preview.pages.dev"
 
 # (Only add bindings you actually use)
+[[analytics_engine_datasets]]
+binding = "GOLD_ANALYTICS"
+dataset = "goldshore-events"
+
 [[env.preview.analytics_engine_datasets]]
 binding = "GOLD_ANALYTICS"
 dataset = "goldshore-events"

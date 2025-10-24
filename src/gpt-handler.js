@@ -28,6 +28,7 @@ const ALLOWED_CHAT_COMPLETION_OPTIONS = new Set([
   "tool_choice",
   "tools",
   "user",
+  "stream",
 ]);
 
 const encoder = new TextEncoder();
@@ -280,10 +281,6 @@ function buildChatCompletionPayload(payload) {
       ])
     .map((message, index) => normalizeMessage(message, index));
 
-  if (Object.prototype.hasOwnProperty.call(rest, "stream")) {
-    throw new Error("stream option is not supported by this proxy.");
-  }
-
   const requestBody = {
     model: trimmedModel,
     messages: normalizedMessages,
@@ -291,6 +288,15 @@ function buildChatCompletionPayload(payload) {
 
   for (const [key, value] of Object.entries(rest)) {
     if (!ALLOWED_CHAT_COMPLETION_OPTIONS.has(key) || value === undefined) {
+      continue;
+    }
+    if (key === "stream") {
+      if (typeof value !== "boolean") {
+        throw new Error("stream option must be a boolean value.");
+      }
+      if (value) {
+        requestBody[key] = true;
+      }
       continue;
     }
     requestBody[key] = value;
@@ -323,6 +329,8 @@ async function handlePost(request, env, corsOrigin) {
     );
   }
 
+  const wantsStream = requestBody.stream === true;
+
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -332,6 +340,40 @@ async function handlePost(request, env, corsOrigin) {
       },
       body: JSON.stringify(requestBody),
     });
+
+    if (wantsStream) {
+      if (!response.ok) {
+        const responseText = await response.text();
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (error) {
+          data = { body: responseText };
+        }
+
+        return errorResponse("OpenAI API request failed.", response.status, data, corsOrigin);
+      }
+
+      const headers = buildCorsHeaders(corsOrigin);
+      const contentType = response.headers.get("content-type");
+      if (contentType) {
+        headers.set("content-type", contentType);
+      } else {
+        headers.set("content-type", "text/event-stream; charset=utf-8");
+      }
+
+      const cacheControl = response.headers.get("cache-control");
+      if (cacheControl) {
+        headers.set("cache-control", cacheControl);
+      }
+
+      headers.set("x-accel-buffering", "no");
+
+      return new Response(response.body, {
+        status: response.status,
+        headers,
+      });
+    }
 
     const responseText = await response.text();
     let data;

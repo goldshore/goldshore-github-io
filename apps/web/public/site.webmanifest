@@ -3,7 +3,7 @@
   "short_name": "GoldShore",
   "icons": [
     {
-      "src": "/packages/assets/goldshore/favicon.svg",
+      "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }

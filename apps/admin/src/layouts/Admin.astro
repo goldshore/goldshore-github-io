@@ -1,10 +1,11 @@
 ---
 import "@goldshore/theme/tokens.css";
+import logoUrl from "@goldshore/assets/logo-wordmark-on-light.svg?url";
 const items = ["Dashboard","Customers","Subscriptions","Workflows","Trading","Orders","Risk","Reports","Settings"];
 ---
 <html><body class="bg-[var(--bg)] text-[var(--text)]">
   <aside class="fixed left-0 top-0 h-full w-56 border-r p-4">
-    <img src="/packages/assets/goldshore/logo-wordmark-on-light.svg" height="24" />
+    <img src={logoUrl} height="24" alt="GoldShore" />
     <ul class="mt-4 space-y-2">
       {items.map(i => <li><a href={`/${i.toLowerCase()}`} class="hover:underline">{i}</a></li>)}
     </ul>

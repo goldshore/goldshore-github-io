@@ -11,7 +11,7 @@ API="https://api.cloudflare.com/client/v4"
 
 # Resolve the zone identifier when not provided explicitly.
 if [[ -z "${CF_ZONE_ID:-}" ]]; then
-  CF_ZONE_ID=$(curl -sS -X GET "$API/zones?name=$ZONE_NAME" \
+  CF_ZONE_ID=$(curl -sS --fail-with-body -X GET "$API/zones?name=$ZONE_NAME" \
     -H "Authorization: Bearer $CF_API_TOKEN" \
     -H "Content-Type: application/json" | jq -r '.result[0].id // empty')
 fi
@@ -40,7 +40,7 @@ remove_conflicting_records() {
   esac
 
   local conflicts_json
-  conflicts_json=$(curl -sS -X GET "$API/zones/$zone_id/dns_records?name=$name" \
+  conflicts_json=$(curl -sS --fail-with-body -X GET "$API/zones/$zone_id/dns_records?name=$name" \
     -H "Authorization: Bearer $CF_API_TOKEN" \
     -H "Content-Type: application/json")
 
@@ -50,7 +50,7 @@ remove_conflicting_records() {
 
     while IFS= read -r id; do
       [[ -z "$id" || "$id" == "null" ]] && continue
-      curl -sS -X DELETE "$API/zones/$zone_id/dns_records/$id" \
+      curl -sS --fail-with-body -X DELETE "$API/zones/$zone_id/dns_records/$id" \
         -H "Authorization: Bearer $CF_API_TOKEN" \
         -H "Content-Type: application/json" >/dev/null
       echo "Removed conflicting $conflict_type record for $name"
@@ -68,7 +68,7 @@ upsert_record() {
   remove_conflicting_records "$zone_id" "$name" "$type"
 
   local existing_id
-  existing_id=$(curl -sS -X GET "$API/zones/$zone_id/dns_records?type=$type&name=$name" \
+  existing_id=$(curl -sS --fail-with-body -X GET "$API/zones/$zone_id/dns_records?type=$type&name=$name" \
     -H "Authorization: Bearer $CF_API_TOKEN" \
     -H "Content-Type: application/json" | jq -r '.result[0].id // ""')
 
@@ -80,13 +80,13 @@ upsert_record() {
     --argjson proxied $proxied '{type:$type,name:$name,content:$content,ttl:1,proxied:$proxied}')
 
   if [[ -n "$existing_id" ]]; then
-    curl -sS -X PUT "$API/zones/$zone_id/dns_records/$existing_id" \
+    curl -sS --fail-with-body -X PUT "$API/zones/$zone_id/dns_records/$existing_id" \
       -H "Authorization: Bearer $CF_API_TOKEN" \
       -H "Content-Type: application/json" \
       --data "$payload" >/dev/null
     echo "Updated $type record for $name"
   else
-    curl -sS -X POST "$API/zones/$zone_id/dns_records" \
+    curl -sS --fail-with-body -X POST "$API/zones/$zone_id/dns_records" \
       -H "Authorization: Bearer $CF_API_TOKEN" \
       -H "Content-Type: application/json" \
       --data "$payload" >/dev/null

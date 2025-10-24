@@ -46,6 +46,7 @@ function buildCorsHeaders(origin) {
     headers.set("Access-Control-Allow-Origin", origin);
     headers.set("Vary", "Origin");
   }
+
   headers.set("Access-Control-Allow-Methods", ALLOWED_METHODS);
   headers.set("Access-Control-Allow-Headers", ALLOWED_HEADERS);
   return headers;
@@ -117,6 +118,20 @@ function validateOrigin(request, env) {
     return { ok: true, origin: null };
   }
 
+  const allowedOrigin = resolveAllowedOrigin(requestOrigin, allowedOrigins);
+  if (!allowedOrigin) {
+    return {
+      ok: false,
+      response: errorResponse("Origin not allowed.", 403),
+    };
+  }
+
+  return { ok: true, origin: allowedOrigin };
+}
+
+function extractBearerToken(header) {
+  if (typeof header !== "string") {
+    return null;
   if (!allowedOrigins.includes(requestOrigin)) {
     return {
       ok: false,
@@ -148,7 +163,8 @@ function extractProvidedToken(request) {
     return apiKeyHeader.trim();
   }
 
-  return null;
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : null;
 }
 
 function authenticateRequest(request, env, corsOrigin) {
@@ -352,40 +368,6 @@ async function handlePost(request, env, corsOrigin) {
       body: JSON.stringify(requestBody),
     });
 
-    if (wantsStream) {
-      if (!response.ok) {
-        const responseText = await response.text();
-        let data;
-        try {
-          data = JSON.parse(responseText);
-        } catch (error) {
-          data = { body: responseText };
-        }
-
-        return errorResponse("OpenAI API request failed.", response.status, data, corsOrigin);
-      }
-
-      const headers = buildCorsHeaders(corsOrigin);
-      const contentType = response.headers.get("content-type");
-      if (contentType) {
-        headers.set("content-type", contentType);
-      } else {
-        headers.set("content-type", "text/event-stream; charset=utf-8");
-      }
-
-      const cacheControl = response.headers.get("cache-control");
-      if (cacheControl) {
-        headers.set("cache-control", cacheControl);
-      }
-
-      headers.set("x-accel-buffering", "no");
-
-      return new Response(response.body, {
-        status: response.status,
-        headers,
-      });
-    }
-
     const responseText = await response.text();
     let data;
     try {
@@ -400,7 +382,12 @@ async function handlePost(request, env, corsOrigin) {
     }
 
     if (!response.ok) {
-      return errorResponse("OpenAI API request failed.", response.status, data, corsOrigin);
+      return errorResponse(
+        "OpenAI API request failed.",
+        response.status,
+        data,
+        corsOrigin,
+      );
     }
 
     return jsonResponse(data, { status: response.status }, corsOrigin);

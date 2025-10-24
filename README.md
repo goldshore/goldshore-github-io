@@ -18,6 +18,39 @@ The repository is transitioning to a unified monorepo so every service (web, adm
 - [`infra/cf`](infra/cf) – Wrangler binding templates, D1 migrations, and infrastructure scripts for deterministic deployments.
 - [`infra/policies`](infra/policies) – Zero Trust policy definitions and Access documentation.
 
+## GPT handler endpoint
+
+The Cloudflare Worker now exposes a protected `POST /api/gpt` endpoint that relays chat-completion requests to OpenAI. All callers **must**:
+
+- Include an `Authorization: Bearer <token>` header that matches the shared secret stored in the Worker as `GPT_SHARED_SECRET`.
+- Send requests from an origin listed in the comma-separated `GPT_ALLOWED_ORIGINS` variable. Requests with an unrecognised `Origin` header are rejected before reaching OpenAI.
+
+Worker secrets are configured with `wrangler secret put` (run once per environment):
+
+```bash
+wrangler secret put OPENAI_API_KEY
+wrangler secret put GPT_SHARED_SECRET
+wrangler secret put GPT_ALLOWED_ORIGINS
+```
+### Configuring OpenAI credentials
+
+Set the `OPENAI_API_KEY` secret in each Worker environment so the GPT handler
+can authenticate with OpenAI:
+
+| Variable | Purpose | How to set |
+| --- | --- | --- |
+| `FORMSPREE_ENDPOINT` | Destination endpoint provided by Formspree | `wrangler secret put FORMSPREE_ENDPOINT` (or add to `.dev.vars` for local previews) |
+| `TURNSTILE_SECRET` | Server-side Turnstile verification secret | `wrangler secret put TURNSTILE_SECRET` (or add to `.dev.vars`) |
+| `OPENAI_API_KEY` | Authenticates calls to the `/api/gpt` handler | `wrangler secret put OPENAI_API_KEY` (or add to `.dev.vars`) |
+| `GPT_PROXY_SECRET` | Shared secret browsers must send when calling `/api/gpt` | `wrangler secret put GPT_PROXY_SECRET` (or add to `.dev.vars`) |
+| `GPT_ALLOWED_ORIGINS` | Comma-separated list of origins that receive CORS access | Define in `wrangler.toml` (`[vars]`) or add to `.dev.vars` |
+| `CF_ACCESS_AUD` | Audience identifier expected inside Cloudflare Access JWTs for `/api/gpt` | Define per-environment in `wrangler.toml` or via `wrangler secret put CF_ACCESS_AUD` |
+| `CF_ACCESS_ISS` | (Optional) Cloudflare Access issuer URL to pin for JWT validation | Define per-environment in `wrangler.toml` |
+| `CF_ACCESS_JWKS_URL` | (Optional) Override for the Cloudflare Access JWKS endpoint | Define per-environment in `wrangler.toml` |
+| `GPT_PROXY_SECRET` | Shared secret required by the `/api/gpt` handler | `wrangler secret put GPT_PROXY_SECRET` (or add to `.dev.vars`) |
+```bash
+wrangler secret put OPENAI_API_KEY
+```
 Legacy assets remain available while the migration completes:
 
 - [`index.html`](index.html) powers the public landing page and wires up Tailwind via CDN, Swiper-powered hero imagery, and the section layout for services, work, team, and contact CTAs.
@@ -67,6 +100,41 @@ Traffic for `goldshore.org` hits a Worker (`wrangler.toml` target `goldshore`) b
 
 ### Required secrets and configuration
 
+Requests missing the header (or using the wrong secret) are rejected with HTTP 401.
+### Example response
+
+```bash
+curl -X POST "https://goldshore.org/api/gpt" \
+  -H "Origin: https://app.goldshore.org" \
+  -H "Authorization: Bearer $GPT_SHARED_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "messages": [
+          { "role": "user", "content": "Write a Python function that reverses a string." }
+        ]
+      }'
+```
+
+Successful responses return the JSON payload from the OpenAI Chat Completions API. Errors include an explanatory `error` string in the response body.
+```json
+{
+  "model": "gpt-4o-mini",
+  "created": 1720000000,
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Gold Shore Labs builds secure, AI-driven tools for cloud, cybersecurity, and automation."
+      }
+    }
+  ]
+}
+```
+
+## `/api/gpt` configuration
+
+The GPT relay worker requires explicit authentication and origin allow-listing. Set the following variables in each Cloudflare Worker environment:
 Set the following per environment using `wrangler secret put` (or provider-specific secret managers):
 
 | Variable | Purpose |

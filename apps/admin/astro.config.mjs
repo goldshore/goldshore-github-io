@@ -1,6 +1,8 @@
+import { defineConfig } from 'astro/config';
 import cloudflare from '@astrojs/cloudflare';
-export default {
+
+export default defineConfig({
   output: 'server',
-  adapter: cloudflare({}),
+  adapter: cloudflare({ imageService: 'passthrough' }),
   vite: { build: { assetsInlineLimit: 0 } }
-};
+});

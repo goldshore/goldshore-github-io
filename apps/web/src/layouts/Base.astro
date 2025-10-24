@@ -1,9 +1,5 @@
 ---
 import "@goldshore/theme/tokens.css";
-import "../styles/theme.css";
-import "../styles/utilities.css";
-import logoUrl from "@goldshore/assets/logo-wordmark-on-light.svg?url";
-import faviconUrl from "@goldshore/assets/favicon.svg?url";
 const nav = [
   {label:"Products", href:"#products"},
   {label:"Trading Dashboard", href:"/dash"},
@@ -12,32 +8,17 @@ const nav = [
   {label:"Docs", href:"https://api.goldshore.org/v1/docs"},
   {label:"Admin", href:"https://admin.goldshore.org"},
 ];
-const manifest = {
-  name: "GoldShore",
-  short_name: "GoldShore",
-  icons: [
-    {
-      src: faviconUrl,
-      sizes: "any",
-      type: "image/svg+xml"
-    }
-  ],
-  theme_color: "#FAFBFF",
-  background_color: "#FAFBFF",
-  display: "standalone"
-};
-const manifestUrl = `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifest))}`;
 ---
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href={faviconUrl} />
-    <link rel="manifest" href={manifestUrl} />
+    <link rel="icon" type="image/svg+xml" href="/packages/assets/goldshore/favicon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
     <title>GoldShore</title>
   </head>
   <body class="bg-[var(--bg)] text-[var(--text)]">
     <header class="mx-auto max-w-7xl p-4 flex items-center gap-6">
-      <img src={logoUrl} alt="GoldShore" height="28" />
+      <img src="/packages/assets/goldshore/logo-wordmark-on-light.svg" alt="GoldShore" height="28" />
       <nav class="ml-auto flex gap-5">
         {nav.map(n => <a href={n.href} class="hover:underline">{n.label}</a>)}
         <a href="/signup" class="px-3 py-1 rounded bg-[var(--brand)] text-[var(--brand-contrast)]">Get Started</a>

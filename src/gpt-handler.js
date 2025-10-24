@@ -40,6 +40,32 @@ function getAllowedOrigins(env) {
     .filter(Boolean);
 }
 
+function resolveAllowedOrigin(requestOrigin, allowedOrigins) {
+  if (typeof requestOrigin !== "string") {
+    return null;
+  }
+
+  const normalizedOrigin = requestOrigin.trim();
+  if (normalizedOrigin === "") {
+    return null;
+  }
+
+  for (const allowed of allowedOrigins) {
+    if (allowed === normalizedOrigin) {
+      return normalizedOrigin;
+    }
+  }
+
+  return null;
+}
+
+function buildCorsHeaders(origin) {
+  const headers = new Headers();
+
+  for (const [key, value] of Object.entries(BASE_CORS_HEADERS)) {
+    headers.set(key, value);
+  }
+
 function buildCorsHeaders(origin) {
   const headers = new Headers();
   if (origin) {
@@ -55,10 +81,15 @@ function buildCorsHeaders(origin) {
 function jsonResponse(body, init = {}, corsOrigin = null) {
   const headers = new Headers(init.headers || {});
   const corsHeaders = buildCorsHeaders(corsOrigin);
+
   for (const [key, value] of corsHeaders.entries()) {
     headers.set(key, value);
   }
-  headers.set("content-type", "application/json");
+
+  if (!headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
+
   return new Response(JSON.stringify(body), { ...init, headers });
 }
 
@@ -309,6 +340,7 @@ function buildChatCompletionPayload(payload) {
   }
 
   const requestBody = {
+    model: typeof model === "string" ? model.trim() : DEFAULT_MODEL,
     model: trimmedModel,
     messages: normalizedMessages,
   };
@@ -376,6 +408,7 @@ async function handlePost(request, env, corsOrigin) {
       return errorResponse(
         "Unexpected response from OpenAI API.",
         502,
+        responseText,
         { body: responseText },
         corsOrigin,
       );

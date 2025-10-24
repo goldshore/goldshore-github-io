@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/Base.astro";
+import "../styles/contact.css";
 
 const meta = {
   title: "Contact Gold Shore — Book a strategy session",
@@ -8,6 +9,7 @@ const meta = {
 };
 
 const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+const contactScript = await import("../scripts/contactSuccess.ts?url");
 ---
 <BaseLayout {...meta}>
   <h1 class="section-title">Let’s build momentum</h1>
@@ -16,23 +18,35 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
   </p>
 
   <form
-    class="card"
+    class="card contact-form"
     action="/api/contact"
     method="POST"
-    style="display: grid; gap: 20px;"
   >
     <input type="hidden" name="_redirect" value="/contact#contact-success" />
     <div>
       <label for="name">Name</label>
-      <input id="name" name="name" type="text" required placeholder="Ada Lovelace" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);" />
+      <input id="name" name="name" type="text" required placeholder="Ada Lovelace" class="contact-field" />
     </div>
     <div>
       <label for="email">Email</label>
-      <input id="email" name="email" type="email" required placeholder="you@example.com" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);" />
+      <input id="email" name="email" type="email" required placeholder="you@example.com" class="contact-field" />
     </div>
     <div>
       <label for="focus">What do you need?</label>
-      <select id="focus" name="focus" required style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);">
+      <select id="focus" name="focus" required class="contact-field">
+  <form class="card contact-form" action="/api/contact" method="POST">
+    <input type="hidden" name="_redirect" value="/contact#contact-success" />
+    <div>
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" required placeholder="Ada Lovelace" class="contact-control" />
+    </div>
+    <div>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required placeholder="you@example.com" class="contact-control" />
+    </div>
+    <div>
+      <label for="focus">What do you need?</label>
+      <select id="focus" name="focus" required class="contact-control">
         <option value="">Select a track</option>
         <option>Launch architecture</option>
         <option>Reputation defense</option>
@@ -42,37 +56,37 @@ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
     </div>
     <div>
       <label for="message">Context</label>
-      <textarea id="message" name="message" rows="5" required placeholder="Tell us about the product, timeline, and any material we should review." style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);"></textarea>
+      <textarea
+        id="message"
+        name="message"
+        rows="5"
+        required
+        placeholder="Tell us about the product, timeline, and any material we should review."
+        class="contact-control"
+      ></textarea>
     </div>
     {turnstileSiteKey && (
-      <div style="display: flex; justify-content: center;">
+      <div class="turnstile-wrapper">
         <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="dark"></div>
       </div>
     )}
     <button class="btn" type="submit">Submit request</button>
   </form>
 
-  <div id="contact-success" class="card" style="margin-top: 24px; display: none; background: rgba(0, 64, 32, 0.35); color: #c9f7d4;">
-    <p style="margin: 0;">Thanks for the note—we’ll reach out within one business day.</p>
+  <div id="contact-success" class="card contact-success" hidden>
+    <p class="contact-success__message">Thanks for the note—we’ll reach out within one business day.</p>
   </div>
 
   {turnstileSiteKey && (
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   )}
-  <script>
-    if (typeof window !== 'undefined' && window.location.hash === '#contact-success') {
-      const success = document.getElementById('contact-success');
-      if (success) {
-        success.style.display = 'block';
-      }
-    }
-  </script>
+  <script type="module" src={contactScript.default}></script>
 
-  <section style="margin-top: clamp(48px, 8vw, 96px);">
+  <section class="contact-availability">
     <h2 class="section-title">Availability</h2>
     <p class="section-subtitle">We host strategy calls on Tuesdays and Thursdays. Urgent reputation work is on-call 24/7.</p>
     <div class="card">
-      <p style="margin: 0;">Prefer async? Email <a href="mailto:intake@goldshore.org">intake@goldshore.org</a> with decks, briefs, or data rooms.</p>
+      <p class="no-margin">Prefer async? Email <a href="mailto:intake@goldshore.org">intake@goldshore.org</a> with decks, briefs, or data rooms.</p>
     </div>
   </section>
 </BaseLayout>

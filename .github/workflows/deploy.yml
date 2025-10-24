@@ -17,11 +17,8 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    env:
-      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,16 +40,44 @@ jobs:
             apps/**/dist
             packages/**/dist
 
-      - name: Deploy Worker (preview)
-        run: npx wrangler deploy --config wrangler.worker.toml --env=preview --minify
+  deploy-workers:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [preview, dev, production]
+    env:
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Deploy Worker (dev)
-        run: npx wrangler deploy --config wrangler.worker.toml --env=dev --minify
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-      - name: Deploy Worker (production)
-        run: npx wrangler deploy --env=production
+      - name: Install dependencies
+        run: npm install --no-package-lock
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: goldshore-build
+          path: .
+
+      - name: Deploy Worker (${{ matrix.environment }})
+        env:
+          DEPLOY_ENVIRONMENT: ${{ matrix.environment }}
+        run: |
+          MINIFY_FLAG="--minify"
+          if [ "$DEPLOY_ENVIRONMENT" = "production" ]; then
+            MINIFY_FLAG=""
+          fi
+          npx wrangler deploy --env="$DEPLOY_ENVIRONMENT" $MINIFY_FLAG
 
       - name: Sync DNS records
+        if: matrix.environment == 'production'
         run: bash infra/scripts/upsert-goldshore-dns.sh
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}

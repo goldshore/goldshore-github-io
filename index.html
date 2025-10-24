@@ -10,6 +10,7 @@
   <meta property="og:type" content="website" />
   <meta property="og:image" content="/assets/img/logo/penrose-og.png" />
   <meta name="theme-color" content="#0a0f1a" />
+  <meta name="cf-turnstile-site-key" content="0x4AAAAAABpjjp050UPFCrE" />
 
   <!-- Favicons (text-free Penrose) -->
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/logo/penrose-32.png" />
@@ -458,7 +459,7 @@
               </label>
 
               <!-- Cloudflare Turnstile -->
-              <div class="cf-turnstile" data-sitekey="0X4AAAAAABpjj·p050UPFCrE" data-theme="dark" data-callback="onTsOk"></div>
+              <div id="primaryTurnstile" class="cf-turnstile" data-theme="dark" data-callback="onTsOk"></div>
 
               <button data-cta="contact-send" class="inline-flex items-center justify-center rounded-lg bg-emerald-400/90 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-300">
                 Request alignment
@@ -472,6 +473,33 @@
         </div>
       </div>
 
+      <script>
+        (function () {
+          var meta = document.querySelector('meta[name="cf-turnstile-site-key"]');
+          var siteKey = meta && typeof meta.content === 'string' ? meta.content.trim() : '';
+          if (!siteKey) {
+            console.error('Missing Turnstile site key');
+            return;
+          }
+
+          var sanitized = siteKey.replace(/[^0-9a-z_-]/gi, '');
+          if (/^[01]X/.test(sanitized)) {
+            sanitized = sanitized.replace(/^[01]X/, function (match) {
+              return match.toLowerCase();
+            });
+          }
+
+          if (!/^[01]x[0-9A-Za-z_-]{10,}$/.test(sanitized)) {
+            console.error('Invalid Turnstile site key configured');
+            return;
+          }
+
+          var widgets = document.querySelectorAll('.cf-turnstile');
+          widgets.forEach(function (el) {
+            el.setAttribute('data-sitekey', sanitized);
+          });
+        })();
+      </script>
       <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
       <script>
         function onTsOk(){ /* optional: enable submit button, show 'verified' state */ }

@@ -1,0 +1,37 @@
+.contact-form {
+  display: grid;
+  gap: 20px;
+}
+
+.contact-field {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .2);
+  background: rgba(10, 15, 26, .6);
+  color: var(--fg);
+}
+
+.contact-turnstile {
+  display: flex;
+  justify-content: center;
+}
+
+.contact-success {
+  margin-top: 24px;
+  display: none;
+  background: rgba(0, 64, 32, 0.35);
+  color: #c9f7d4;
+}
+
+.contact-success.is-visible {
+  display: block;
+}
+
+.contact-success p {
+  margin: 0;
+}
+
+.contact-availability {
+  margin-top: clamp(48px, 8vw, 96px);
+}

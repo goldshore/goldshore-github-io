@@ -29,7 +29,8 @@ routes = [
   # Routes for primary marketing hostnames. Wildcards are intentionally avoided so
   # API subdomains like `api.goldshore.org` continue to resolve to their dedicated
   # origins provisioned by the deployment workflow instead of hitting this router.
-  # Add any additional marketing hosts explicitly to keep non-site services bypassed.
+  # Explicitly enumerate any additional marketing hosts so that non-site services
+  # remain mapped to their own infrastructure rather than this worker.
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "gearswipe.com/*", zone_name = "gearswipe.com" },

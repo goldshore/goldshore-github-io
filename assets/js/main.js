@@ -35,17 +35,38 @@ if (navToggle && mobileMenu) {
 
 // --- Swiper init ---
 document.addEventListener('DOMContentLoaded', () => {
-  const el = document.querySelector('.hero-swiper');
-  if (el && window.Swiper) {
-    const hasMatchMedia = typeof window.matchMedia === 'function';
-    const reduceMotion = hasMatchMedia
-      ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-      : false;
+  const hero = document.querySelector('.hero-swiper');
+  if (hero && window.Swiper) {
+    let reduceMotion = false;
+    if (typeof window.matchMedia === 'function') {
+      reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
 
-    new Swiper(el, {
+    new Swiper(hero, {
       loop: !reduceMotion,
       autoplay: reduceMotion ? false : { delay: 4000 },
       pagination: { el: '.swiper-pagination', clickable: true }
+    });
+  }
+
+  const testimonials = document.querySelector('.testimonials-swiper');
+  if (testimonials && window.Swiper) {
+    let reduceMotion = false;
+    if (typeof window.matchMedia === 'function') {
+      reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+
+    new Swiper(testimonials, {
+      loop: !reduceMotion,
+      autoplay: reduceMotion ? false : { delay: 5000 },
+      spaceBetween: 24,
+      slidesPerView: 1,
+      pagination: { el: '.testimonials-pagination', clickable: true },
+      breakpoints: {
+        768: { slidesPerView: 1.5 },
+        1024: { slidesPerView: 2 },
+        1280: { slidesPerView: 2.5 }
+      }
     });
   }
 });
@@ -77,10 +98,100 @@ document.querySelectorAll('a[href^="http"]').forEach(a => {
 });
 
 // Contact form submit
-const contactForm = document.getElementById('contactForm');
+const contactForm = document.getElementById('primaryContactForm');
 if (contactForm) {
   contactForm.addEventListener('submit', () => {
     track('contact_submit', {});
   });
 }
+
+window.addEventListener('contact:success', (event) => {
+  const detail = event && event.detail ? event.detail : {};
+  track('contact_submit_success', {
+    form_id: detail.formId || 'primaryContactForm',
+    transport_type: detail.transportType || 'redirect'
+  });
+});
+
+// Pricing toggle
+const pricingToggles = document.querySelectorAll('[data-pricing-toggle]');
+if (pricingToggles.length) {
+  const priceTargets = document.querySelectorAll('[data-price-target]');
+  const priceFrequencies = document.querySelectorAll('[data-price-frequency]');
+  const priceDetails = document.querySelectorAll('[data-price-detail]');
+  const caption = document.querySelector('[data-pricing-caption]');
+  let activePeriod = 'monthly';
+
+  const setActive = (period, shouldTrack = false) => {
+    if (!period) period = 'monthly';
+    activePeriod = period;
+
+    pricingToggles.forEach(btn => {
+      const isActive = btn.dataset.period === period;
+      btn.classList.toggle('pricing-toggle--active', isActive);
+      btn.setAttribute('aria-pressed', String(isActive));
+    });
+
+    priceTargets.forEach(el => {
+      const key = period === 'annual' ? 'priceAnnual' : 'priceMonthly';
+      if (el.dataset[key]) {
+        el.textContent = el.dataset[key];
+      }
+    });
+
+    priceFrequencies.forEach(el => {
+      const key = period === 'annual' ? 'frequencyAnnual' : 'frequencyMonthly';
+      if (el.dataset[key]) {
+        el.textContent = el.dataset[key];
+      }
+    });
+
+    priceDetails.forEach(el => {
+      const key = period === 'annual' ? 'detailAnnual' : 'detailMonthly';
+      if (el.dataset[key]) {
+        el.textContent = el.dataset[key];
+      }
+    });
+
+    if (caption) {
+      const key = period === 'annual' ? 'captionAnnual' : 'captionMonthly';
+      if (caption.dataset[key]) {
+        caption.textContent = caption.dataset[key];
+      }
+    }
+
+    if (shouldTrack) {
+      track('pricing_toggle_change', { period });
+    }
+  };
+
+  pricingToggles.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const period = btn.dataset.period || 'monthly';
+      if (period === activePeriod) return;
+      setActive(period, true);
+    });
+  });
+
+  setActive(activePeriod, false);
+}
+
+// FAQ accordion
+document.querySelectorAll('[data-faq-toggle]').forEach(btn => {
+  const panelId = btn.getAttribute('aria-controls');
+  const panel = panelId ? document.getElementById(panelId) : null;
+  if (!panel) return;
+
+  btn.addEventListener('click', () => {
+    const expanded = btn.getAttribute('aria-expanded') === 'true';
+    const nextState = !expanded;
+    btn.setAttribute('aria-expanded', String(nextState));
+    panel.classList.toggle('hidden', !nextState);
+    panel.hidden = !nextState;
+    track('faq_toggle', {
+      question: btn.dataset.faqQuestion || panelId,
+      expanded: nextState
+    });
+  });
+});
 

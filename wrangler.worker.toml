@@ -21,11 +21,9 @@ secret_name = "CF_API_TOKEN"
 
 [vars]
 APP_NAME = "GoldShore"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "goldshore-db"
-database_id = "REPLACE_WITH_D1_ID"
+PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
+PREVIEW_ASSETS = "https://goldshore-org-preview.pages.dev"
+DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
 
 [env.production]
 routes = [

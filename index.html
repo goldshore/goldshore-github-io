@@ -481,9 +481,22 @@
             console.error('Missing Turnstile site key');
             return;
           }
+
+          var sanitized = siteKey.replace(/[^0-9a-z_-]/gi, '');
+          if (/^[01]X/.test(sanitized)) {
+            sanitized = sanitized.replace(/^[01]X/, function (match) {
+              return match.toLowerCase();
+            });
+          }
+
+          if (!/^[01]x[0-9A-Za-z_-]{10,}$/.test(sanitized)) {
+            console.error('Invalid Turnstile site key configured');
+            return;
+          }
+
           var widgets = document.querySelectorAll('.cf-turnstile');
           widgets.forEach(function (el) {
-            el.setAttribute('data-sitekey', siteKey);
+            el.setAttribute('data-sitekey', sanitized);
           });
         })();
       </script>

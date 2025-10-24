@@ -51,6 +51,10 @@ ASSETS_ORIGIN = "https://goldshore-org-preview.pages.dev"
 binding = "GOLD_ANALYTICS"
 dataset = "goldshore-events"
 
+[[env.preview.analytics_engine_datasets]]
+binding = "GOLD_ANALYTICS"
+dataset = "goldshore-events"
+
 [env.dev]
 name = "goldshore-dev"
 routes = [

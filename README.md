@@ -6,11 +6,31 @@ Empowering communities through secure, scalable, and intelligent infrastructure.
 
 ## Repository overview
 
+The repository is transitioning to a unified monorepo so every service (web, admin, API, agent, and auxiliary workers) can ship from a single source of truth. The workspace layout now follows:
+
+- [`packages/api`](packages/api) – canonical Cloudflare Worker API with consistent CORS handling and queue integration.
+- [`packages/web`](packages/web) – Pages deployment for the marketing site (placeholder build until the Astro app is migrated).
+- [`packages/admin`](packages/admin) – Admin dashboard served via Cloudflare Pages and protected with Access (placeholder build).
+- [`packages/agent`](packages/agent) – AI agent orchestration layer (to be filled with prompt routing, tool adapters, and queues).
+- [`packages/workers`](packages/workers) – Event, webhook, and sentiment processors that listen to Cloudflare Queues and Durable Objects.
+- [`packages/libs`](packages/libs) – Shared TypeScript libraries (auth, utils, domain models) consumed across workers and front-ends.
+- [`packages/sentry`](packages/sentry) – Optional Sentry helpers for error and trace instrumentation.
+- [`infra/cf`](infra/cf) – Wrangler binding templates, D1 migrations, and infrastructure scripts for deterministic deployments.
+- [`infra/policies`](infra/policies) – Zero Trust policy definitions and Access documentation.
+
+Legacy assets remain available while the migration completes:
+
 - [`index.html`](index.html) powers the public landing page and wires up Tailwind via CDN, Swiper-powered hero imagery, and the section layout for services, work, team, and contact CTAs.
 - [`assets/css/styles.css`](assets/css/styles.css) adds bespoke polish on top of Tailwind (pricing toggle, testimonial glassmorphism, and accessible FAQ toggles).
 - [`src/router.js`](src/router.js) is the Cloudflare Worker entry point that proxies static assets to the configured Pages origin while breaking `/api/gpt` traffic out to the API handler.
 - [`src/gpt-handler.js`](src/gpt-handler.js) validates authenticated chat requests, enforces CORS, normalises payloads, and relays them to OpenAI's Chat Completions endpoint.
 - [`docs/`](docs) collects internal operations notes (Cloudflare Access, implementation guides, etc.) and is the best place to append additional runbooks.
+
+## Common Cloudflare bindings
+
+Shared Worker bindings, queue definitions, and D1 connections now live in [`infra/cf/bindings.example.toml`](infra/cf/bindings.example.toml). Copy the template into your environment-specific Wrangler files (for example `wrangler.dev.toml`) and replace the placeholder IDs. Secrets such as `OPENAI_API_KEY`, `GOLDSHORE_TURNSTILE_SECRET`, and `GOLDSHORE_JWT_SECRET` must still be injected with `wrangler secret put`.
+
+Initial D1 schema migrations sit under [`infra/cf/sql`](infra/cf/sql) so every deployment converges on the same trading, CRM, and sentiment tables.
 
 ## Frontend (goldshore.org)
 This repository powers the GoldShore marketing site, Cloudflare Worker router, and maintenance scripts. The project ships as a static Astro site served behind a Cloudflare Worker that protects the production domain while keeping preview deployments inexpensive.
@@ -99,6 +119,16 @@ git pull --ff-only
 # Work, commit, then push straight back to main
 git push origin main
 ```
+
+## Continuous integration & deployment
+
+[`turbo.json`](turbo.json) defines build orchestration for every workspace. The root scripts delegate to Turbo so `npm run build`, `npm run lint`, and `npm run typecheck` operate across the monorepo. GitHub Actions now run [`ci.yml`](.github/workflows/ci.yml), which:
+
+1. Installs dependencies and executes `npm run build`, `npm run lint`, and `npm run typecheck`.
+2. Deploys the API worker via Wrangler when commits land on `main`.
+3. Publishes the `packages/web/dist` and `packages/admin/dist` outputs to their respective Cloudflare Pages projects.
+
+Extend the workflow with additional deploy jobs (Queues consumers, agent runtime) as they migrate into the repository.
 
 ### Automated helper
 

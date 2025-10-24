@@ -274,7 +274,7 @@
           </label>
 
           <!-- Cloudflare Turnstile -->
-          <div class="cf-turnstile" data-sitekey="0X4AAAAAABpjj·p050UPFCrE" data-theme="dark" data-callback="onTsOk"></div>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAABpjjp050UPFCrE" data-theme="dark" data-callback="onTsOk"></div>
 
           <button data-cta="contact-send" class="inline-flex justify-center rounded bg-white text-neutral-900 px-4 py-2 font-semibold hover:bg-white/90">
             Send
@@ -286,29 +286,33 @@
           function onTsOk(){ /* optional: enable submit button, show 'verified' state */ }
         </script>
         
-        <div id="contact-success" class="hidden mt-4 rounded bg-emerald-600/20 text-emerald-200 p-3">
+        <div
+          id="contact-success"
+          class="hidden mt-4 rounded bg-emerald-600/20 text-emerald-200 p-3"
+          role="status"
+          aria-live="polite"
+          tabindex="-1"
+        >
           Thanks! We’ll get back to you soon.
         </div>
         <script>
-          if (location.hash === '#contact-success') {
-            var successEl = document.getElementById('contact-success');
-            if (successEl) {
-              successEl.classList.remove('hidden');
+          (function() {
+            if (location.hash === '#contact-success') {
+              var detail = { formId: 'primaryContactForm', transportType: 'redirect' };
+              window.__contactSuccess = detail;
+              try {
+                window.dispatchEvent(new CustomEvent('contact:success', { detail: detail }));
+              } catch (err) {
+                var successEl = document.getElementById('contact-success');
+                if (successEl) {
+                  successEl.classList.remove('hidden');
+                }
+                if (typeof console !== 'undefined' && console.warn) {
+                  console.warn('contact success event failed', err);
+                }
+              }
             }
-            if (window.gtagTrack) {
-              window.gtagTrack('contact_form_submit', {
-                form_id: 'primaryContactForm',
-                transport_type: 'redirect'
-              });
-            }
-            try {
-              window.dispatchEvent(new CustomEvent('contact:success', {
-                detail: { formId: 'primaryContactForm', transportType: 'redirect' }
-              }));
-            } catch (err) {
-              console.warn('contact success event failed', err);
-            }
-          }
+          })();
         </script>
 
       </div>

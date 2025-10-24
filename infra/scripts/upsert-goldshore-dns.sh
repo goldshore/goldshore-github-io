@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if ! command -v jq >/dev/null 2>&1; then
+  echo "jq is required" >&2
+  exit 1
+fi
+
 if [[ -z "${CF_API_TOKEN:-}" ]]; then
   echo "CF_API_TOKEN environment variable must be set" >&2
   exit 1
@@ -99,21 +104,64 @@ main() {
 
   local ipv4_target=${IPv4_TARGET:-192.0.2.1}
   local ipv6_target=${IPv6_TARGET:-}
+  local apex_cname_target=${APEX_CNAME_TARGET:-}
+  local preview_cname_target=${PREVIEW_CNAME_TARGET:-"goldshore-org-preview.pages.dev"}
+  local dev_cname_target=${DEV_CNAME_TARGET:-"goldshore-org-dev.pages.dev"}
+  local www_cname_target=${WWW_CNAME_TARGET:-$ZONE_NAME}
+  local default_proxied=${DEFAULT_PROXIED:-true}
 
-  local -a hostnames=(
-    "$ZONE_NAME"
-    "www.$ZONE_NAME"
-    "preview.$ZONE_NAME"
-    "dev.$ZONE_NAME"
-  )
+  local -a records=()
 
-  local host
-  for host in "${hostnames[@]}"; do
-    upsert_record "$zone_id" "$host" "A" "$ipv4_target" true
+  if [[ -n "$apex_cname_target" ]]; then
+    records+=("$ZONE_NAME|CNAME|$apex_cname_target|$default_proxied")
+  else
+    records+=("$ZONE_NAME|A|$ipv4_target|$default_proxied")
 
     if [[ -n "$ipv6_target" ]]; then
-      upsert_record "$zone_id" "$host" "AAAA" "$ipv6_target" true
+      records+=("$ZONE_NAME|AAAA|$ipv6_target|$default_proxied")
     fi
+  fi
+
+  if [[ -n "$www_cname_target" ]]; then
+    records+=("www.$ZONE_NAME|CNAME|$www_cname_target|$default_proxied")
+  fi
+
+  if [[ -n "$preview_cname_target" ]]; then
+    records+=("preview.$ZONE_NAME|CNAME|$preview_cname_target|$default_proxied")
+  fi
+
+  if [[ -n "$dev_cname_target" ]]; then
+    records+=("dev.$ZONE_NAME|CNAME|$dev_cname_target|$default_proxied")
+  fi
+
+  declare -A host_record_types=()
+  local record
+  for record in "${records[@]}"; do
+    IFS='|' read -r name type content proxied <<<"$record"
+
+    if [[ -z "$name" || -z "$type" || -z "$content" ]]; then
+      echo "Skipping malformed record definition: $record" >&2
+      continue
+    fi
+
+    case "$type" in
+      CNAME)
+        if [[ "${host_record_types[$name]:-}" == "address" ]]; then
+          echo "Configuration error: $name cannot have both address and CNAME records" >&2
+          exit 1
+        fi
+        host_record_types[$name]="cname"
+        ;;
+      A|AAAA)
+        if [[ "${host_record_types[$name]:-}" == "cname" ]]; then
+          echo "Configuration error: $name cannot have both address and CNAME records" >&2
+          exit 1
+        fi
+        host_record_types[$name]="address"
+        ;;
+    esac
+
+    upsert_record "$zone_id" "$name" "$type" "$content" "${proxied:-$default_proxied}"
   done
 
   echo "DNS synchronized for ${ZONE_NAME}."

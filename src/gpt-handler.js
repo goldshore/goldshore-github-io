@@ -281,7 +281,12 @@ function buildChatCompletionPayload(payload) {
     .map((message, index) => normalizeMessage(message, index));
 
   if (typeof stream !== "undefined") {
-    if (stream) {
+    if (typeof stream === "string") {
+      const normalized = stream.trim().toLowerCase();
+      if (normalized && normalized !== "false" && normalized !== "0") {
+        throw new Error("stream option is not supported by this proxy.");
+      }
+    } else if (stream) {
       throw new Error("stream option is not supported by this proxy.");
     }
   }

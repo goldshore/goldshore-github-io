@@ -278,13 +278,83 @@
           </label>
 
           <!-- Cloudflare Turnstile -->
-          <div class="cf-turnstile" data-sitekey="0X4AAAAAABpjj·p050UPFCrE" data-theme="dark" data-callback="onTsOk"></div>
+          <div id="primaryTurnstileWrapper" class="hidden justify-center">
+            <div id="primaryTurnstileContainer" class="cf-turnstile" data-theme="dark"></div>
+          </div>
 
           <button data-cta="contact-send" class="inline-flex justify-center rounded bg-white text-neutral-900 px-4 py-2 font-semibold hover:bg-white/90">
             Send
           </button>
         </form>
 
+        <script>
+          (function () {
+            const revealWidget = (siteKey) => {
+              if (!siteKey) {
+                return;
+              }
+
+              const wrapper = document.getElementById('primaryTurnstileWrapper');
+              if (wrapper) {
+                wrapper.classList.remove('hidden');
+                wrapper.classList.add('flex');
+              }
+
+              const renderWidget = () => {
+                if (typeof turnstile === 'undefined') {
+                  setTimeout(renderWidget, 100);
+                  return;
+                }
+
+                try {
+                  turnstile.render('#primaryTurnstileContainer', {
+                    sitekey: siteKey,
+                    theme: 'dark',
+                    callback(token) {
+                      if (typeof window.onTsOk === 'function') {
+                        window.onTsOk(token);
+                      }
+                    }
+                  });
+                } catch (error) {
+                  console.error('Failed to render Turnstile widget', error);
+                }
+              };
+
+              renderWidget();
+            };
+
+            const bootstrap = async () => {
+              const wrapper = document.getElementById('primaryTurnstileWrapper');
+
+              try {
+                const response = await fetch('/api/turnstile/site-key');
+                if (!response.ok) {
+                  return;
+                }
+
+                const payload = await response.json();
+                if (payload && payload.siteKey) {
+                  revealWidget(payload.siteKey);
+                  return;
+                }
+              } catch (error) {
+                console.error('Failed to fetch Turnstile site key', error);
+              }
+
+              if (wrapper) {
+                wrapper.classList.add('hidden');
+                wrapper.classList.remove('flex');
+              }
+            };
+
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', bootstrap);
+            } else {
+              bootstrap();
+            }
+          })();
+        </script>
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
         <script>
           function onTsOk(){ /* optional: enable submit button, show 'verified' state */ }

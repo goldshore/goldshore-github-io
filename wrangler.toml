@@ -6,13 +6,13 @@ workers_dev = false
 
 [vars]
 APP_NAME = "GoldShore"
-PRODUCTION_ASSETS = "https://goldshore.org"
-PREVIEW_ASSETS = "https://goldshore.org"
-DEV_ASSETS = "https://goldshore.org"
+PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
+PREVIEW_ASSETS = "https://goldshore-org-preview.pages.dev"
+DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
 GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https://preview.goldshore.org, https://dev.goldshore.org, https://trade.goldshore.org"
 
 # Secrets such as FORMSPREE_ENDPOINT, TURNSTILE_SECRET, OPENAI_API_KEY, and
-# GPT_PROXY_SECRET are provided via
+# GPT_SHARED_SECRET (or legacy GPT_PROXY_SECRET) are provided via
 # `wrangler secret put …` or `.dev.vars` in local development.
 
 [env.production]
@@ -23,7 +23,7 @@ routes = [
 ]
 
 [env.production.vars]
-ASSETS_ORIGIN = "https://goldshore.org"
+ASSETS_ORIGIN = "https://goldshore-org.pages.dev"
 CF_ACCESS_AUD = "3d5916af31a595ca00d8b1ab0157361a953779d939d9df2f63b1802b87a0248e"
 CF_ACCESS_ISS = "https://rmarston.cloudflareaccess.com"
 CF_ACCESS_JWKS_URL = "https://rmarston.cloudflareaccess.com/cdn-cgi/access/certs"
@@ -32,19 +32,22 @@ CF_ACCESS_JWKS_URL = "https://rmarston.cloudflareaccess.com/cdn-cgi/access/certs
 name = "goldshore-preview"
 routes = [
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
-  { pattern = "fortune-fund.com" },
-  { pattern = "fortune-fund.games" },
-  { pattern = "goldshore.foundation" },
-  { pattern = "rmarston.com/*" },
-  { pattern = "gearswipe.com" },
-  { pattern = "armsway.com/*" },
-  { pattern = "armsway.net" },
-  { pattern = "banproof.me" },
+  { pattern = "fortune-fund.com/*", zone_name = "fortune-fund.com" },
+  { pattern = "fortune-fund.games/*", zone_name = "fortune-fund.games" },
+  { pattern = "goldshore.foundation/*", zone_name = "goldshore.foundation" },
+  { pattern = "rmarston.com/*", zone_name = "rmarston.com" },
+  { pattern = "gearswipe.com/*", zone_name = "gearswipe.com" },
+  { pattern = "armsway.com/*", zone_name = "armsway.com" },
+  { pattern = "armsway.net/*", zone_name = "armsway.net" },
+  { pattern = "banproof.me/*", zone_name = "banproof.me" },
   { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
+[env.preview.vars]
+ASSETS_ORIGIN = "https://goldshore-org-preview.pages.dev"
+
 # (Only add bindings you actually use)
-[[env.preview.analytics_engine_datasets]]
+[[analytics_engine_datasets]]
 binding = "GOLD_ANALYTICS"
 dataset = "goldshore-events"
 
@@ -53,3 +56,6 @@ name = "goldshore-dev"
 routes = [
   { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" }
 ]
+
+[env.dev.vars]
+ASSETS_ORIGIN = "https://goldshore-org-dev.pages.dev"

@@ -1,28 +1,148 @@
-# Gold Shore Labs
+# GoldShore Monorepo
 
-Empowering communities through secure, scalable, and intelligent infrastructure.  
+Empowering communities through secure, scalable, and intelligent infrastructure.
 💻 Building tools in Cybersecurity, Cloud, and Automation.
 🌐 Visit us at [GoldShoreLabs](https://goldshore.org) — compatible with [goldshore.foundation](https://goldshore.foundation)
 
-## `/api/gpt` Worker endpoint
+## Repository overview
 
-- **Route**: `POST /api/gpt`
-- **Handler**: Cloudflare Worker module at [`src/gpt-handler.js`](src/gpt-handler.js)
+- [`index.html`](index.html) powers the public landing page and wires up Tailwind via CDN, Swiper-powered hero imagery, and the section layout for services, work, team, and contact CTAs.
+- [`assets/css/styles.css`](assets/css/styles.css) adds bespoke polish on top of Tailwind (pricing toggle, testimonial glassmorphism, and accessible FAQ toggles).
+- [`src/router.js`](src/router.js) is the Cloudflare Worker entry point that proxies static assets to the configured Pages origin while breaking `/api/gpt` traffic out to the API handler.
+- [`src/gpt-handler.js`](src/gpt-handler.js) validates authenticated chat requests, enforces CORS, normalises payloads, and relays them to OpenAI's Chat Completions endpoint.
+- [`docs/`](docs) collects internal operations notes (Cloudflare Access, implementation guides, etc.) and is the best place to append additional runbooks.
 
-Incoming requests first enter `src/router.js`, which proxies static assets to the
-Pages origin. Requests whose pathname starts with `/api/gpt` are passed to the
-GPT handler module, which formats the payload, calls OpenAI's Responses API,
-and streams the result back to the client.
+## Frontend (goldshore.org)
 
-## GPT handler endpoint
+The landing page is a static document served from Cloudflare Pages. Tailwind is sourced from the official CDN, and Swiper is used for lightweight hero carousels so the bundle stays minimal while still supporting accessible motion controls. Key interactive elements include:
 
-The Cloudflare Worker now exposes a protected `POST /api/gpt` endpoint that relays chat-completion requests to OpenAI. All callers **must**:
+- A sticky navigation bar with mobile toggle logic inlined in `index.html`, keeping the DOM small for fast first paint.
+- Hero imagery rendered through Swiper slides with pagination controls, giving the brand's "Shaping waves" story a dynamic marquee.
+- Clickable "What we deliver" cards that blend gradient overlays with subtle scale transforms from Tailwind utility classes.
+- Services, team, and contact sections arranged as semantic sections so screen readers can jump between anchors exposed in the nav.
 
-- Include an `Authorization: Bearer <token>` header that matches the shared secret stored in the Worker as `GPT_SHARED_SECRET`.
-- Send requests from an origin listed in the comma-separated `GPT_ALLOWED_ORIGINS` variable. Requests with an unrecognised `Origin` header are rejected before reaching OpenAI.
+Tailwind handles most theming, but the custom stylesheet introduces affordances Tailwind does not cover out of the box:
 
-Worker secrets are configured with `wrangler secret put` (run once per environment):
+- `.pricing-toggle` switches adopt pill styling, focus-visible rings, and drop shadows to communicate the active state.
+- `.testimonial-card` applies a glass blur backdrop, increased padding above medium breakpoints, and consistent FAQ paddings.
+- `.faq-question` and `.faq-icon` form an accessible disclosure pattern that uses pseudo-elements to animate the plus/minus indicator while respecting keyboard focus.
 
+## Cloudflare Worker architecture
+
+Traffic for `goldshore.org` hits a Worker (`wrangler.toml` target `goldshore`) before being proxied to the static Pages host. The Worker layer does two jobs:
+
+1. **Asset routing** — `src/router.js` picks the correct origin based on environment variables such as `ASSETS_ORIGIN` or `PRODUCTION_ASSETS`, rewrites the incoming request, and forwards it with cache hints so CDN hits stay warm. Requests to `/api/gpt` short-circuit to the API handler instead of the Pages origin.
+2. **GPT proxy** — `src/gpt-handler.js` exposes a locked-down `POST /api/gpt` endpoint. It enforces CORS allowlists, bearer authentication via the `GPT_SHARED_SECRET`, validates supported model names, normalises `messages` arrays, and forwards the payload to OpenAI using the Worker’s `OPENAI_API_KEY`. Errors bubble back with JSON bodies and matching HTTP status codes so clients can react precisely.
+
+### Required secrets and configuration
+
+Set the following per environment using `wrangler secret put` (or provider-specific secret managers):
+
+| Variable | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | Authorises the Worker when calling OpenAI's Responses API. |
+| `GPT_SHARED_SECRET` | Bearer token browsers must send when requesting `/api/gpt`. |
+| `GPT_ALLOWED_ORIGINS` | Comma-separated origins that receive permissive CORS headers. |
+| `CF_ACCESS_AUD` / `CF_ACCESS_ISS` / `CF_ACCESS_JWKS_URL` (optional) | Lock API access behind Cloudflare Zero Trust when required. |
+| `FORMSPREE_ENDPOINT` | Submission URL for the contact form backend. |
+| `TURNSTILE_SECRET` | Server-side secret for Cloudflare Turnstile verification. |
+
+Use `.dev.vars` (ignored by git) to store throwaway credentials for local previews.
+
+## Keeping `main` in sync
+
+Gold Shore deploys directly from `main`, so contributors should keep their local clone fast-forwarded and push only from that branch.
+
+### One-time setup
+
+```bash
+git checkout main
+git branch --set-upstream-to=origin/main main
+```
+
+### Daily workflow
+
+```bash
+# Update local tracking info and fast-forward main
+git fetch origin main
+git pull --ff-only
+
+# Work, commit, then push straight back to main
+git push origin main
+```
+
+### Automated helper
+
+The repository is transitioning to a unified monorepo so every service (web, admin, API, agent, and auxiliary workers) can ship from a single source of truth. The workspace layout now follows:
+
+- [`packages/api`](packages/api) – canonical Cloudflare Worker API with consistent CORS handling and queue integration.
+- [`packages/web`](packages/web) – Pages deployment for the marketing site (placeholder build until the Astro app is migrated).
+- [`packages/admin`](packages/admin) – Admin dashboard served via Cloudflare Pages and protected with Access (placeholder build).
+- [`packages/agent`](packages/agent) – AI agent orchestration layer (to be filled with prompt routing, tool adapters, and queues).
+- [`packages/workers`](packages/workers) – Event, webhook, and sentiment processors that listen to Cloudflare Queues and Durable Objects.
+- [`packages/libs`](packages/libs) – Shared TypeScript libraries (auth, utils, domain models) consumed across workers and front-ends.
+- [`packages/sentry`](packages/sentry) – Optional Sentry helpers for error and trace instrumentation.
+- [`infra/cf`](infra/cf) – Wrangler binding templates, D1 migrations, and infrastructure scripts for deterministic deployments.
+- [`infra/policies`](infra/policies) – Zero Trust policy definitions and Access documentation.
+
+The landing page is a static document served from Cloudflare Pages. Tailwind is sourced from the official CDN, and Swiper is used for lightweight hero carousels so the bundle stays minimal while still supporting accessible motion controls. Key interactive elements include:
+
+- A sticky navigation bar with mobile toggle logic inlined in `index.html`, keeping the DOM small for fast first paint.
+- Hero imagery rendered through Swiper slides with pagination controls, giving the brand's "Shaping waves" story a dynamic marquee.
+- Clickable "What we deliver" cards that blend gradient overlays with subtle scale transforms from Tailwind utility classes.
+- Services, team, and contact sections arranged as semantic sections so screen readers can jump between anchors exposed in the nav.
+
+Tailwind handles most theming, but the custom stylesheet introduces affordances Tailwind does not cover out of the box:
+
+- `.pricing-toggle` switches adopt pill styling, focus-visible rings, and drop shadows to communicate the active state.
+- `.testimonial-card` applies a glass blur backdrop, increased padding above medium breakpoints, and consistent FAQ paddings.
+- `.faq-question` and `.faq-icon` form an accessible disclosure pattern that uses pseudo-elements to animate the plus/minus indicator while respecting keyboard focus.
+
+## Cloudflare Worker architecture
+
+Traffic for `goldshore.org` hits a Worker (`wrangler.toml` target `goldshore`) before being proxied to the static Pages host. The Worker layer does two jobs:
+
+1. **Asset routing** — `src/router.js` picks the correct origin based on environment variables such as `ASSETS_ORIGIN` or `PRODUCTION_ASSETS`, rewrites the incoming request, and forwards it with cache hints so CDN hits stay warm. Requests to `/api/gpt` short-circuit to the API handler instead of the Pages origin.
+2. **GPT proxy** — `src/gpt-handler.js` exposes a locked-down `POST /api/gpt` endpoint. It enforces CORS allowlists, bearer authentication via the `GPT_SHARED_SECRET`, validates supported model names, normalises `messages` arrays, and forwards the payload to OpenAI using the Worker’s `OPENAI_API_KEY`. Errors bubble back with JSON bodies and matching HTTP status codes so clients can react precisely.
+
+### Required secrets and configuration
+
+Set the following per environment using `wrangler secret put` (or provider-specific secret managers):
+
+| Variable | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | Authorises the Worker when calling OpenAI's Responses API. |
+| `GPT_SHARED_SECRET` | Bearer token browsers must send when requesting `/api/gpt`. |
+| `GPT_ALLOWED_ORIGINS` | Comma-separated origins that receive permissive CORS headers. |
+| `CF_ACCESS_AUD` / `CF_ACCESS_ISS` / `CF_ACCESS_JWKS_URL` (optional) | Lock API access behind Cloudflare Zero Trust when required. |
+| `FORMSPREE_ENDPOINT` | Submission URL for the contact form backend. |
+| `TURNSTILE_SECRET` | Server-side secret for Cloudflare Turnstile verification. |
+
+Use `.dev.vars` (ignored by git) to store throwaway credentials for local previews.
+
+## Keeping `main` in sync
+
+Gold Shore deploys directly from `main`, so contributors should keep their local clone fast-forwarded and push only from that branch.
+
+### One-time setup
+
+```bash
+git checkout main
+git branch --set-upstream-to=origin/main main
+```
+
+### Daily workflow
+
+```bash
+# Update local tracking info and fast-forward main
+git fetch origin main
+git pull --ff-only
+
+# Work, commit, then push straight back to main
+git push origin main
+```
+
+### Automated helper
 ```bash
 wrangler secret put OPENAI_API_KEY
 wrangler secret put GPT_SHARED_SECRET
@@ -47,107 +167,151 @@ can authenticate with OpenAI:
 ```bash
 wrangler secret put OPENAI_API_KEY
 ```
+Legacy assets remain available while the migration completes:
 
-For CI/CD pipelines, use the equivalent secret management command (for example
-`npx wrangler secret put`, Cloudflare Dashboard > Worker > Settings > Secrets,
-or the GitHub Action `cloudflare/wrangler-action` `secrets` input).
+- [`index.html`](index.html) powers the public landing page and wires up Tailwind via CDN, Swiper-powered hero imagery, and the section layout for services, work, team, and contact CTAs.
+- [`assets/css/styles.css`](assets/css/styles.css) adds bespoke polish on top of Tailwind (pricing toggle, testimonial glassmorphism, and accessible FAQ toggles).
+- [`src/router.js`](src/router.js) is the Cloudflare Worker entry point that proxies static assets to the configured Pages origin while breaking `/api/gpt` traffic out to the API handler.
+- [`src/gpt-handler.js`](src/gpt-handler.js) validates authenticated chat requests, enforces CORS, normalises payloads, and relays them to OpenAI's Chat Completions endpoint.
+- [`docs/`](docs) collects internal operations notes (Cloudflare Access, implementation guides, etc.) and is the best place to append additional runbooks.
 
-### Where to store KV-style configuration
+## Common Cloudflare bindings
 
-- **Secrets and API keys**: use Cloudflare's encrypted secrets store via `wrangler secret put <NAME>` for each environment. These values are only visible within Cloudflare and to the Worker at runtime. For local development, copy `.dev.vars.example` to `.dev.vars` (already ignored by Git) and fill in throwaway credentials.
-- **Worker KV data**: if you need persistent key/value configuration, define a KV namespace in `wrangler.toml` (under `kv_namespaces`) and populate it with `wrangler kv:key put`. The namespace contents stay inside Cloudflare's infrastructure, so nothing sensitive is committed to the repo.
-- **CI/CD pipelines**: inject the same secrets and KV namespace identifiers through your build provider's secret manager (for example GitHub Actions' encrypted secrets) so automated deploys can bind them without revealing the values in logs or commits.
+Shared Worker bindings, queue definitions, and D1 connections now live in [`infra/cf/bindings.example.toml`](infra/cf/bindings.example.toml). Copy the template into your environment-specific Wrangler files (for example `wrangler.dev.toml`) and replace the placeholder IDs. Secrets such as `OPENAI_API_KEY`, `GOLDSHORE_TURNSTILE_SECRET`, and `GOLDSHORE_JWT_SECRET` must still be injected with `wrangler secret put`.
 
-### GPT handler API
-### Supported models
+Initial D1 schema migrations sit under [`infra/cf/sql`](infra/cf/sql) so every deployment converges on the same trading, CRM, and sentiment tables.
 
-The handler currently supports the following OpenAI model identifiers:
+## Frontend (goldshore.org)
+This repository powers the GoldShore marketing site, Cloudflare Worker router, and maintenance scripts. The project ships as a static Astro site served behind a Cloudflare Worker that protects the production domain while keeping preview deployments inexpensive.
 
-- `gpt-4o-mini`
-- `gpt-4o`
-- `o4-mini`
+## Project layout
 
-You can pass the desired model in the `model` field of the request JSON. The
-Worker validates the choice and forwards it to OpenAI.
+- `apps/web` – Astro front-end for the marketing site and supporting pages.
+- `apps/api-router` – Cloudflare Worker that routes traffic to the appropriate Pages origin and stamps cache/Access headers.
+- `packages/` – Shared tooling (image processing, AI maintenance helpers, etc.).
+- `infra/` – Shell scripts for DNS automation and Access provisioning.
+- `docs/` – Deployment playbooks and additional reference material.
 
-### Example request
+Install dependencies with `npm install` and run `npm run dev` to start the Astro site locally. The `npm run build` and `npm run process-images` scripts mirror the CI pipeline.
 
-```http
-POST /api/gpt HTTP/1.1
-Host: goldshore.org
-Content-Type: application/json
+The landing page is a static document served from Cloudflare Pages. Tailwind is sourced from the official CDN, and Swiper is used for lightweight hero carousels so the bundle stays minimal while still supporting accessible motion controls. Key interactive elements include:
 
-{
-  "model": "gpt-4o-mini",
-  "messages": [
-    { "role": "system", "content": "You are a concise assistant." },
-    { "role": "user", "content": "Summarize Gold Shore Labs." }
-  ]
-}
-```
+- A sticky navigation bar with mobile toggle logic inlined in `index.html`, keeping the DOM small for fast first paint.
+- Hero imagery rendered through Swiper slides with pagination controls, giving the brand's "Shaping waves" story a dynamic marquee.
+- Clickable "What we deliver" cards that blend gradient overlays with subtle scale transforms from Tailwind utility classes.
+- Services, team, and contact sections arranged as semantic sections so screen readers can jump between anchors exposed in the nav.
 
-Requests must include an `X-GPT-Proxy-Token` header whose value matches the `GPT_PROXY_TOKEN` secret; requests missing or presenting the wrong token are rejected before reaching OpenAI. Requests from origins outside `GPT_ALLOWED_ORIGINS` are short-circuited with `403 Forbidden` before the proxy ever talks to OpenAI, ensuring non-whitelisted sites cannot piggyback on the proxy.
-Requests must include an `X-API-Key` header whose value matches the `GPT_PROXY_SECRET` secret; requests missing or presenting the wrong token are rejected before reaching OpenAI. Browsers will only receive a permissive CORS header when their `Origin` appears in `GPT_ALLOWED_ORIGINS`, ensuring non-whitelisted sites cannot piggyback on the proxy.
-Requests must include an `X-GPT-Proxy-Token` header whose value matches the `GPT_PROXY_TOKEN` secret; requests missing or presenting the wrong token are rejected before reaching OpenAI. Browsers will only receive a permissive CORS header when their `Origin` appears in `GPT_ALLOWED_ORIGINS`, ensuring non-whitelisted sites cannot piggyback on the proxy. When hitting the authenticated Worker hostname (`goldshore-org.admin-77d.workers.dev`), Cloudflare injects a `Cf-Access-Jwt-Assertion` header after the user completes Access authentication—calls without a valid JWT fail with `401`/`403` responses before token verification or OpenAI proxying occurs.
+Tailwind handles most theming, but the custom stylesheet introduces affordances Tailwind does not cover out of the box:
 
-Responses are returned verbatim from OpenAI's `/v1/chat/completions` endpoint. Be sure to configure both `OPENAI_API_KEY` and `GPT_PROXY_SECRET`, and update `GPT_ALLOWED_ORIGINS` in each environment before deploying.
+- `.pricing-toggle` switches adopt pill styling, focus-visible rings, and drop shadows to communicate the active state.
+- `.testimonial-card` applies a glass blur backdrop, increased padding above medium breakpoints, and consistent FAQ paddings.
+- `.faq-question` and `.faq-icon` form an accessible disclosure pattern that uses pseudo-elements to animate the plus/minus indicator while respecting keyboard focus.
 
-Example `fetch` call from the frontend:
-Responses are returned verbatim from OpenAI's `/v1/chat/completions` endpoint. Be sure to configure both `OPENAI_API_KEY` and `GPT_PROXY_SECRET` in each environment before deploying. Clients must include the shared secret via an `x-api-key` header when calling the Worker:
+## Cloudflare Worker architecture
 
-```js
-await fetch("/api/gpt", {
-  method: "POST",
-  headers: {
-    "content-type": "application/json",
-    "x-api-key": "<your-matched-secret>",
-  },
-  body: JSON.stringify({
-    prompt: "Write a Python function that returns the factorial of n",
-    purpose: "coding",
-  }),
-});
-```
+Traffic for `goldshore.org` hits a Worker (`wrangler.toml` target `goldshore`) before being proxied to the static Pages host. The Worker layer does two jobs:
 
-## Cloudflare Zero Trust GitHub Access integration
+1. **Asset routing** — `src/router.js` picks the correct origin based on environment variables such as `ASSETS_ORIGIN` or `PRODUCTION_ASSETS`, rewrites the incoming request, and forwards it with cache hints so CDN hits stay warm. Requests to `/api/gpt` short-circuit to the API handler instead of the Pages origin.
+2. **GPT proxy** — `src/gpt-handler.js` exposes a locked-down `POST /api/gpt` endpoint. It enforces CORS allowlists, bearer authentication via the `GPT_SHARED_SECRET`, validates supported model names, normalises `messages` arrays, and forwards the payload to OpenAI using the Worker’s `OPENAI_API_KEY`. Errors bubble back with JSON bodies and matching HTTP status codes so clients can react precisely.
 
-Gold Shore Labs authenticates internal apps with Cloudflare Access using GitHub as an identity provider. When rotating secrets or onboarding new environments, follow these steps to re-establish the OAuth handshake:
+### Required secrets and configuration
 
-1. Sign in to GitHub and navigate to **Settings → Developer settings → OAuth Apps**.
-2. Register a new OAuth application (or update the existing one) using the team domain `https://goldshore.cloudflareaccess.com` for the homepage URL.
-3. Set the authorization callback URL to `https://goldshore.cloudflareaccess.com/cdn-cgi/access/callback`.
-4. Note the generated **Client ID** and **Client Secret**; rotate the secret if none is available.
-5. In Cloudflare Zero Trust, open **Settings → Authentication → Login methods** and add or edit the GitHub provider.
-6. Paste the GitHub Client ID into the **App ID** field and the Client Secret into **Client secret**, then save.
-7. Use the **Test** button next to the GitHub login method to confirm end-to-end authentication (log into GitHub first if MFA is enabled).
-
-For API-driven deployments, the following environment values are required by automation:
-
-```
-GH_APP_ID=<numeric GitHub App ID>
-GH_APP_INSTALLATION_ID=<installation identifier>
-GH_CLIENT_ID=<public OAuth client ID>
-GH_APP_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
-```
-
-Update these secrets anywhere they are referenced (GitHub Actions, Cloudflare Workers, or Pages projects) whenever the OAuth app is rotated.
-
-## Swiss-Army Critique Pipeline
-
-The `critique-worker/` folder contains a Cloudflare Workers + Queues + R2 pipeline that turns inbound email into automated website, portfolio, or social critiques. High-level flow:
-    "x-api-key": "your-shared-secret",
-  },
-  body: JSON.stringify({
-    purpose: "coding",
-    prompt: "Write a Python function that returns the factorial of n",
-  }),
-});
-```
-
-Requests missing the header (or using the wrong secret) are rejected with HTTP 401.
-### Example response
+For a repeatable routine, run the repository script before and after you commit:
 
 ```bash
+./scripts/sync-main.sh        # fast-forward local main
+./scripts/sync-main.sh --push # push your latest commits
+```
+
+The helper ensures you are on `main`, aligns the upstream remote, fast-forwards from the specified remote (default `origin`), and optionally pushes back up. Override the remote or branch with `--remote` / `--branch` if you are mirroring another deployment target.
+## `/api/gpt` configuration
+
+The GPT relay worker requires explicit authentication and origin allow-listing. Set the following variables in each Cloudflare Worker environment:
+Set the following per environment using `wrangler secret put` (or provider-specific secret managers):
+
+| Variable | Purpose |
+| --- | --- |
+| `OPENAI_API_KEY` | Authorises the Worker when calling OpenAI's Responses API. |
+| `GPT_SHARED_SECRET` | Bearer token browsers must send when requesting `/api/gpt`. |
+| `GPT_ALLOWED_ORIGINS` | Comma-separated origins that receive permissive CORS headers. |
+| `CF_ACCESS_AUD` / `CF_ACCESS_ISS` / `CF_ACCESS_JWKS_URL` (optional) | Lock API access behind Cloudflare Zero Trust when required. |
+| `FORMSPREE_ENDPOINT` | Submission URL for the contact form backend. |
+| `TURNSTILE_SECRET` | Server-side secret for Cloudflare Turnstile verification. |
+
+Use `.dev.vars` (ignored by git) to store throwaway credentials for local previews.
+
+## Keeping `main` in sync
+
+Gold Shore deploys directly from `main`, so contributors should keep their local clone fast-forwarded and push only from that branch.
+
+### One-time setup
+
+```bash
+git checkout main
+git branch --set-upstream-to=origin/main main
+```
+
+### Daily workflow
+```bash
+wrangler secret put OPENAI_API_KEY
+wrangler secret put GPT_SHARED_SECRET
+wrangler secret put GPT_ALLOWED_ORIGINS
+```
+### Configuring OpenAI credentials
+## Cloudflare Worker deployment
+
+The Worker settings live in [`wrangler.toml`](wrangler.toml). The repository assumes a dedicated Cloudflare API token named **“Goldshore Worker”** that has the following permissions:
+
+- Account → Workers Scripts (Edit)
+- Account → Workers Routes (Edit)
+- Account → Worker KV Storage (Edit)
+- Account → Queues (Edit) if you operate the critique pipeline
+- Account → R2 Storage (Edit) when reports are stored in R2
+- Account → Pages (Read) so the Worker can discover origin hostnames
+
+Create the token in the Cloudflare dashboard and save it locally as `CF_API_TOKEN`:
+
+```bash
+# Update local tracking info and fast-forward main
+git fetch origin main
+git pull --ff-only
+
+For guidance on broader operational topics (analytics, exit plans, or worker-specific runbooks) explore the documents under [`docs/`](docs) and [`GOLDSHORE_IMPLEMENTATION_GUIDE.md`](GOLDSHORE_IMPLEMENTATION_GUIDE.md).
+# Work, commit, then push straight back to main
+git push origin main
+```
+
+## Continuous integration & deployment
+
+[`turbo.json`](turbo.json) defines build orchestration for every workspace. The root scripts delegate to Turbo so `npm run build`, `npm run lint`, and `npm run typecheck` operate across the monorepo. GitHub Actions now run [`ci.yml`](.github/workflows/ci.yml), which:
+
+1. Installs dependencies and executes `npm run build`, `npm run lint`, and `npm run typecheck`.
+2. Deploys the API worker via Wrangler when commits land on `main`.
+3. Publishes the `packages/web/dist` and `packages/admin/dist` outputs to their respective Cloudflare Pages projects.
+
+Extend the workflow with additional deploy jobs (Queues consumers, agent runtime) as they migrate into the repository.
+
+### Automated helper
+
+For a repeatable routine, run the repository script before and after you commit:
+
+```bash
+./scripts/sync-main.sh        # fast-forward local main
+./scripts/sync-main.sh --push # push your latest commits
+```
+
+The helper ensures you are on `main`, aligns the upstream remote, fast-forwards from the specified remote (default `origin`), and optionally pushes back up. Override the remote or branch with `--remote` / `--branch` if you are mirroring another deployment target.
+
+---
+
+For guidance on broader operational topics (analytics, exit plans, or worker-specific runbooks) explore the documents under [`docs/`](docs) and [`GOLDSHORE_IMPLEMENTATION_GUIDE.md`](GOLDSHORE_IMPLEMENTATION_GUIDE.md).
+```
+
+The helper ensures you are on `main`, aligns the upstream remote, fast-forwards from the specified remote (default `origin`), and optionally pushes back up. Override the remote or branch with `--remote` / `--branch` if you are mirroring another deployment target.
+
+---
+
+For guidance on broader operational topics (analytics, exit plans, or worker-specific runbooks) explore the documents under [`docs/`](docs) and [`GOLDSHORE_IMPLEMENTATION_GUIDE.md`](GOLDSHORE_IMPLEMENTATION_GUIDE.md).
 curl -X POST "https://goldshore.org/api/gpt" \
   -H "Origin: https://app.goldshore.org" \
   -H "Authorization: Bearer $GPT_SHARED_SECRET" \
@@ -174,227 +338,31 @@ Successful responses return the JSON payload from the OpenAI Chat Completions AP
     }
   ]
 }
+```bash
+# One time per machine
+wrangler login # optional if you prefer OAuth
+wrangler secret put CF_API_TOKEN --env production
+wrangler secret put CF_API_TOKEN --env preview
+wrangler secret put CF_API_TOKEN --env dev
 ```
 
-## `/api/gpt` configuration
+For automated workflows (CI, scripts in `infra/`), export the same value or add it to your `.dev.vars` file:
 
-The GPT relay worker requires explicit authentication and origin allow-listing. Set the following variables in each Cloudflare Worker environment:
-
-| Variable | Purpose |
-|----------|---------|
-| `OPENAI_API_KEY` | Server-side OpenAI API key used to fulfil chat completions. |
-| `GPT_SERVICE_TOKEN` | Bearer token that callers must present in the `Authorization: Bearer <token>` header. |
-| `GPT_ALLOWED_ORIGINS` | Comma-separated list of origins permitted to call the endpoint (e.g. `https://goldshore.org,https://www.goldshore.org`). |
-
-Requests without a matching `Origin` header or a valid bearer token receive `403`/`401` responses. Update any front-end client to supply the configured token when posting to `/api/gpt`.
-
-You are an expert JavaScript and Git assistant. Your role is to complete code inside the `$FILENAME` file where [CURSOR] appears. You must return the most likely full completion, without asking for clarification, summarizing, or greeting the user.
-
-• Respect existing formatting and style.  
-• If [CURSOR] is in a comment block, continue that documentation.  
-• If it’s within a config or JSON file, complete only valid syntax.  
-• If it’s in a `.js` file, complete functions, objects, or exports.  
-• If after punctuation or space, write full multi-line completions.  
-
-Never return nothing. Never ask questions. Just finish the thought.
-
----
-
-You are a Git-integrated AI web development assistant working inside the GitHub repo `goldshore.github.io`.
-
-**Context:**
-- The brand is **Gold Shore Labs**
-- Project: A modular site showcasing AI tools, cybersecurity R&D, digital consulting, field ops, and identity-based tech
-- Audience: Developers, researchers, entrepreneurs, creatives, institutional partners
-- Tone: Futuristic, mythic, hybrid enterprise--mix of serious and surreal
-- Goal: Present portfolio, issue signals, publish updates, and link internal projects
-
----
-
-**Task Types:**
-1. Generate HTML/CSS/JS for high-concept, visually rich single-page sites
-2. Maintain performance (low TTI, compressed assets, dark/light mode pref)
-3. Build sliders, project cards, and language-icon tiles (JS, Python, Bash, etc.)
-4. Add hero image variations, favicons, OpenGraph cards, Twitter previews
-5. Implement responsive design via Tailwind CSS or custom grid/flex
-6. Integrate minimal JS carousels or Swiper sliders for past works
-7. Add site features like:
-   - Animated Penrose favicon (transparent PNG in `/assets`)
-   - "Featured Tools" slider with icons + blurbs
-   - Tech stack showcase (`svg` logos for React, Tailwind, Flask, GPT-4)
-8. Generate README.md with project purpose, usage, and deployment info
-
----
-
-**Constraints:**
-- Output only static front-end (for GitHub Pages)
-- Repo should stay portable, self-contained, and visually legible
-- Avoid large JS libs unless lazy-loaded
-- AI-generated images should go in `/assets/ai/`
-- Logos and favicon: `/assets/penrose/`, `/assets/logo/`
-- All links must use relative paths (no `file:///` or absolute `/Users/...`)
-- All commits go to `main` branch unless directed
-
----
-
-**Preferred Design Language:**
-- Grid or flex-based layout with subtle shadow, glassmorphic containers
-- Smooth transitions, consistent spacing, alt text on every img
-- Modular components (`card`, `hero`, `tile`, `nav`, `footer`)
-- Copy tone: poetic + precise; taglines = signal phrases
-
----
-
-**Examples of valid input:**
-- "Add slider showing recent AI builds using Swiper"
-- "Replace placeholder favicon with transparent Penrose icon"
-- "Create mosaic of logos: React, Next.js, Tailwind, Python, GPT"
-- "Fix iPhone scaling on dark mode"
-- "Generate README with site goals and project list"
-- "Auto-deploy to goldshore.github.io from `main` via GitHub Actions"
-- "Create metadata for SEO + Twitter card"
-
----
-
-**Response Format:**
-- Markdown-rendered code
-- Commit message suggestion
-- Optional GitHub Actions snippet or `.env` values if needed
-
----
-
-**GitHub Repo Environment:**
-- Branch: `main`  
-- Root: `~/goldshore.github.io/`  
-- Primary Files:  
-  - `index.html`  
-  - `styles.css`  
-  - `README.md`  
-  - `/assets/logo/`, `/assets/penrose/`  
-  - `/assets/ai/` (AI-generated content)  
-  - `.github/workflows/deploy.yml` (if CI enabled)
-
---
-# Gold Shore monorepo
-
-This repository follows the Gold Shore agent playbook: a lightweight monorepo that keeps the Astro site, Cloudflare Worker, and
-infrastructure scripts in one place so the CI agent can ship predictable deployments.
-
-## Layout
-
-```
-goldshore/
-├─ apps/
-│  ├─ api-router/      # Cloudflare Worker router
-│  └─ web/             # Astro marketing site
-├─ packages/
-│  └─ image-tools/         # Sharp image optimisation scripts
-├─ infra/
-│  └─ scripts/             # DNS & Access automation
-├─ .github/workflows/      # Deploy / maintenance CI
-├─ wrangler.toml           # Cloudflare Pages configuration
-├─ wrangler.worker.toml    # Worker + bindings configuration
-└─ package.json            # npm workspaces + shared tooling
+```bash
+cat >> .dev.vars <<'ENV'
+CF_API_TOKEN="goldshore"
+ENV
 ```
 
-### Key files
+### Environment-specific settings
 
-- `apps/api-router/src/router.ts` — Worker proxy that selects the correct asset origin per host and stamps immutable cache headers for assets.
-- `apps/web/src` — Astro site with a shared theme (`styles/theme.css`), reusable components, and hero animation.
-- `packages/image-tools/process-images.mjs` — Sharp pipeline that emits AVIF/WEBP variants before every build.
-- `infra/scripts/*.sh` — Shell scripts that upsert required DNS records and ensure Cloudflare Access policies for `/admin`.
+- **Production (`wrangler deploy --env production`)** – Routes `goldshore.org/*` and `www.goldshore.org/*` to the production Pages origin defined in `ASSETS_ORIGIN`.
+- **Preview (`wrangler deploy --env preview`)** – Provides Workers.dev previews and optional routed staging domains while pointing at `https://goldshore-org-preview.pages.dev`.
+- **Dev (`wrangler deploy --env dev`)** – Restricts routing to `dev.goldshore.org/*` for experimental branches.
 
-For a deeper end-to-end playbook that covers design, accessibility, deployment, DNS, and Cloudflare configuration, see [GoldShore Web & Worker Implementation Guide](./GOLDSHORE_IMPLEMENTATION_GUIDE.md).
-For a deeper end-to-end playbook that covers design, accessibility, deployment, DNS, and Cloudflare configuration, see [Gold Shore implementation playbook](./GOLDSHORE_IMPLEMENTATION_GUIDE.md).
+Each environment shares the `APP_NAME`, origin mappings, and Turnstile/OpenAI secrets. Update [`wrangler.toml`](wrangler.toml) when origin hostnames change and redeploy with the appropriate `wrangler deploy` command.
 
-## Workflows
+## Related documentation
 
-| Workflow | Purpose | Trigger |
-| --- | --- | --- |
-| `deploy.yml` | Builds the Astro site, deploys the Worker to `production`, `preview`, and `dev`, then syncs DNS. | Push to `main` (selected paths) or manual run |
-| `qa.yml` | Runs Lighthouse to keep performance/accessibility/SEO above 90%. | Pull requests or manual run |
-| `ai_maint.yml` | Runs linting, Lighthouse smoke tests, and guarded AI copy suggestions that open PRs. | Nightly (05:00 UTC) or manual run |
-| `sync_dns.yml` | Manually replays the DNS upsert script. | Manual run |
-
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the Astro dev server from `apps/web`. |
-| `npm run build` | Optimise images then build the production site. |
-| `npm run deploy:prod` | Deploy the Worker to the production environment. |
-| `npm run deploy:preview` | Deploy the Worker to the preview environment. |
-| `npm run deploy:dev` | Deploy the Worker to the dev environment. |
-| `npm run qa` | Execute the local QA helper defined in `.github/workflows/local-qa.mjs`. |
-
-## GitHub Actions
-
-- `CF_ACCOUNT_ID`
-- `CF_API_TOKEN`
-- `CF_SECRET_STORE_ID`
-- `OPENAI_API_KEY`
-- `OPENAI_PROJECT_ID`
-
-These secrets are consumed by the Worker (via the Secrets Store binding) and GitHub Actions. The deploy workflow also expects `jq` (available on the GitHub Actions runner).
-
-## Local development
-
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Start Astro locally:
-   ```bash
-   npm run dev
-   ```
-3. Optimise images and build for production:
-   ```bash
-   npm run build
-   ```
-4. Deploy the Worker preview when ready:
-   ```bash
-   npm run deploy:preview
-   ```
-
-## Secrets required in CI
-
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-2. Start Astro locally:
-   ```bash
-   cd apps/web
-   npm install
-   npm run dev
-   ```
-3. Deploy the Worker preview when ready:
-   ```bash
-   npx wrangler dev --config wrangler.worker.toml
-   ```
-
-- `CF_API_TOKEN`
-- `CF_ACCOUNT_ID`
-
-If either secret is missing the deploy workflow will fail early, prompting the operator to add them before proceeding.
-
-The public contact form posts to Formspree after passing Cloudflare Turnstile validation. To finish wiring the production form:
-
-The Worker expects Cloudflare Pages projects mapped to:
-
-Example Worker binding block:
-
-```toml
-[[d1_databases]]
-binding = "DB"
-database_name = "goldshore-db"
-database_id = "DATABASE_ID"
-```
-
-Future Drizzle integration can live in `packages/db` alongside the schema.
-
-The DNS upsert script keeps these hostnames pointed at the correct Pages project using proxied CNAME records for:
-`goldshore.org`, `www.goldshore.org`, `preview.goldshore.org`, and `dev.goldshore.org`.
-
-- The Worker deploy relies on the Cloudflare Secrets Store; be sure the store already contains the mapped secrets (`OPENAI_API_KEY`, `OPENAI_PROJECT_ID`, `CF_API_TOKEN`).
-- Cloudflare Access automation defaults to allowing `@goldshore.org` addresses. Adjust `ALLOWED_DOMAIN` when running the script if your allowlist differs.
-- The AI maintenance workflow is conservative and only opens pull requests when copy changes are suggested. Merge decisions stay in human hands.
-- Worker asset environment variables (`PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, `DEV_ASSETS`) accept either a single origin or a comma-separated list. The router will select the first valid HTTPS origin and will automatically prepend `https://` when a scheme is omitted, which makes it easy to rotate between legacy and renamed domains without downtime.
+- [`docs/cloudflare-deployment.md`](docs/cloudflare-deployment.md) – Checklist for keeping Pages and the Worker in sync.
+- [`GOLDSHORE_IMPLEMENTATION_GUIDE.md`](GOLDSHORE_IMPLEMENTATION_GUIDE.md) – Deep dive into layout, automation, and DNS practices.

@@ -1,50 +1,29 @@
 ---
-import Header from "../components/Header.astro";
-import "../styles/theme.css";
-
-interface Props {
-  title: string;
-  description: string;
-  canonical: string;
-  ogImage?: string;
-  noIndex?: boolean;
-}
-
-const { title, description, canonical, ogImage, noIndex = false } = Astro.props as Props;
-const siteName = "Gold Shore";
+import "@goldshore/theme/tokens.css";
+const nav = [
+  {label:"Products", href:"#products"},
+  {label:"Trading Dashboard", href:"/dash"},
+  {label:"Pricing", href:"#pricing"},
+  {label:"Blog", href:"/blog"},
+  {label:"Docs", href:"https://api.goldshore.org/v1/docs"},
+  {label:"Admin", href:"https://admin.goldshore.org"},
+];
 ---
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content={siteName} />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonical} />
-    {ogImage && <meta property="og:image" content={ogImage} />}
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
-    <meta name="twitter:description" content={description} />
-    {ogImage && <meta name="twitter:image" content={ogImage} />}
-    {noIndex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" type="image/svg+xml" href="/packages/assets/goldshore/favicon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <title>GoldShore</title>
   </head>
-  <body>
-    <a class="skip-link" href="#content">Skip to content</a>
-    <Header />
-    <main id="content" class="container" style="padding-top: clamp(24px, 6vw, 56px);">
-      <slot />
-    </main>
-    <footer class="container" role="contentinfo">
-      <div class="grid" style="gap: 8px;">
-        <small>© {new Date().getFullYear()} Gold Shore. All rights reserved.</small>
-        <small>
-          <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/admin">Admin</a>
-        </small>
-      </div>
-    </footer>
+  <body class="bg-[var(--bg)] text-[var(--text)]">
+    <header class="mx-auto max-w-7xl p-4 flex items-center gap-6">
+      <img src="/packages/assets/goldshore/logo-wordmark-on-light.svg" alt="GoldShore" height="28" />
+      <nav class="ml-auto flex gap-5">
+        {nav.map(n => <a href={n.href} class="hover:underline">{n.label}</a>)}
+        <a href="/signup" class="px-3 py-1 rounded bg-[var(--brand)] text-[var(--brand-contrast)]">Get Started</a>
+      </nav>
+    </header>
+    <slot />
   </body>
 </html>

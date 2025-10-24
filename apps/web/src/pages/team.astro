@@ -41,13 +41,13 @@ const team = [
     {team.map((member) => (
       <article class="card" role="listitem">
         <h2>{member.name}</h2>
-        <p style="color: var(--lav); font-weight: 600;">{member.role}</p>
+        <p class="text-lav-strong">{member.role}</p>
         <p>{member.bio}</p>
       </article>
     ))}
   </div>
 
-  <section style="margin-top: clamp(48px, 8vw, 96px);">
+  <section class="section-spacing">
     <h2 class="section-title">Join the roster</h2>
     <p class="section-subtitle">
       Gold Shore partners with senior independents and boutique studios. Share your craft, proof of work, and the types of

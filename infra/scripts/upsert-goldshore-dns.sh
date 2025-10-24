@@ -4,7 +4,7 @@ set -euo pipefail
 : "${CF_API_TOKEN:?CF_API_TOKEN missing}"
 : "${CF_ACCOUNT_ID:?CF_ACCOUNT_ID missing}"
 
-ZONE="goldshore.org"
+ZONE="${ZONE_NAME:-${ZONE:-goldshore.org}}"
 API="https://api.cloudflare.com/client/v4"
 AUTH_HEADER=(-H "Authorization: Bearer ${CF_API_TOKEN}" -H "Content-Type: application/json")
 

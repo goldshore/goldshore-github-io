@@ -32,7 +32,7 @@ jobs:
           node-version: 20
 
       - name: Install workspace dependencies
-        run: npm install --workspaces --include=dev
+        run: npm install --workspaces --include=dev --no-package-lock
         # npm ci requires a package-lock.json at the repository root, which we don't
         # have yet, so keep using npm install until the lockfile exists.
 

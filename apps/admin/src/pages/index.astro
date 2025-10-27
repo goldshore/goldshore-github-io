@@ -1,0 +1,19 @@
+---
+import Admin from "../layouts/Admin.astro";
+---
+<Admin>
+  <section class="space-y-4">
+    <h1 class="text-2xl font-bold">Trading Ops Overview</h1>
+    <p>Welcome to the GoldShore admin console. Choose a module from the sidebar to review customer activity, risk posture, and real-time trading telemetry.</p>
+    <div class="grid gap-4 md:grid-cols-2">
+      <article class="border rounded p-4">
+        <h2 class="font-semibold">Leads</h2>
+        <p>Monitor newly captured leads from marketing funnels synced via the API.</p>
+      </article>
+      <article class="border rounded p-4">
+        <h2 class="font-semibold">Risk Alerts</h2>
+        <p>Review threshold breaches, net exposure drifts, and automated interventions.</p>
+      </article>
+    </div>
+  </section>
+</Admin>

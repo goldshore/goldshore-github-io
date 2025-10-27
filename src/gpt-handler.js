@@ -5,6 +5,23 @@ const BASE_CORS_HEADERS = {
 };
 const DEFAULT_ALLOWED_HEADERS = "Content-Type, Authorization";
 const DEFAULT_ALLOWED_METHODS = "POST, OPTIONS";
+const DEFAULT_MODEL = "gpt-4o-mini";
+const ALLOWED_CHAT_COMPLETION_OPTIONS = new Set([
+  "frequency_penalty",
+  "logit_bias",
+  "logprobs",
+  "top_logprobs",
+  "max_tokens",
+  "n",
+  "presence_penalty",
+  "response_format",
+  "seed",
+  "stop",
+  "stream",
+  "temperature",
+  "top_p",
+  "user",
+]);
 
 const encoder = new TextEncoder();
 
@@ -29,12 +46,11 @@ function timingSafeEqual(a, b) {
 }
 
 function parseAllowedOrigins(env) {
-  const rawOrigins = env.GPT_ALLOWED_ORIGINS || env.ALLOWED_ORIGINS || "";
-
-  return rawOrigins
+  const raw = env.GPT_ALLOWED_ORIGINS ?? env.ALLOWED_ORIGINS ?? "";
+  return raw
     .split(",")
     .map((origin) => origin.trim())
-    .filter(Boolean);
+    .filter((origin) => origin !== "");
 }
 
 function resolveAllowedOrigin(requestOrigin, allowedOrigins) {
@@ -49,12 +65,10 @@ function resolveAllowedOrigin(requestOrigin, allowedOrigins) {
 
   if (!Array.isArray(allowedOrigins) || allowedOrigins.length === 0) {
     return null;
-function buildCorsHeaders(origin) {
-  const headers = new Headers();
+  }
 
-  if (origin) {
-    headers.set("Access-Control-Allow-Origin", origin);
-    headers.set("Vary", "Origin");
+  if (allowedOrigins.includes("*")) {
+    return normalizedOrigin;
   }
 
   for (const allowed of allowedOrigins) {
@@ -62,6 +76,18 @@ function buildCorsHeaders(origin) {
       return normalizedOrigin;
     }
   }
+
+  return null;
+}
+
+function buildCorsHeaders(origin) {
+  const headers = new Headers(BASE_CORS_HEADERS);
+
+  if (origin) {
+    headers.set("Access-Control-Allow-Origin", origin);
+    headers.set("Vary", "Origin");
+  }
+
   headers.set("Access-Control-Allow-Methods", DEFAULT_ALLOWED_METHODS);
   headers.set("Access-Control-Allow-Headers", DEFAULT_ALLOWED_HEADERS);
 
@@ -69,14 +95,22 @@ function buildCorsHeaders(origin) {
 }
 
 function jsonResponse(body, init = {}, origin = null) {
-  const headers = new Headers(init.headers || {});
-  const corsHeaders = buildCorsHeaders(origin);
+  const headers = new Headers(BASE_CORS_HEADERS);
 
+  if (init.headers) {
+    const initHeaders = new Headers(init.headers);
+    for (const [key, value] of initHeaders.entries()) {
+      headers.set(key, value);
+    }
+  }
+
+  const corsHeaders = buildCorsHeaders(origin);
   for (const [key, value] of corsHeaders.entries()) {
     headers.set(key, value);
   }
 
   headers.set("content-type", "application/json");
+
   return new Response(JSON.stringify(body), { ...init, headers });
 }
 
@@ -88,126 +122,41 @@ function errorResponse(message, status = 400, details, origin) {
   return jsonResponse(payload, { status }, origin);
 }
 
-function parseAllowedOrigins(env) {
-  const raw = env.GPT_ALLOWED_ORIGINS ?? env.ALLOWED_ORIGINS ?? "";
-  return raw
-    .split(",")
-    .map((value) => value.trim())
-    .filter((value) => value !== "");
-}
-
-function validateOrigin(request, env) {
-  const allowedOrigins = parseAllowedOrigins(env);
-
-  if (allowedOrigins.length === 0) {
-    return {
-      errorResponse: jsonResponse(
-        { error: "Server misconfigured: no allowed origins configured." },
-        { status: 500 },
-      ),
-    };
-  }
-
-  const origin = request.headers.get("Origin");
-
-  if (origin && !allowedOrigins.includes(origin)) {
-    return {
-      errorResponse: jsonResponse(
-        { error: "Origin is not allowed." },
-        { status: 403 },
-      ),
-    };
-  }
-
-  return { origin: origin && allowedOrigins.includes(origin) ? origin : null };
-}
-
 function authorizeRequest(request, env, origin) {
   const expectedToken = env.GPT_SERVICE_TOKEN;
 
-  const expectedToken = env.GPT_PROXY_SECRET;
   if (!expectedToken) {
-    return jsonResponse({ error: "Missing GPT proxy secret." }, { status: 500 }, allowedOrigin);
-  if (!expectedToken) {
-    return jsonResponse(
-      { error: "Server misconfigured: missing GPT service token." },
-      { status: 500 },
+    return errorResponse(
+      "Server misconfigured: missing GPT service token.",
+      500,
+      undefined,
       origin,
     );
   }
 
   const authHeader = request.headers.get("Authorization") || "";
-  const token = authHeader.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length).trim()
-    : null;
+  let providedToken = null;
 
-  if (token !== expectedToken) {
-    return jsonResponse(
-      { error: "Unauthorized." },
-      { status: 401 },
-      origin,
-    );
+  if (authHeader.toLowerCase().startsWith("bearer ")) {
+    providedToken = authHeader.slice("Bearer ".length).trim();
   }
 
-  return null;
-}
+  if (!providedToken) {
+    const headerToken = request.headers.get(TOKEN_HEADER_NAME);
+    if (typeof headerToken === "string" && headerToken.trim() !== "") {
+      providedToken = headerToken.trim();
+    }
+  }
 
-async function handlePost(request, env, origin) {
-  if (!env.OPENAI_API_KEY) {
-    return jsonResponse(
-      { error: "Missing OpenAI API key." },
-      { status: 500 },
-      origin,
-    );
+  if (!providedToken) {
+    return errorResponse("Missing authentication token.", 401, undefined, origin);
   }
 
   if (!timingSafeEqual(providedToken, expectedToken)) {
-    return jsonResponse({ error: "Invalid authentication token." }, { status: 403 }, allowedOrigin);
-  const providedSecret = request.headers.get("x-api-key");
-  if (providedSecret !== env.GPT_PROXY_SECRET) {
-    return jsonResponse(request, { error: "Unauthorized." }, { status: 401 });
-function requireProxyToken(env) {
-  const token = env.GPT_PROXY_TOKEN ?? env.GPT_ACCESS_TOKEN ?? null;
-  if (!token) {
-    return {
-      ok: false,
-      status: 500,
-      message: "GPT proxy access token not configured.",
-    };
-  }
-  return { ok: true, token };
-}
-
-  let payload;
-  try {
-    payload = await request.json();
-  } catch (error) {
-    return jsonResponse(
-      { error: "Invalid JSON body." },
-      { status: 400 },
-      origin,
-    );
+    return errorResponse("Unauthorized.", 401, undefined, origin);
   }
 
-  const authorization = request.headers.get("authorization");
-  if (!authorization || !authorization.toLowerCase().startsWith("bearer ")) {
-    return {
-      ok: false,
-      status: 401,
-      message: "Missing or invalid Authorization header.",
-    };
-  }
-
-  const providedToken = authorization.slice(7).trim();
-  if (providedToken !== tokenResult.token) {
-    return {
-      ok: false,
-      status: 401,
-      message: "Unauthorized.",
-    };
-  }
-
-  return { ok: true };
+  return null;
 }
 
 function normalizeMessage(message, index) {
@@ -278,9 +227,11 @@ function buildChatCompletionPayload(payload) {
   const { model = DEFAULT_MODEL, messages, prompt, ...rest } = payload;
 
   if (!Array.isArray(messages) && typeof prompt !== "string") {
-    return jsonResponse(request, {
-      error: "Request body must include either a 'messages' array or a 'prompt' string.",
-    }, { status: 400 }, origin);
+    throw new Error("Request body must include either a 'messages' array or a 'prompt' string.");
+  }
+
+  if (typeof model !== "string" || model.trim() === "") {
+    throw new Error("Model must be a non-empty string.");
   }
 
   const normalizedMessages = (Array.isArray(messages) && messages.length > 0
@@ -299,7 +250,7 @@ function buildChatCompletionPayload(payload) {
   };
 
   for (const [key, value] of Object.entries(rest)) {
-    if (ALLOWED_CHAT_COMPLETION_OPTIONS.has(key)) {
+    if (value !== undefined && ALLOWED_CHAT_COMPLETION_OPTIONS.has(key)) {
       requestBody[key] = value;
     }
   }
@@ -345,70 +296,59 @@ async function handlePost(request, env, origin) {
     let data;
     try {
       data = JSON.parse(text);
-    } catch (error) {
-      return jsonResponse(request, {
-        error: "Unexpected response from OpenAI API.",
-        details: responseText,
-      }, { status: 502 }, origin);
+    } catch (parseError) {
+      return errorResponse("Unexpected response from OpenAI API.", 502, text, origin);
     }
 
     if (!response.ok) {
-      return jsonResponse(request, {
-        error: "OpenAI API request failed.",
-        details: data,
-      }, { status: response.status }, origin);
+      return errorResponse("OpenAI API request failed.", response.status, data, origin);
     }
 
     return jsonResponse(data, { status: response.status }, origin);
   } catch (error) {
-    return jsonResponse(request, {
-      error: "Failed to contact OpenAI API.",
-      details: error instanceof Error ? error.message : String(error),
-    }, { status: 502 }, origin);
+    return errorResponse(
+      "Failed to contact OpenAI API.",
+      502,
+      error instanceof Error ? error.message : String(error),
+      origin,
+    );
   }
 }
 
 export default {
   async fetch(request, env) {
-    const requestOriginHeader = request.headers.get("Origin");
     const allowedOrigins = parseAllowedOrigins(env);
-    const allowedOrigin = resolveAllowedOrigin(requestOriginHeader, allowedOrigins);
-    const hasAllowedOriginsConfigured = allowedOrigins.length > 0;
-    const normalizedRequestOrigin =
-      typeof requestOriginHeader === "string" ? requestOriginHeader.trim() : "";
 
-    if (hasAllowedOriginsConfigured && normalizedRequestOrigin && !allowedOrigin) {
-      return jsonResponse(
-        { error: "Origin not allowed." },
-        { status: 403 },
-        normalizedRequestOrigin,
+    if (allowedOrigins.length === 0) {
+      return errorResponse(
+        "Server misconfigured: no allowed origins configured.",
+        500,
       );
-    const { origin, errorResponse } = validateOrigin(request, env);
+    }
 
-    if (errorResponse) {
-      return errorResponse;
+    const requestOrigin = request.headers.get("Origin");
+    const allowedOrigin = resolveAllowedOrigin(requestOrigin, allowedOrigins);
+
+    if (requestOrigin && !allowedOrigin) {
+      return errorResponse("Origin is not allowed.", 403, undefined, requestOrigin);
     }
 
     if (request.method === "OPTIONS") {
       return new Response(null, {
         status: 204,
-        headers: buildCorsHeaders(origin),
+        headers: buildCorsHeaders(allowedOrigin),
       });
     }
 
     if (request.method !== "POST") {
-      return jsonResponse(
-        { error: "Method not allowed." },
-        { status: 405 },
-        origin,
-      );
+      return errorResponse("Method not allowed.", 405, undefined, allowedOrigin);
     }
 
-    const authError = authorizeRequest(request, env, origin);
+    const authError = authorizeRequest(request, env, allowedOrigin);
     if (authError) {
       return authError;
     }
 
-    return handlePost(request, env, origin);
+    return handlePost(request, env, allowedOrigin);
   },
 };

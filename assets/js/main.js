@@ -99,19 +99,48 @@ document.querySelectorAll('a[href^="http"]').forEach(a => {
 
 // Contact form submit
 const contactForm = document.getElementById('primaryContactForm');
+const contactSuccessMessage = document.getElementById('contact-success');
+
 if (contactForm) {
   contactForm.addEventListener('submit', () => {
     track('contact_submit', {});
   });
 }
 
+function revealContactSuccess() {
+  if (!contactSuccessMessage) return;
+
+  contactSuccessMessage.classList.remove('hidden');
+
+  if (typeof contactSuccessMessage.focus === 'function') {
+    requestAnimationFrame(() => {
+      try {
+        contactSuccessMessage.focus({ preventScroll: true });
+      } catch (err) {
+        contactSuccessMessage.focus();
+      }
+    });
+  }
+}
+
+function handleContactSuccess(detail) {
+  revealContactSuccess();
+
+  const formId = detail && detail.formId ? detail.formId : 'primaryContactForm';
+  const transportType = detail && detail.transportType ? detail.transportType : 'redirect';
+
+  track('contact_form_submit', { form_id: formId, transport_type: transportType });
+  track('contact_submit_success', { form_id: formId, transport_type: transportType });
+}
+
 window.addEventListener('contact:success', (event) => {
-  const detail = event && event.detail ? event.detail : {};
-  track('contact_submit_success', {
-    form_id: detail.formId || 'primaryContactForm',
-    transport_type: detail.transportType || 'redirect'
-  });
+  handleContactSuccess(event && event.detail ? event.detail : {});
 });
+
+if (window.__contactSuccess) {
+  handleContactSuccess(window.__contactSuccess);
+  window.__contactSuccess = null;
+}
 
 // Pricing toggle
 const pricingToggles = document.querySelectorAll('[data-pricing-toggle]');

@@ -1,0 +1,6 @@
+name = "goldshore-api"
+main = "dist/index.js"
+compatibility_date = "2024-11-21"
+minify = true
+
+# Environment-specific bindings should be layered from infra/cf/bindings.example.toml

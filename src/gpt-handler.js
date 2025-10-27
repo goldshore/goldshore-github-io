@@ -2,14 +2,14 @@ const TOKEN_HEADER_NAME = "x-api-key";
 const PROXY_TOKEN_HEADER_NAME = "x-gpt-proxy-token";
 const BASE_CORS_HEADERS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-GPT-Proxy-Token, X-API-Key, CF-Access-Jwt-Assertion",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Authorization, X-GPT-Proxy-Token, X-API-Key, CF-Access-Jwt-Assertion",
 };
 
 const DEFAULT_MODEL = "gpt-4o-mini";
 const ALLOWED_METHODS = "POST, OPTIONS";
 const ALLOWED_HEADERS =
   "Content-Type, Authorization, X-GPT-Proxy-Token, X-Api-Key, CF-Access-Jwt-Assertion";
-const DEFAULT_MODEL = "gpt-4o-mini";
 const SUPPORTED_MODELS = new Set(["gpt-4o-mini", "gpt-4o", "o4-mini"]);
 const ALLOWED_CHAT_COMPLETION_OPTIONS = new Set([
   "frequency_penalty",
@@ -17,22 +17,18 @@ const ALLOWED_CHAT_COMPLETION_OPTIONS = new Set([
   "logprobs",
   "max_tokens",
   "modalities",
-  "top_logprobs",
-  "max_tokens",
   "n",
   "presence_penalty",
   "response_format",
   "seed",
   "stop",
-  "stream",
   "temperature",
   "top_logprobs",
   "top_p",
   "tool_choice",
   "tools",
-  "temperature",
-  "top_p",
   "user",
+  "stream",
 ]);
 
 const encoder = new TextEncoder();
@@ -41,8 +37,34 @@ function getAllowedOrigins(env) {
   return (env.GPT_ALLOWED_ORIGINS || "")
     .split(",")
     .map((origin) => origin.trim())
-    .filter(Boolean);
+    .filter((origin) => origin !== "");
 }
+
+function resolveAllowedOrigin(requestOrigin, allowedOrigins) {
+  if (typeof requestOrigin !== "string") {
+    return null;
+  }
+
+  const normalizedOrigin = requestOrigin.trim();
+  if (normalizedOrigin === "") {
+    return null;
+  }
+
+  for (const allowed of allowedOrigins) {
+    if (allowed === normalizedOrigin) {
+      return normalizedOrigin;
+    }
+  }
+
+  return null;
+}
+
+function buildCorsHeaders(origin) {
+  const headers = new Headers();
+
+  for (const [key, value] of Object.entries(BASE_CORS_HEADERS)) {
+    headers.set(key, value);
+  }
 
 function buildCorsHeaders(origin) {
   const headers = new Headers();
@@ -50,6 +72,7 @@ function buildCorsHeaders(origin) {
     headers.set("Access-Control-Allow-Origin", origin);
     headers.set("Vary", "Origin");
   }
+
   headers.set("Access-Control-Allow-Methods", ALLOWED_METHODS);
   headers.set("Access-Control-Allow-Headers", ALLOWED_HEADERS);
   return headers;
@@ -58,10 +81,23 @@ function buildCorsHeaders(origin) {
 function jsonResponse(body, init = {}, corsOrigin = null) {
   const headers = new Headers(init.headers || {});
   const corsHeaders = buildCorsHeaders(corsOrigin);
+
+  if (init.headers) {
+    const initHeaders = new Headers(init.headers);
+    for (const [key, value] of initHeaders.entries()) {
+      headers.set(key, value);
+    }
+  }
+
+  const corsHeaders = buildCorsHeaders(origin);
   for (const [key, value] of corsHeaders.entries()) {
     headers.set(key, value);
   }
-  headers.set("content-type", "application/json");
+
+  if (!headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
+
   return new Response(JSON.stringify(body), { ...init, headers });
 }
 
@@ -121,6 +157,20 @@ function validateOrigin(request, env) {
     return { ok: true, origin: null };
   }
 
+  const allowedOrigin = resolveAllowedOrigin(requestOrigin, allowedOrigins);
+  if (!allowedOrigin) {
+    return {
+      ok: false,
+      response: errorResponse("Origin not allowed.", 403),
+    };
+  }
+
+  return { ok: true, origin: allowedOrigin };
+}
+
+function extractBearerToken(header) {
+  if (typeof header !== "string") {
+    return null;
   if (!allowedOrigins.includes(requestOrigin)) {
     return {
       ok: false,
@@ -193,7 +243,7 @@ function authenticateRequest(request, env, corsOrigin) {
     };
   }
 
-  return { ok: true };
+  return null;
 }
 
 function normalizeMessage(message, index) {
@@ -261,7 +311,7 @@ function buildChatCompletionPayload(payload) {
     throw new Error("Request body must be a JSON object.");
   }
 
-  const { model = DEFAULT_MODEL, messages, prompt, ...rest } = payload;
+  const { model = DEFAULT_MODEL, messages, prompt, stream, ...rest } = payload;
 
   if (typeof model !== "string" || model.trim() === "") {
     throw new Error("model must be a non-empty string.");
@@ -286,17 +336,34 @@ function buildChatCompletionPayload(payload) {
       ])
     .map((message, index) => normalizeMessage(message, index));
 
-  if (Object.prototype.hasOwnProperty.call(rest, "stream")) {
-    throw new Error("stream option is not supported by this proxy.");
+  if (typeof stream !== "undefined") {
+    if (typeof stream === "string") {
+      const normalized = stream.trim().toLowerCase();
+      if (normalized && normalized !== "false" && normalized !== "0") {
+        throw new Error("stream option is not supported by this proxy.");
+      }
+    } else if (stream) {
+      throw new Error("stream option is not supported by this proxy.");
+    }
   }
 
   const requestBody = {
+    model: typeof model === "string" ? model.trim() : DEFAULT_MODEL,
     model: trimmedModel,
     messages: normalizedMessages,
   };
 
   for (const [key, value] of Object.entries(rest)) {
     if (!ALLOWED_CHAT_COMPLETION_OPTIONS.has(key) || value === undefined) {
+      continue;
+    }
+    if (key === "stream") {
+      if (typeof value !== "boolean") {
+        throw new Error("stream option must be a boolean value.");
+      }
+      if (value) {
+        requestBody[key] = true;
+      }
       continue;
     }
     requestBody[key] = value;
@@ -329,6 +396,8 @@ async function handlePost(request, env, corsOrigin) {
     );
   }
 
+  const wantsStream = requestBody.stream === true;
+
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -347,13 +416,19 @@ async function handlePost(request, env, corsOrigin) {
       return errorResponse(
         "Unexpected response from OpenAI API.",
         502,
-        { body: text },
-        origin,
+        responseText,
+        { body: responseText },
+        corsOrigin,
       );
     }
 
     if (!response.ok) {
-      return errorResponse("OpenAI API request failed.", response.status, data, origin);
+      return errorResponse(
+        "OpenAI API request failed.",
+        response.status,
+        data,
+        corsOrigin,
+      );
     }
 
     return jsonResponse(data, { status: response.status }, corsOrigin);
@@ -362,7 +437,7 @@ async function handlePost(request, env, corsOrigin) {
       "Failed to contact OpenAI API.",
       502,
       error instanceof Error ? error.message : String(error),
-      origin,
+      corsOrigin,
     );
   }
 }

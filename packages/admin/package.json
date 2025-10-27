@@ -1,0 +1,11 @@
+{
+  "name": "@goldshore/admin",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p dist && printf '<!-- placeholder admin build -->\n' > dist/index.html",
+    "dev": "echo 'Run admin dashboard dev server via Pages project'",
+    "lint": "echo 'lint not yet configured for @goldshore/admin'",
+    "typecheck": "echo 'typecheck not yet configured for @goldshore/admin'"
+  }
+}

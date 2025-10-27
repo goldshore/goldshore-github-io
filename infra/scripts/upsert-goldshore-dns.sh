@@ -89,15 +89,17 @@ for name in "${ordered_names[@]}"; do
   content=$(echo "$record" | jq -r '.content')
   proxied=$(echo "$record" | jq -r '.proxied')
 
-  existing=$(api_request "GET" "/zones/$CF_ZONE_ID/dns_records?name=$name")
-  record_id=$(echo "$existing" | jq -r '.result[0].id // empty')
-  existing_type=$(echo "$existing" | jq -r '.result[0].type // empty')
+  existing=$(api_request "GET" "/zones/$CF_ZONE_ID/dns_records?name=$name&per_page=100")
 
-  if [[ -n "$record_id" && "$existing_type" != "$type" ]]; then
-    echo "Removing existing $existing_type record for $name to create $type"
-    api_request "DELETE" "/zones/$CF_ZONE_ID/dns_records/$record_id" > /dev/null
-    record_id=""
+  mapfile -t conflicting_ids < <(echo "$existing" | jq -r --arg type "$type" '.result[] | select(.type != $type) | .id')
+  if [[ ${#conflicting_ids[@]} -gt 0 ]]; then
+    echo "Removing conflicting records for $name before creating $type"
+    for conflicting_id in "${conflicting_ids[@]}"; do
+      api_request "DELETE" "/zones/$CF_ZONE_ID/dns_records/$conflicting_id" > /dev/null
+    done
   fi
+
+  record_id=$(echo "$existing" | jq -r --arg type "$type" '.result[] | select(.type == $type) | .id' | head -n1)
 
   payload=$(jq -n --arg type "$type" --arg name "$name" --arg content "$content" --argjson proxied $proxied '{type:$type,name:$name,content:$content,proxied:$proxied,ttl:1}')
 

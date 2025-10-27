@@ -6,3 +6,15 @@ _site/
 .bundle/
 vendor/
 .dev.vars
+# Generated package outputs
+packages/*/dist/
+node_modules/
+**/node_modules/
+package-lock.json
+pnpm-lock.yaml
+apps/web/node_modules/
+apps/web/.astro/
+apps/web/dist/
+.pnpm-store/
+.wrangler/
+.turbo/

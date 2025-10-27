@@ -1,0 +1,9 @@
+:root{
+  --gs-ink:#0B0C10; --gs-graphite:#2A2F3A; --gs-paper:#FAFBFF; --gs-bone:#101217;
+  --gs-gold:#E3B341; --gs-auric:#F7C84E; --border:#E4E7EF;
+  --bg:var(--gs-paper); --surface:#FFF; --text:var(--gs-bone); --brand:var(--gs-gold); --brand-contrast:#151515;
+  --radius:12px; --ease:cubic-bezier(.2,.7,.2,1); --dur:120ms;
+}
+:root[data-theme="dark"]{
+  --bg:#0E1016; --surface:#141823; --text:#E9ECF4; --border:#232936; --brand:var(--gs-auric); --brand-contrast:#0D0F14;
+}

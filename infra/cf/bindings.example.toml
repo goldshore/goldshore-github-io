@@ -1,0 +1,40 @@
+# Common bindings for Goldshore Cloudflare Workers
+# Copy this file per environment (e.g., wrangler.dev.toml) and replace the IDs with real values.
+
+[[kv_namespaces]]
+binding = "KV_SESSIONS"
+id = "xxxxxxxxxxxxxxxxxxxx"
+
+[[kv_namespaces]]
+binding = "KV_CACHE"
+id = "xxxxxxxxxxxxxxxxxxxx"
+
+[[durable_objects.bindings]]
+name = "DO_SESSIONS"
+class_name = "SessionDO"
+
+[[queues.producers]]
+binding = "Q_EVENTS"
+queue = "goldshore-events"
+
+[[queues.consumers]]
+queue = "goldshore-events"
+max_batch_size = 50
+max_wait_ms = 2000
+dead_letter_queue = "goldshore-dlq"
+
+[[d1_databases]]
+binding = "D1_CORE"
+database_name = "goldshore-core"
+database_id = "xxxxxxxx-xxxx"
+
+[[r2_buckets]]
+binding = "R2_PUBLIC"
+bucket_name = "goldshore-public"
+
+[vars]
+GOLDSHORE_ENV = "production"
+GOLDSHORE_ORIGIN = "https://goldshore.org"
+GOLDSHORE_CORS = "https://goldshore.org,https://admin.goldshore.org"
+FF_ENABLE_TRADING = "true"
+FF_ENABLE_SENTIMENT = "true"

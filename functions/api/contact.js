@@ -7,14 +7,7 @@ export async function onRequestPost({ request, env }) {
 
     if (!turnstileSecret || !formspreeEndpoint) {
       return new Response(
-        JSON.stringify({
-          ok: false,
-          reason: 'missing_environment',
-          missing: {
-            turnstile: !turnstileSecret,
-            formspree: !formspreeEndpoint
-          }
-        }),
+        JSON.stringify({ ok: false, reason: 'missing_environment', missing: { turnstile: !turnstileSecret, formspree: !formspreeEndpoint } }),
         {
           status: 500,
           headers: { 'content-type': 'application/json' }
@@ -23,15 +16,6 @@ export async function onRequestPost({ request, env }) {
     }
 
     const token = form.get('cf-turnstile-response');
-    if (!token) {
-      return new Response(
-        JSON.stringify({ ok: false, reason: 'missing_token' }),
-        {
-          status: 400,
-          headers: { 'content-type': 'application/json' }
-        }
-      );
-    }
     const ip = request.headers.get('CF-Connecting-IP');
     const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
       method: 'POST',
@@ -50,8 +34,15 @@ export async function onRequestPost({ request, env }) {
     }
 
     const forward = new FormData();
-    forward.set('email', form.get('email') || '');
-    forward.set('message', form.get('message') || '');
+    const email = form.get('email') || '';
+    const message = form.get('message') || '';
+    const name = form.get('name') || '';
+    const focus = form.get('focus') || '';
+
+    forward.set('email', email);
+    forward.set('message', message);
+    if (name) forward.set('name', name);
+    if (focus) forward.set('focus', focus);
     forward.set('_subject', 'Gold Shore Contact');
 
     const fsRes = await fetch(formspreeEndpoint, { method: 'POST', body: forward });
@@ -63,9 +54,15 @@ export async function onRequestPost({ request, env }) {
       });
     }
 
-    return Response.redirect('/#contact-success', 303);
+    const redirectRaw = form.get('_redirect');
+    const redirect = typeof redirectRaw === 'string' && redirectRaw.startsWith('/')
+      ? redirectRaw
+      : '/#contact-success';
+
+    return Response.redirect(redirect, 303);
   } catch (err) {
-    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
+    console.error('contact submission failed', err);
+    return new Response(JSON.stringify({ ok: false, reason: 'internal_error' }), {
       status: 500,
       headers: { 'content-type': 'application/json' }
     });

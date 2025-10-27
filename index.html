@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gold Shore Labs -- We steer capital, not manage it.</title>
-  <meta name="description" content="Gold Shore Labs delivers capital intelligence, private networks, and resilient IT products for leaders who steer capital instead of merely managing it." />
-  <meta property="og:title" content="Gold Shore Labs" />
-  <meta property="og:description" content="We do not manage capital -- we steer it." />
+  <title>Gold Shore — Shaping waves that move markets</title>
+  <meta name="description" content="Premium capital-market storytelling, launch operations, and growth playbooks for founders moving faster than their competition." />
+  <meta property="og:title" content="Gold Shore — Shaping waves that move markets" />
+  <meta property="og:description" content="Shaping waves that move markets — and reputations." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="/assets/img/logo/penrose-og.png" />
   <meta name="theme-color" content="#0a0f1a" />
+  <meta name="cf-turnstile-site-key" content="0x4AAAAAABpjjp050UPFCrE" />
 
   <!-- Favicons (text-free Penrose) -->
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/logo/penrose-32.png" />
@@ -53,9 +54,9 @@
         <!-- Brand -->
         <a href="/" class="flex items-center gap-3" aria-label="Gold Shore Labs">
           <img
-            src="/assets/img/logo/penrose-lockup-dark.png"
-            srcset="/assets/img/logo/penrose-lockup-dark.png 1x, /assets/img/logo/penrose-512.png 2x"
-            alt=""
+            src="/assets/img/logo/plain-penrose.png"
+            srcset="/assets/img/logo/plain-penrose.png 1x, /assets/img/logo/penrose-512.png 2x"
+            alt="Gold Shore Labs penrose logomark"
             class="h-12 md:h-16 w-auto select-none"
             decoding="async"
             fetchpriority="high"
@@ -64,10 +65,19 @@
 
         <!-- Desktop Nav -->
         <nav class="hidden md:flex items-center gap-8" aria-label="Primary">
+          <a href="#kits" class="hover:text-white/90">Kits</a>
+          <a href="#tactile" class="hover:text-white/90">Situations</a>
+          <a href="#stack" class="hover:text-white/90">Command Stack</a>
           <a href="#about" class="hover:text-white/90">About</a>
           <a href="#services" class="hover:text-white/90">Services</a>
           <a href="#work" class="hover:text-white/90">Work</a>
           <a href="#team" class="hover:text-white/90">Team</a>
+          <a href="https://chatgpt.com/g/g-p-67b8a1b2ef008191a115f932a765e71a" target="_blank" rel="noopener" class="inline-flex items-center gap-1 rounded border border-white/10 px-3 py-1 text-sm font-semibold text-white/80 hover:text-white hover:border-white/30" data-cta="nav-goldshore-gpt">
+            <span>Gold Shore GPT</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 6h9m0 0v9m0-9-11 11" />
+            </svg>
+          </a>
           <a href="#contact" class="hover:text-white/90">Contact</a>
           <a href="#contact" data-cta="book-consult-header" class="inline-flex items-center rounded bg-white text-neutral-900 px-3 py-1.5 text-sm font-semibold hover:bg-white/90">Book a consult</a>
         </nav>
@@ -87,10 +97,14 @@
     <!-- Mobile Nav Panel -->
     <div id="mobileMenu" class="md:hidden hidden border-t border-neutral-800">
       <nav class="px-4 py-4 space-y-3" aria-label="Mobile">
+        <a href="#kits" class="block py-2">Kits</a>
+        <a href="#tactile" class="block py-2">Situations</a>
+        <a href="#stack" class="block py-2">Command Stack</a>
         <a href="#about" class="block py-2">About</a>
         <a href="#services" class="block py-2">Services</a>
         <a href="#work" class="block py-2">Work</a>
         <a href="#team" class="block py-2">Team</a>
+        <a href="https://chatgpt.com/g/g-p-67b8a1b2ef008191a115f932a765e71a" target="_blank" rel="noopener" class="block py-2" data-cta="mobile-goldshore-gpt">Gold Shore GPT</a>
         <a href="#contact" class="block py-2">Contact</a>
         <a href="#contact" data-cta="book-consult-mobile" class="inline-flex items-center rounded bg-white text-neutral-900 px-3 py-2 text-sm font-semibold hover:bg-white/90">Book a consult</a>
       </nav>
@@ -102,16 +116,28 @@
     <section class="relative overflow-hidden">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
         <div>
-          <p class="text-sm uppercase tracking-widest text-white/60">Innovating the Future</p>
+          <p class="text-sm uppercase tracking-widest text-white/60">Impact studio</p>
           <h1 class="mt-3 text-4xl/tight md:text-5xl/tight font-extrabold">
-            We steer capital, not manage it.
+            Shaping waves that move markets — and reputations.
           </h1>
           <p class="mt-4 text-white/80 max-w-prose">
-            Integrated wealth analysis, trusted relationship access, and IT product enablement for leaders who need leverage without noise.
+            We partner with high-velocity teams to launch, scale, and defend the products that move modern markets.
           </p>
           <div class="mt-8 flex flex-wrap gap-3">
-            <a href="#work" data-cta="hero-see-work" class="inline-flex items-center rounded bg-white text-neutral-900 px-4 py-2 font-semibold hover:bg-white/90">Review our integrated playbooks</a>
-            <a href="#contact" data-cta="hero-join-lore" class="inline-flex items-center rounded border border-white/20 px-4 py-2 font-semibold hover:bg-neutral-900">Request a network briefing</a>
+            <a href="#kits" data-cta="hero-see-kits" class="inline-flex items-center rounded bg-white text-neutral-900 px-4 py-2 font-semibold hover:bg-white/90">Explore our integrated playbooks</a>
+            <a href="#contact" data-cta="hero-join-lore" class="inline-flex items-center rounded border border-white/20 px-4 py-2 font-semibold hover:bg-neutral-900">Request a discreet network briefing</a>
+          <p class="mt-3 text-white/70 max-w-prose">
+            From positioning to investor decks, we build systems that compound attention, trust, and operational readiness.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href="#services" data-cta="hero-explore-services" class="inline-flex items-center rounded bg-white text-neutral-900 px-4 py-2 font-semibold hover:bg-white/90">Explore services</a>
+            <a href="#contact" data-cta="hero-book-session" class="inline-flex items-center rounded border border-white/20 px-4 py-2 font-semibold hover:bg-neutral-900">Book a session</a>
+            <a href="https://chatgpt.com/g/g-p-67b8a1b2ef008191a115f932a765e71a" target="_blank" rel="noopener" data-cta="hero-goldshore-gpt" class="inline-flex items-center gap-2 rounded bg-emerald-400/10 px-4 py-2 font-semibold text-emerald-200 ring-1 ring-emerald-400/30 transition hover:bg-emerald-400/20 hover:text-emerald-100">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m5 12 4.5 4.5L19 7" />
+              </svg>
+              <span>Activate Gold Shore GPT</span>
+            </a>
           </div>
         </div>
 
@@ -120,13 +146,13 @@
           <div class="swiper hero-swiper rounded-xl ring-1 ring-white/10 overflow-hidden">
             <div class="swiper-wrapper">
               <div class="swiper-slide">
-                <img src="/assets/img/hero/hero-1.jpg" alt="AI fintech dashboards and signal tooling" class="w-full h-80 object-cover" />
+                <img src="/assets/img/gsl-hero1.jpeg" alt="Launch strategy workshop with capital intelligence overlays" class="w-full h-80 object-cover" />
               </div>
               <div class="swiper-slide">
-                <img src="/assets/img/hero/hero-2.jpg" alt="Field Manual creative systems in production" class="w-full h-80 object-cover" />
+                <img src="/assets/img/gsl-hero2.png" alt="Operator console showing alliance pathways" class="w-full h-80 object-cover" />
               </div>
               <div class="swiper-slide">
-                <img src="/assets/img/hero/hero-3.jpg" alt="E-commerce infrastructure and automation" class="w-full h-80 object-cover" />
+                <img src="/assets/img/gsl-hero3.png" alt="War-room monitors orchestrating market signals" class="w-full h-80 object-cover" />
               </div>
             </div>
             <div class="swiper-pagination"></div>
@@ -135,56 +161,125 @@
       </div>
     </section>
 
-    <!-- Fancy Image CTA cards (clickable) -->
-    <section id="work" class="py-14 md:py-20 border-t border-neutral-800 bg-neutral-950">
+    <!-- Operative-grade intelligence kits -->
+    <section id="kits" class="py-16 md:py-24 border-t border-neutral-800 bg-neutral-950">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2 class="text-2xl md:text-3xl font-bold">Selected work</h2>
-        <p class="mt-2 text-white/70">Tap into live systems and case studies across capital intelligence, trusted networks, and product enablement.</p>
+        <div class="max-w-3xl">
+          <p class="text-sm uppercase tracking-widest text-white/60">Pricing intelligence</p>
+          <h2 class="mt-3 text-3xl md:text-4xl font-bold">Operative-grade intelligence kits</h2>
+          <p class="mt-3 text-white/70">
+            Pick the discreet operating kit that fits your mandate. Every tier deploys capital telemetry, private alliance mapping, and resilient enablement so your signals stay yours.
+          </p>
+        </div>
+
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+          <div class="pricing-card">
+            <div class="flex items-center justify-between gap-4">
+              <span class="text-sm font-semibold uppercase tracking-widest text-white/70">Scout</span>
+              <span class="pricing-badge">New</span>
+        <h2 class="text-2xl md:text-3xl font-bold">What we deliver</h2>
+        <p class="mt-2 text-white/70">Ship-ready campaigns, investor collateral, automated launch infrastructure, and founder enablement designed for the next market move.</p>
 
         <div class="mt-8 grid gap-6 md:grid-cols-3">
           <!-- Card 1 -->
-          <a href="#contact" data-cta="card-ai-fintech" class="group relative overflow-hidden rounded-xl ring-1 ring-white/10">
-            <img src="/assets/img/cards/ai-fintech.jpg" alt="AI Fintech Intelligence" class="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          <a href="#contact" data-cta="card-launch-architecture" class="group relative overflow-hidden rounded-xl ring-1 ring-white/10">
+            <img src="/assets/img/gsl-galaxy.png" alt="Launch architecture storyboards" class="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-105" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
             <div class="absolute inset-x-0 bottom-0 p-4">
-              <h3 class="text-lg font-semibold">Integrated Wealth Atlas</h3>
-              <p class="text-sm text-white/80">Discreet analysis layers harmonize capital signals for principals in motion.</p>
-              <span class="mt-2 inline-block text-sm font-semibold text-white/90 underline underline-offset-4">Request a demo →</span>
+              <h3 class="text-lg font-semibold">Launch architecture</h3>
+              <p class="text-sm text-white/80">Messaging arcs, GTM plans, and channel choreography tuned for your founder’s pace.</p>
+              <span class="mt-2 inline-block text-sm font-semibold text-white/90 underline underline-offset-4">See the Bridgekeeper blueprint →</span>
             </div>
-          </a>
+            <p class="pricing-price">$5k</p>
+            <p class="pricing-frequency">per quarter retainer</p>
+            <ul class="pricing-list">
+              <li>Capital telemetry briefs every 30 days</li>
+              <li>Protected operator dossiers with anonymized sourcing</li>
+              <li>Rapid enablement audit across your critical apps</li>
+            </ul>
+            <a href="#contact" data-cta="kit-scout" class="pricing-cta">Deploy scout kit</a>
+          </div>
 
+          <div class="pricing-card highlight">
+            <div class="flex items-center justify-between gap-4">
+              <span class="text-sm font-semibold uppercase tracking-widest text-white/70">Command</span>
+              <span class="pricing-badge">Most requested</span>
           <!-- Card 2 -->
-          <a href="#contact" data-cta="card-field-manual" class="group relative overflow-hidden rounded-xl ring-1 ring-white/10">
-            <img src="/assets/img/cards/field-manual.jpg" alt="Private Network Console" class="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          <a href="#contact" data-cta="card-reputation-defense" class="group relative overflow-hidden rounded-xl ring-1 ring-white/10">
+            <img src="/assets/img/gs-hq-lava.png" alt="Reputation defense command center" class="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-105" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
             <div class="absolute inset-x-0 bottom-0 p-4">
-              <h3 class="text-lg font-semibold">Network Access Console</h3>
-              <p class="text-sm text-white/80">Invite-only relationship mapping connects founders to vetted operators and peers.</p>
-              <span class="mt-2 inline-block text-sm font-semibold text-white/90 underline underline-offset-4">Read the brief →</span>
+              <h3 class="text-lg font-semibold">Reputation defense</h3>
+              <p class="text-sm text-white/80">Always-on monitoring, rapid comms, and content to keep your story ahead of the cycle.</p>
+              <span class="mt-2 inline-block text-sm font-semibold text-white/90 underline underline-offset-4">Learn about Banproof →</span>
             </div>
-          </a>
+            <p class="pricing-price">$12k</p>
+            <p class="pricing-frequency">per month engagement</p>
+            <ul class="pricing-list">
+              <li>Continuously refreshed decision decks and anomaly alerts</li>
+              <li>Embedded private network concierge with invite arbitration</li>
+              <li>System hardening playbooks delivered with activation crews</li>
+            </ul>
+            <a href="#contact" data-cta="kit-command" class="pricing-cta">Book a command briefing</a>
+          </div>
 
+          <div class="pricing-card">
+            <div class="flex items-center justify-between gap-4">
+              <span class="text-sm font-semibold uppercase tracking-widest text-white/70">Sovereign</span>
+              <span class="pricing-badge">Limited seats</span>
           <!-- Card 3 -->
-          <a href="#contact" data-cta="card-ecommerce" class="group relative overflow-hidden rounded-xl ring-1 ring-white/10">
-            <img src="/assets/img/cards/ecommerce.jpg" alt="Product Enablement Stack" class="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+          <a href="#contact" data-cta="card-operational-intelligence" class="group relative overflow-hidden rounded-xl ring-1 ring-white/10">
+            <img src="/assets/img/gsl-infinite.png" alt="Operational intelligence dashboards" class="h-56 w-full object-cover transition-transform duration-300 group-hover:scale-105" />
             <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
             <div class="absolute inset-x-0 bottom-0 p-4">
-              <h3 class="text-lg font-semibold">Product Enablement Spine</h3>
-              <p class="text-sm text-white/80">Modular IT foundations accelerate compliant digital launches without excess footprint.</p>
-              <span class="mt-2 inline-block text-sm font-semibold text-white/90 underline underline-offset-4">See the stack →</span>
+              <h3 class="text-lg font-semibold">Operational intelligence</h3>
+              <p class="text-sm text-white/80">Dashboards, automations, and reporting that equip your team and investors in real-time.</p>
+              <span class="mt-2 inline-block text-sm font-semibold text-white/90 underline underline-offset-4">Meet the operators →</span>
             </div>
-          </a>
+            <p class="pricing-price">Custom</p>
+            <p class="pricing-frequency">annual program</p>
+            <ul class="pricing-list">
+              <li>On-demand intelligence crew with encrypted signal channels</li>
+              <li>Discreet alliance fabrication and scenario simulations</li>
+              <li>Dedicated resilience atelier engineering bespoke stacks</li>
+            </ul>
+            <a href="#contact" data-cta="kit-sovereign" class="pricing-cta">Arrange a sovereign consult</a>
+          </div>
         </div>
       </div>
     </section>
 
+    <!-- Tactile situation -->
+    <section id="tactile" class="py-16 md:py-24 border-t border-neutral-800">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="stacked-card">
+          <div class="stacked-card__content">
+            <p class="text-sm uppercase tracking-widest text-white/70">Featured field kit</p>
+            <h2 class="mt-3 text-3xl font-bold">Tactile situation for rooms without screens</h2>
+            <p class="mt-4 text-white/70 max-w-xl">
+              Deploy a portable briefcase of weighted tiles, tactile schematics, and encoded prompts designed for secure, screenless collaboration. Executives and operators can choreograph sensitive moves without leaving a digital wake.
+            </p>
+            <ul class="mt-6 grid gap-3 text-sm text-white/80">
+              <li class="feature-item">Magnetic signal tiles for allocating capital in the round</li>
+              <li class="feature-item">Red-team storyline cards to test conviction under pressure</li>
+              <li class="feature-item">Faraday-lined folio for secure transport and storage</li>
+            </ul>
+            <div class="mt-8">
+              <a href="#contact" data-cta="tactile-demo" class="inline-flex items-center gap-2 rounded-full bg-white text-neutral-950 px-5 py-2.5 text-sm font-semibold shadow-lg shadow-white/20 hover:bg-white/90">
+                Schedule a tactile demo
+                <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          </div>
+          <div class="stacked-card__media">
+            <img src="/assets/img/matte-blue-mat.png" alt="Tactile intelligence kit" class="stacked-card__image" loading="lazy" />
     <!-- About -->
     <section id="about" class="py-14 md:py-20 border-t border-neutral-800">
       <div class="mx-auto max-w-4xl px-4 sm:px-6">
         <h2 class="text-2xl md:text-3xl font-bold">About</h2>
         <p class="mt-3 text-white/80">
-          Gold Shore Labs is a hybrid technology atelier at the intersection of AI, resilience, and digital sovereignty.
-          Every project is designed not to manage capital, but to steer it.
+          Gold Shore is an impact studio shaping waves that move markets. We combine narrative architecture, alliance design,
+          and resilient enablement so founders can operate with conviction and confidentiality.
         </p>
       </div>
     </section>
@@ -193,23 +288,62 @@
     <section id="services" class="py-14 md:py-20 border-t border-neutral-800 bg-neutral-950">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <h2 class="text-2xl md:text-3xl font-bold">Services</h2>
+        <p class="mt-2 max-w-3xl text-white/70">Every engagement is designed to compound story, access, and infrastructure. These are the pillars we assemble for founders who move faster than the cycle.</p>
         <div class="mt-8 grid gap-6 md:grid-cols-3">
-          <div class="rounded-xl border border-neutral-800 p-6 bg-neutral-900/30">
-            <h3 class="font-semibold">Wealth Signal Cartography</h3>
-            <p class="mt-2 text-white/80">Map multi-class asset signals into actionable briefs without disclosing the engines behind them.</p>
+          <div class="rounded-xl border border-neutral-800 bg-neutral-900/30 p-6">
+            <h3 class="font-semibold">Capital signal desk</h3>
+            <p class="mt-2 text-white/80">Macro and micro indicators translated into briefs your principals can action within hours.</p>
           </div>
-          <div class="rounded-xl border border-neutral-800 p-6 bg-neutral-900/30">
-            <h3 class="font-semibold">Curated Operator Circles</h3>
-            <p class="mt-2 text-white/80">Assemble invitation-only collaboration lattices that blend family offices, founders, and subject savants.</p>
+          <div class="rounded-xl border border-neutral-800 bg-neutral-900/30 p-6">
+            <h3 class="font-semibold">Alliance choreography</h3>
+            <p class="mt-2 text-white/80">Invite-only operator graphs and corridor activations that move without public footprints.</p>
           </div>
-          <div class="rounded-xl border border-neutral-800 p-6 bg-neutral-900/30">
-            <h3 class="font-semibold">Adjacency Systems Lab</h3>
-            <p class="mt-2 text-white/80">Prototype complementary IT kits that augment core stacks while keeping our internal methods sealed.</p>
+          <div class="rounded-xl border border-neutral-800 bg-neutral-900/30 p-6">
+            <h3 class="font-semibold">Enablement forge</h3>
+            <p class="mt-2 text-white/80">Compliance-ready systems, automations, and launch infrastructure that harden your next wave.</p>
+          </div>
+          <div class="rounded-xl border border-neutral-800 bg-neutral-900/30 p-6">
+            <h3 class="font-semibold">Narrative defense</h3>
+            <p class="mt-2 text-white/80">Scenario planning, rapid comms, and newsroom-grade content to defend your reputation.</p>
+          </div>
+          <div class="rounded-xl border border-neutral-800 bg-neutral-900/30 p-6">
+            <h3 class="font-semibold">Capital raise atelier</h3>
+            <p class="mt-2 text-white/80">Decks, data rooms, and diligence layers that secure durable capital without sacrificing speed.</p>
+          </div>
+          <div class="rounded-xl border border-neutral-800 bg-neutral-900/30 p-6">
+            <h3 class="font-semibold">Operations intelligence</h3>
+            <p class="mt-2 text-white/80">Dashboards, reporting, and governance overlays that keep leadership, investors, and operators aligned.</p>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- Engineer your own command stack -->
+    <section id="stack" class="py-16 md:py-24 border-t border-neutral-800 bg-neutral-950">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid gap-12 md:grid-cols-2 md:items-center">
+        <div>
+          <p class="text-sm uppercase tracking-widest text-white/60">Systems atelier</p>
+          <h2 class="mt-3 text-3xl md:text-4xl font-bold">Engineer your own command stack</h2>
+          <p class="mt-4 text-white/70">
+            We integrate intelligence, alliances, and enablement layers into a single pane so principals can orchestrate moves faster than competitors notice. Everything is modular, compliant, and delivered in closed-loop playbooks.
+          </p>
+          <ul class="mt-6 space-y-3 text-white/80">
+            <li class="flex items-start gap-3">
+              <span class="feature-dot mt-1"></span>
+              <span>Embedded telemetry fabric spanning treasury, supply, and sentiment signals.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="feature-dot mt-1"></span>
+              <span>Invite arbitration layer that keeps operators vetted and confidential.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="feature-dot mt-1"></span>
+              <span>Hardening sprints that ship zero-trust infrastructure without slowing delivery.</span>
+            </li>
+          </ul>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a href="#contact" data-cta="stack-design-session" class="inline-flex items-center rounded bg-white text-neutral-900 px-5 py-2.5 text-sm font-semibold hover:bg-white/90">Design a custom stack</a>
+            <a href="/tiers.html" data-cta="stack-download" class="inline-flex items-center rounded border border-white/20 px-5 py-2.5 text-sm font-semibold hover:bg-neutral-900">Download stack briefing</a>
     <!-- Tech stack icons -->
     <section class="py-12 border-t border-neutral-800">
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -230,11 +364,15 @@
       <div class="mx-auto max-w-4xl px-4 sm:px-6">
         <h2 class="text-2xl md:text-3xl font-bold">Team</h2>
         <div class="mt-6 flex items-center gap-4">
-          <img src="/assets/img/team/robert.jpg" alt="Gold Shore Labs penrose logomark" class="h-14 w-14 rounded-full object-cover ring-1 ring-white/10" />
+          <img src="/assets/img/team/robert.jpg" alt="Portrait of Robert M., founder of Gold Shore Labs" class="h-14 w-14 rounded-full object-cover ring-1 ring-white/10" />
           <div>
             <p class="font-semibold">Robert M.</p>
-            <p class="text-white/70 text-sm">Founder</p>
+            <p class="text-sm text-white/70">Founder &amp; Lead Strategist</p>
           </div>
+        </div>
+        <div class="relative">
+          <div class="command-stack-glow" aria-hidden="true"></div>
+          <img src="/assets/img/layout.png" alt="Command stack layout" class="relative z-10 w-full max-w-xl mx-auto rounded-2xl ring-1 ring-white/15 shadow-2xl" loading="lazy" />
         </div>
       </div>
     </section>
@@ -245,7 +383,7 @@
         <h2 class="text-2xl md:text-3xl font-bold">Contact</h2>
         <p class="mt-2 text-white/80">Have a project or idea? Reach out anytime.</p>
         
-        <form id="contactForm" class="mt-6 grid gap-4" method="POST" action="/api/contact">
+        <form id="primaryContactForm" class="mt-6 grid gap-4" method="POST" action="/api/contact">
           <label class="grid gap-1">
             <span class="text-sm text-white/70">Your email</span>
             <input name="email" type="email" required class="bg-neutral-900 border border-neutral-800 rounded px-3 py-2" />
@@ -256,7 +394,7 @@
           </label>
 
           <!-- Cloudflare Turnstile -->
-          <div class="cf-turnstile" data-sitekey="0X4AAAAAABpjj·p050UPFCrE" data-theme="dark" data-callback="onTsOk"></div>
+          <div class="cf-turnstile" data-sitekey="0x4AAAAAABpjjp050UPFCrE" data-theme="dark" data-callback="onTsOk"></div>
 
           <button data-cta="contact-send" class="inline-flex justify-center rounded bg-white text-neutral-900 px-4 py-2 font-semibold hover:bg-white/90">
             Send
@@ -268,24 +406,310 @@
           function onTsOk(){ /* optional: enable submit button, show 'verified' state */ }
         </script>
         
-        <div id="contact-success" class="hidden mt-4 rounded bg-emerald-600/20 text-emerald-200 p-3">
+        <div
+          id="contact-success"
+          class="hidden mt-4 rounded bg-emerald-600/20 text-emerald-200 p-3"
+          role="status"
+          aria-live="polite"
+          tabindex="-1"
+        >
           Thanks! We’ll get back to you soon.
         </div>
         <script>
-          if (location.hash === '#contact-success') {
-            document.getElementById('contact-success').classList.remove('hidden');
-          }
+          (function() {
+            if (location.hash === '#contact-success') {
+              var detail = { formId: 'primaryContactForm', transportType: 'redirect' };
+              window.__contactSuccess = detail;
+              try {
+                window.dispatchEvent(new CustomEvent('contact:success', { detail: detail }));
+              } catch (err) {
+                var successEl = document.getElementById('contact-success');
+                if (successEl) {
+                  successEl.classList.remove('hidden');
+                }
+                if (typeof console !== 'undefined' && console.warn) {
+                  console.warn('contact success event failed', err);
+                }
+              }
+            }
+          })();
         </script>
+    <!-- Testimonials -->
+    <section id="testimonials" class="border-t border-neutral-800 bg-neutral-950 py-16 md:py-20">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="md:flex md:items-end md:justify-between md:gap-12">
+          <div>
+            <p class="text-sm uppercase tracking-[0.3em] text-white/50">Field Notes</p>
+            <h2 class="mt-3 text-2xl md:text-3xl font-bold">Signals from the circle</h2>
+            <p class="mt-3 max-w-2xl text-white/70">Curated operators and principals rely on Gold Shore Labs to orchestrate capital intelligence, closed-network activations, and resilient enablement systems.</p>
+          </div>
+          <div class="hidden md:block text-sm text-white/60">Swipe or tap to review what partners are saying.</div>
+        </div>
 
+        <div class="mt-10">
+          <div class="swiper testimonials-swiper">
+            <div class="swiper-wrapper">
+              <div class="swiper-slide h-auto">
+                <figure class="testimonial-card h-full rounded-2xl border border-white/10 bg-gradient-to-br from-neutral-900/70 via-neutral-900/50 to-neutral-900/30 p-6 shadow-lg shadow-cyan-500/5">
+                  <blockquote class="text-lg text-white/90">“They mapped the capital terrain around our expansion faster than anyone inside the room. Every briefing landed with precision and discretion.”</blockquote>
+                  <figcaption class="mt-6 text-sm font-semibold text-white/70">
+                    <span class="block text-white">Chief Strategy Officer</span>
+                    Private Wealth Consortium
+                  </figcaption>
+                </figure>
+              </div>
+              <div class="swiper-slide h-auto">
+                <figure class="testimonial-card h-full rounded-2xl border border-white/10 bg-gradient-to-br from-neutral-900/70 via-neutral-900/50 to-neutral-900/30 p-6 shadow-lg shadow-amber-500/5">
+                  <blockquote class="text-lg text-white/90">“Gold Shore decoded the alliance graph that let us activate trusted partners in three countries without exposing our operators.”</blockquote>
+                  <figcaption class="mt-6 text-sm font-semibold text-white/70">
+                    <span class="block text-white">Principal Partner</span>
+                    Invitation-Only Family Office
+                  </figcaption>
+                </figure>
+              </div>
+              <div class="swiper-slide h-auto">
+                <figure class="testimonial-card h-full rounded-2xl border border-white/10 bg-gradient-to-br from-neutral-900/70 via-neutral-900/50 to-neutral-900/30 p-6 shadow-lg shadow-indigo-500/5">
+                  <blockquote class="text-lg text-white/90">“They hardened our infrastructure spine while keeping the product team sprinting. Launch windows stayed on schedule and compliant.”</blockquote>
+                  <figcaption class="mt-6 text-sm font-semibold text-white/70">
+                    <span class="block text-white">Head of Enablement</span>
+                    Regulated Commerce Portfolio
+                  </figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="testimonials-pagination mt-6"></div>
+          </div>
+        </div>
       </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="border-t border-neutral-800 py-16 md:py-20">
+      <div class="mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="text-center">
+          <p class="text-sm uppercase tracking-[0.3em] text-white/50">Engagement Maps</p>
+          <h2 class="mt-3 text-2xl md:text-3xl font-bold">Curate the tier that fits your mission</h2>
+          <p class="mt-3 text-white/70">Toggle live pricing scenarios to align with immediate strike teams or longer horizon mandates.</p>
+
+          <div class="mt-8 flex justify-center">
+            <div class="inline-flex items-center gap-1 rounded-full bg-neutral-900/80 p-1 ring-1 ring-white/10" role="group" aria-label="Billing period">
+              <button type="button" class="pricing-toggle pricing-toggle--active" data-pricing-toggle data-period="monthly" aria-pressed="true">Per mission</button>
+              <button type="button" class="pricing-toggle" data-pricing-toggle data-period="annual" aria-pressed="false">Annual retainer</button>
+            </div>
+          </div>
+          <p class="mt-4 text-sm text-emerald-300/80" data-pricing-caption data-caption-monthly="Dial in for discrete missions and rapid intel packs." data-caption-annual="Annual retainers unlock priority sprints and bespoke war rooms.">Dial in for discrete missions and rapid intel packs.</p>
+        </div>
+
+        <div class="mt-10 grid gap-6 lg:grid-cols-3">
+          <article class="flex flex-col rounded-2xl border border-white/10 bg-neutral-900/60 p-6">
+            <div>
+              <h3 class="text-xl font-semibold">Signal Atlas</h3>
+              <p class="mt-2 text-sm text-white/70">Real-time capital intelligence dossiers for teams who need clarity on demand.</p>
+              <div class="mt-6 flex items-baseline gap-2">
+                <span class="text-4xl font-semibold" data-price-target data-price-monthly="$6.5k" data-price-annual="$68k">$6.5k</span>
+                <span class="text-sm text-white/60" data-price-frequency data-frequency-monthly="/mission" data-frequency-annual="/year">/mission</span>
+              </div>
+              <p class="mt-3 text-xs uppercase tracking-wide text-white/50" data-price-detail data-detail-monthly="Up to 4 rapid-fire briefs" data-detail-annual="Includes 12 deployments">Up to 4 rapid-fire briefs</p>
+            </div>
+            <ul class="mt-6 flex-1 space-y-3 text-sm text-white/80">
+              <li class="flex items-start gap-2"><span aria-hidden="true" class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>Capital terrain analysis updated weekly</li>
+              <li class="flex items-start gap-2"><span aria-hidden="true" class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>Signal briefs with attribution clarity</li>
+              <li class="flex items-start gap-2"><span aria-hidden="true" class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>Direct line to research desk</li>
+            </ul>
+            <a href="#contact" data-cta="pricing-signal" class="mt-8 inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-sm shadow-emerald-500/10 transition hover:bg-white/90">Activate Signal Atlas</a>
+          </article>
+
+          <article class="relative flex flex-col overflow-hidden rounded-2xl border border-emerald-500/40 bg-gradient-to-b from-emerald-500/10 via-neutral-900/70 to-neutral-900/80 p-6">
+            <span class="absolute right-4 top-4 rounded-full bg-emerald-500/90 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-950">Preferred</span>
+            <div>
+              <h3 class="text-xl font-semibold">Alliance Console</h3>
+              <p class="mt-2 text-sm text-white/70">Deploy trusted operators and private network activations without signalling moves.</p>
+              <div class="mt-6 flex items-baseline gap-2">
+                <span class="text-4xl font-semibold" data-price-target data-price-monthly="$12k" data-price-annual="$120k">$12k</span>
+                <span class="text-sm text-white/60" data-price-frequency data-frequency-monthly="/mission" data-frequency-annual="/year">/mission</span>
+              </div>
+              <p class="mt-3 text-xs uppercase tracking-wide text-white/50" data-price-detail data-detail-monthly="Closed-circle activations" data-detail-annual="Priority corridor access">Closed-circle activations</p>
+            </div>
+            <ul class="mt-6 flex-1 space-y-3 text-sm text-white/85">
+              <li class="flex items-start gap-2"><span aria-hidden="true" class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>Operator graph with discretion controls</li>
+              <li class="flex items-start gap-2"><span aria-hidden="true" class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>Alliance choreography and outreach kits</li>
+              <li class="flex items-start gap-2"><span aria-hidden="true" class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>On-call strategist for rapid clearance</li>
+            </ul>
+            <a href="#contact" data-cta="pricing-alliance" class="mt-8 inline-flex items-center justify-center rounded-lg bg-emerald-400/90 px-4 py-2 text-sm font-semibold text-emerald-950 shadow-sm shadow-emerald-400/30 transition hover:bg-emerald-300">Secure Alliance Console</a>
+          </article>
+
+          <article class="flex flex-col rounded-2xl border border-white/10 bg-neutral-900/60 p-6">
+            <div>
+              <h3 class="text-xl font-semibold">Sovereign Spine</h3>
+              <p class="mt-2 text-sm text-white/70">Resilient IT enablement, compliance hardening, and war-room coordination for scale.</p>
+              <div class="mt-6 flex items-baseline gap-2">
+                <span class="text-4xl font-semibold" data-price-target data-price-monthly="$22k" data-price-annual="$220k">$22k</span>
+                <span class="text-sm text-white/60" data-price-frequency data-frequency-monthly="/mission" data-frequency-annual="/year">/mission</span>
+              </div>
+              <p class="mt-3 text-xs uppercase tracking-wide text-white/50" data-price-detail data-detail-monthly="Launch hardening" data-detail-annual="Embedded response pods">Launch hardening</p>
+            </div>
+            <ul class="mt-6 flex-1 space-y-3 text-sm text-white/80">
+              <li class="flex items-start gap-2"><span aria-hidden="true" class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>Infrastructure readiness and compliance runbooks</li>
+              <li class="flex items-start gap-2"><span aria-hidden="true" class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>Cyber resilience simulations &amp; live drills</li>
+              <li class="flex items-start gap-2"><span aria-hidden="true" class="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>Joint mission room with executive overlays</li>
+            </ul>
+            <a href="#contact" data-cta="pricing-sovereign" class="mt-8 inline-flex items-center justify-center rounded-lg border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:border-white/40 hover:text-white/90">Brief Sovereign Spine</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="border-t border-neutral-800 bg-neutral-950 py-16 md:py-20">
+      <div class="mx-auto max-w-4xl px-4 sm:px-6">
+        <div class="text-center">
+          <p class="text-sm uppercase tracking-[0.3em] text-white/50">Clarifications</p>
+          <h2 class="mt-3 text-2xl md:text-3xl font-bold">Questions we resolve early</h2>
+          <p class="mt-3 text-white/70">Toggle the topics that matter most. Each answer keeps sensitive operations off the record yet fully actionable.</p>
+        </div>
+
+        <div class="mt-10 divide-y divide-white/10 rounded-2xl border border-white/10 bg-neutral-900/50">
+          <div class="faq-item">
+            <button type="button" class="faq-question" data-faq-toggle data-faq-question="engagement" aria-expanded="false" aria-controls="faq-panel-1">
+              <span>How fast can a mission brief be activated?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div id="faq-panel-1" class="faq-answer hidden" hidden>
+              <p>Signal Atlas engagements can spin up within 48 hours once objectives are confirmed. Annual partners receive standing war-room coverage with zero spin-up time.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button type="button" class="faq-question" data-faq-toggle data-faq-question="privacy" aria-expanded="false" aria-controls="faq-panel-2">
+              <span>What discretion protocols guard our operators?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div id="faq-panel-2" class="faq-answer hidden" hidden>
+              <p>Alliance Console programs rely on compartmentalised identity layers, zero-logging communication corridors, and human-in-the-loop verification for any outreach.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button type="button" class="faq-question" data-faq-toggle data-faq-question="integration" aria-expanded="false" aria-controls="faq-panel-3">
+              <span>Can you embed with internal engineering or compliance?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div id="faq-panel-3" class="faq-answer hidden" hidden>
+              <p>Sovereign Spine pods integrate alongside legal, engineering, and security stakeholders to ensure infrastructure, data handling, and regulatory moves stay in sync.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button type="button" class="faq-question" data-faq-toggle data-faq-question="access" aria-expanded="false" aria-controls="faq-panel-4">
+              <span>Do you support teams outside North America?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div id="faq-panel-4" class="faq-answer hidden" hidden>
+              <p>Yes. Our network spans transatlantic capitals and emerging corridors. We orchestrate in-time zone coverage while keeping your signature discreet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Final CTA / Contact -->
+    <section id="contact" class="relative overflow-hidden border-t border-neutral-800 py-16 md:py-20">
+      <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-neutral-900 to-neutral-950"></div>
+      <div class="relative mx-auto max-w-6xl px-4 sm:px-6">
+        <div class="grid gap-10 lg:grid-cols-[1.1fr_1fr]">
+          <div>
+            <p class="text-sm uppercase tracking-[0.3em] text-white/50">Align Quickly</p>
+            <h2 class="mt-3 text-3xl font-bold md:text-4xl">Request a discreet alignment session</h2>
+            <p class="mt-4 text-white/70">Share how we can steer your next market wave. We respond within one business day with an encrypted follow-up.</p>
+            <ul class="mt-8 space-y-3 text-sm text-white/75">
+              <li class="flex items-start gap-3"><span class="mt-1 h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true"></span>Encrypted summaries delivered to your secure inbox</li>
+              <li class="flex items-start gap-3"><span class="mt-1 h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true"></span>Optional invite to a live signal room or operator briefing</li>
+              <li class="flex items-start gap-3"><span class="mt-1 h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true"></span>No marketing noise—only the intel you request</li>
+            </ul>
+          </div>
+
+          <div class="rounded-2xl border border-white/10 bg-neutral-950/80 p-6 shadow-2xl shadow-emerald-500/10">
+            <form id="primaryContactForm" class="grid gap-4" method="POST" action="/api/contact">
+              <label class="grid gap-1">
+                <span class="text-sm text-white/70">Your email</span>
+                <input name="email" type="email" required class="rounded-lg border border-white/10 bg-neutral-900/90 px-3 py-2 text-white focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40" />
+              </label>
+              <label class="grid gap-1">
+                <span class="text-sm text-white/70">Mission details</span>
+                <textarea name="message" rows="5" required class="rounded-lg border border-white/10 bg-neutral-900/90 px-3 py-2 text-white focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-400/40"></textarea>
+              </label>
+
+              <!-- Cloudflare Turnstile -->
+              <div id="primaryTurnstile" class="cf-turnstile" data-theme="dark" data-callback="onTsOk"></div>
+
+              <button data-cta="contact-send" class="inline-flex items-center justify-center rounded-lg bg-emerald-400/90 px-4 py-2 text-sm font-semibold text-emerald-950 transition hover:bg-emerald-300">
+                Request alignment
+              </button>
+            </form>
+
+            <div id="contact-success" class="mt-4 hidden rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-200">
+              Thanks! We’ll get back to you soon.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        (function () {
+          var meta = document.querySelector('meta[name="cf-turnstile-site-key"]');
+          var siteKey = meta && typeof meta.content === 'string' ? meta.content.trim() : '';
+          if (!siteKey) {
+            console.error('Missing Turnstile site key');
+            return;
+          }
+
+          var sanitized = siteKey.replace(/[^0-9a-z_-]/gi, '');
+          if (/^[01]X/.test(sanitized)) {
+            sanitized = sanitized.replace(/^[01]X/, function (match) {
+              return match.toLowerCase();
+            });
+          }
+
+          if (!/^[01]x[0-9A-Za-z_-]{10,}$/.test(sanitized)) {
+            console.error('Invalid Turnstile site key configured');
+            return;
+          }
+
+          var widgets = document.querySelectorAll('.cf-turnstile');
+          widgets.forEach(function (el) {
+            el.setAttribute('data-sitekey', sanitized);
+          });
+        })();
+      </script>
+      <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+      <script>
+        function onTsOk(){ /* optional: enable submit button, show 'verified' state */ }
+        if (location.hash === '#contact-success') {
+          var successEl = document.getElementById('contact-success');
+          if (successEl) {
+            successEl.classList.remove('hidden');
+          }
+          if (window.gtagTrack) {
+            window.gtagTrack('contact_form_submit', {
+              form_id: 'primaryContactForm',
+              transport_type: 'redirect'
+            });
+          }
+          try {
+            window.dispatchEvent(new CustomEvent('contact:success', {
+              detail: { formId: 'primaryContactForm', transportType: 'redirect' }
+            }));
+          } catch (err) {
+            console.warn('contact success event failed', err);
+          }
+        }
+      </script>
     </section>
   </main>
 
-  <footer class="border-t border-neutral-800">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 text-sm text-white/70 flex items-center justify-between">
-      <p>© 2025 Gold Shore Labs. All rights reserved.</p>
-      <div class="flex gap-4">
-        <a class="hover:text-white" href="mailto:mail@goldshore.org">mail@goldshore.org</a>
+  <footer class="border-t border-neutral-800 bg-neutral-950/95">
+    <div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-8 text-sm text-white/70 sm:flex-row sm:items-center sm:justify-between">
+      <p>© 2025 Gold Shore. Shaping waves that move markets.</p>
+      <div class="flex flex-wrap items-center gap-4">
+        <a class="hover:text-white" href="mailto:mail@goldshore.org" data-cta="footer-email">mail@goldshore.org</a>
+        <a class="hover:text-white" href="#contact" data-cta="footer-consult">Request a consult</a>
       </div>
     </div>
   </footer>

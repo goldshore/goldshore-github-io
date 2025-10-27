@@ -24,10 +24,17 @@ const MODEL_BY_PURPOSE: Record<string, string> = {
   [DEFAULT_PURPOSE]: 'gpt-5',
 };
 
-const mapHostToAssets = (host: string, env: Env) =>
-  host.startsWith('preview.') ? (env.PREVIEW_ASSETS ?? 'https://goldshore-org-preview.pages.dev') :
-  host.startsWith('dev.')     ? (env.DEV_ASSETS ?? 'https://goldshore-org-dev.pages.dev') :
-                                (env.PRODUCTION_ASSETS ?? 'https://goldshore-org.pages.dev');
+const DEFAULT_ASSETS = {
+  production: 'https://goldshore-org.pages.dev',
+  preview: 'https://goldshore-org-preview.pages.dev',
+  dev: 'https://goldshore-org-dev.pages.dev',
+} as const;
+
+const mapHostToAssets = (host: string, env: Env) => {
+  if (host.startsWith('preview.')) return env.PREVIEW_ASSETS ?? DEFAULT_ASSETS.preview;
+  if (host.startsWith('dev.')) return env.DEV_ASSETS ?? DEFAULT_ASSETS.dev;
+  return env.PRODUCTION_ASSETS ?? DEFAULT_ASSETS.production;
+};
 
 const parseAllowedOrigins = (env: Env) => {
   const raw = env.GPT_ALLOWED_ORIGINS;

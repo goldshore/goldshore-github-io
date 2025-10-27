@@ -14,6 +14,70 @@ const mapHostToAssets = (host: string, env: Env): string =>
       ? env.DEV_ASSETS ?? 'https://goldshore-org-dev.pages.dev'
       : env.PRODUCTION_ASSETS ?? 'https://goldshore-org.pages.dev';
 
+const ALLOWED_HOSTS = new Set([
+  'goldshore.org',
+  'www.goldshore.org',
+  'preview.goldshore.org',
+  'dev.goldshore.org',
+  'goldshore-org.pages.dev',
+  'goldshore-org-preview.pages.dev',
+  'goldshore-org-dev.pages.dev'
+]);
+
+const ALLOWED_BASE_DOMAINS = new Set([
+  'goldshore.org',
+  'goldshore.foundation',
+  'goldshorefoundation.org',
+  'localhost',
+  '127.0.0.1'
+]);
+
+const getBaseDomain = (hostname: string): string => {
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    return hostname;
+  }
+
+  if (hostname === 'localhost') {
+    return hostname;
+  }
+
+  const parts = hostname.split('.');
+  if (parts.length <= 2) {
+    return hostname;
+  }
+
+  return parts.slice(-2).join('.');
+};
+
+const getCorsOrigin = (req: Request, fallbackOrigin: string): string => {
+  const originHeader = req.headers.get('Origin') ?? req.headers.get('origin');
+
+  if (!originHeader) {
+    return fallbackOrigin;
+  }
+
+  try {
+    const parsedOrigin = new URL(originHeader);
+    const baseDomain = getBaseDomain(parsedOrigin.hostname);
+
+    if (ALLOWED_HOSTS.has(parsedOrigin.hostname)) {
+      return parsedOrigin.origin;
+    }
+
+    if (parsedOrigin.origin === fallbackOrigin) {
+      return fallbackOrigin;
+    }
+
+    if (ALLOWED_BASE_DOMAINS.has(baseDomain)) {
+      return parsedOrigin.origin;
+    }
+  } catch (error) {
+    console.warn('Invalid Origin header received', error);
+  }
+
+  return fallbackOrigin;
+};
+
 const buildCorsHeaders = (origin: string): Headers => {
   const headers = new Headers();
   headers.set('access-control-allow-origin', origin);
@@ -28,7 +92,8 @@ export default {
   async fetch(req, env): Promise<Response> {
     const url = new URL(req.url);
 
-    const requestOrigin = req.headers.get('Origin') ?? `${url.protocol}//${url.host}`;
+    const fallbackOrigin = `${url.protocol}//${url.host}`;
+    const requestOrigin = getCorsOrigin(req, fallbackOrigin);
 
     if (req.method === 'OPTIONS') {
       const cors = buildCorsHeaders(requestOrigin);

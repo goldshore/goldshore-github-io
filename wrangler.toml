@@ -22,6 +22,8 @@ secret_name = "CF_API_TOKEN"
 
 [vars]
 APP_NAME = "GoldShore"
+# D1 database bindings are intentionally omitted until the instance is provisioned
+# to avoid blocking deploys with placeholder IDs.
 
 [env.production]
 routes = [

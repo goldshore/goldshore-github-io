@@ -16,17 +16,10 @@ GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https:/
 
 [env.production]
 routes = [
-  # Ensure preview and dev hostnames stay mapped to their environment-specific workers
-  { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org", script = "router-preview" },
-  { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org", script = "router-dev" },
-  { pattern = "preview.gearswipe.com/*", zone_name = "gearswipe.com", script = "router-preview" },
-  { pattern = "dev.gearswipe.com/*", zone_name = "gearswipe.com", script = "router-dev" },
-  { pattern = "preview.armsway.com/*", zone_name = "armsway.com", script = "router-preview" },
-  { pattern = "dev.armsway.com/*", zone_name = "armsway.com", script = "router-dev" },
-  { pattern = "preview.banproof.com/*", zone_name = "banproof.com", script = "router-preview" },
-  { pattern = "dev.banproof.com/*", zone_name = "banproof.com", script = "router-dev" },
-
-  # Routes for primary marketing hostnames. Wildcards are intentionally avoided so
+  # Routes for primary marketing hostnames. Preview/dev patterns are intentionally
+  # omitted so `wrangler deploy --env production` does not overwrite the dedicated
+  # preview/dev workers configured via their own environments below. Wildcards are
+  # intentionally avoided so
   # API subdomains like `api.goldshore.org` continue to resolve to their dedicated
   # origins provisioned by the deployment workflow instead of hitting this router.
   # Explicitly enumerate any additional marketing hosts so that non-site services

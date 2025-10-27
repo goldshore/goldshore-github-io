@@ -1,3 +1,6 @@
+# Cloudflare Pages configuration. Worker deployments should use wrangler.worker.toml.
+pages_build_output_dir = "./apps/web/dist"
+pages_build_command = "npm run build:web"
 # wrangler.toml (Worker router)
 name = "goldshore"
 main = "apps/api-router/src/router.ts"
@@ -23,7 +26,7 @@ routes = [
 ]
 
 [env.production.vars]
-ASSETS_ORIGIN = "https://goldshore-org.pages.dev"
+ASSETS_ORIGIN = "https://goldshore.org"
 CF_ACCESS_AUD = "3d5916af31a595ca00d8b1ab0157361a953779d939d9df2f63b1802b87a0248e"
 CF_ACCESS_ISS = "https://rmarston.cloudflareaccess.com"
 CF_ACCESS_JWKS_URL = "https://rmarston.cloudflareaccess.com/cdn-cgi/access/certs"
@@ -43,11 +46,13 @@ routes = [
   { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
 ]
 
-[env.preview.vars]
-ASSETS_ORIGIN = "https://goldshore-org-preview.pages.dev"
+# (Only add bindings you actually use)
+[[analytics_engine_datasets]]
+binding = "GOLD_ANALYTICS"
+dataset = "goldshore-events"
 
 # (Only add bindings you actually use)
-[[env.preview.analytics_engine_datasets]]
+[[analytics_engine_datasets]]
 binding = "GOLD_ANALYTICS"
 dataset = "goldshore-events"
 
@@ -56,6 +61,3 @@ name = "goldshore-dev"
 routes = [
   { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" }
 ]
-
-[env.dev.vars]
-ASSETS_ORIGIN = "https://goldshore-org-dev.pages.dev"

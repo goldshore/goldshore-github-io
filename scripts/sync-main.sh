@@ -77,11 +77,11 @@ if (( REMOTE_AHEAD > 0 && LOCAL_AHEAD > 0 )); then
   exit 1
 fi
 
-if (( REMOTE_AHEAD > 0 )); then
+if (( LOCAL_AHEAD > 0 )); then
+  echo "$BRANCH is ahead of $REMOTE/$BRANCH by $LOCAL_AHEAD commit(s); skipping fast-forward" >&2
+elif (( REMOTE_AHEAD > 0 )); then
   echo "Fast-forwarding $BRANCH" >&2
   git merge --ff-only "$REMOTE/$BRANCH"
-elif (( LOCAL_AHEAD > 0 )); then
-  echo "$BRANCH is ahead of $REMOTE/$BRANCH by $LOCAL_AHEAD commit(s); skipping fast-forward" >&2
 else
   echo "$BRANCH is already up to date with $REMOTE/$BRANCH" >&2
 fi

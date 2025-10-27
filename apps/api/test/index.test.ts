@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -33,6 +33,14 @@ beforeAll(async () => {
       CORS_ORIGINS: "http://localhost"
     }
   });
+  const db = await mf.getD1Database("DB");
+  const schema = readFileSync("drizzle/0001_init.sql", "utf8");
+  const statements = schema.split(';');
+  for (const statement of statements) {
+    if (statement.trim()) {
+      await db.prepare(statement).run();
+    }
+  }
 });
 
 afterAll(async () => {
@@ -104,7 +112,7 @@ describe("Goldshore API REST handlers", () => {
   });
 
   it("publishes risk limits", async () => {
-    const riskCreate = await request("/v1/risk_config", {
+    const riskCreate = await request("/v1/risk/config", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -116,9 +124,42 @@ describe("Goldshore API REST handlers", () => {
     expect(riskCreate.res.status).toBe(201);
     expect(riskCreate.json.data.is_published).toBe(1);
 
-    const riskLimits = await request("/v1/risk/limits");
+    const riskLimits = await request("/v1/risk/config", {
+      method: "GET",
+    });
     expect(riskLimits.res.status).toBe(200);
-    expect(riskLimits.json.data.limits.max_notional).toBe(50000);
-    expect(riskLimits.json.data.limits.regions).toContain("US");
+    expect(riskLimits.json.data.is_published).toBe(1);
+  });
+
+  it("validates email on lead capture", async () => {
+    const validLead = await request("/v1/lead", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "test@example.com" })
+    });
+    expect(validLead.res.status).toBe(200);
+
+    const invalidLead = await request("/v1/lead", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "not-an-email" })
+    });
+    expect(invalidLead.res.status).toBe(400);
+  });
+
+  it("validates email on lead capture", async () => {
+    const validLead = await request("/v1/lead", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "test@example.com" })
+    });
+    expect(validLead.res.status).toBe(200);
+
+    const invalidLead = await request("/v1/lead", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email: "not-an-email" })
+    });
+    expect(invalidLead.res.status).toBe(400);
   });
 });

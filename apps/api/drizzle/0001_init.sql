@@ -1,5 +1,28 @@
-CREATE TABLE IF NOT EXISTS customers (id TEXT PRIMARY KEY, name TEXT, email TEXT UNIQUE, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS subscriptions (id TEXT PRIMARY KEY, name TEXT, price REAL, features TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS customer_subscriptions (id TEXT PRIMARY KEY, customer_id TEXT, subscription_id TEXT, start_date TEXT);
-CREATE TABLE IF NOT EXISTS audit_logs (id TEXT PRIMARY KEY, action TEXT, actor TEXT, detail TEXT, ts TEXT DEFAULT CURRENT_TIMESTAMP);
-CREATE TABLE IF NOT EXISTS risk_config (id TEXT PRIMARY KEY, max_daily_loss REAL, max_order_value REAL, killswitch INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS customers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  email TEXT
+);
+
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  price REAL,
+  billing_cycle TEXT
+);
+
+CREATE TABLE IF NOT EXISTS risk_configs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  is_published BOOLEAN,
+  limits TEXT
+);
+
+CREATE TABLE IF NOT EXISTS customer_subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id INTEGER,
+  subscription_id INTEGER,
+  status TEXT,
+  FOREIGN KEY (customer_id) REFERENCES customers (id),
+  FOREIGN KEY (subscription_id) REFERENCES subscriptions (id)
+);

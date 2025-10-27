@@ -16,6 +16,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Ensure repository is conflict-free
+        run: |
+          conflicts=$(git ls-files -u)
+          if [ -n "$conflicts" ]; then
+            echo "::error::Unresolved merge conflicts detected" >&2
+            echo "$conflicts" >&2
+            exit 1
+          fi
+
+          markers=$(git grep -n '<<<<<<<' || true)
+          if [ -n "$markers" ]; then
+            echo "::error::Merge conflict markers present in working tree" >&2
+            echo "$markers" >&2
+            exit 1
+          fi
+
+          echo "No merge conflicts detected."
+
       - name: Install node
         uses: actions/setup-node@v4
         with: { node-version: 20 }

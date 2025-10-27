@@ -160,7 +160,7 @@ to mirror the CI checks before opening a PR. 【F:package.json†L8-L18】
 ## 7. DNS & domain topology
 
 - `infra/scripts/upsert-goldshore-dns.sh` provisions proxied CNAMEs for apex, `www`, `preview`, and `dev`, matching the Worker
-  routes. Override `ZONE_NAME` for sister domains before execution. 【F:infra/scripts/upsert-goldshore-dns.sh†L1-L48】
+  routes. Override `ZONE` (or legacy `ZONE_NAME`) for sister domains before execution. 【F:infra/scripts/upsert-goldshore-dns.sh†L1-L48】
 
 ## 8. Admin access & security
 

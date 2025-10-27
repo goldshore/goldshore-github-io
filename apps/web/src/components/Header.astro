@@ -1,4 +1,6 @@
 ---
+import "./Header.css";
+
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
@@ -115,6 +117,8 @@ const navLinks = [
   }
 }
 </style>
+const headerScript = await import("../scripts/headerMenu.ts?url");
+---
 
 <header class="container header" role="banner">
   <a class="brand" href="/" aria-label="Gold Shore home">
@@ -143,6 +147,7 @@ const navLinks = [
     id="mobile-primary-navigation"
     data-mobile-menu
     hidden
+    aria-hidden="true"
   >
     <nav aria-label="Mobile primary">
       {navLinks.map(({ href, label }) => (
@@ -260,3 +265,6 @@ const navLinks = [
     mobileMenu.hidden = true;
   }
 </script>
+<script type="module" src={headerScript.default}></script>
+
+<script type="module" src={Astro.resolve("./header-menu.ts")}></script>

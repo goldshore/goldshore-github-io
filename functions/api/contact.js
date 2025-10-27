@@ -61,7 +61,8 @@ export async function onRequestPost({ request, env }) {
 
     return Response.redirect(redirect, 303);
   } catch (err) {
-    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
+    console.error('contact submission failed', err);
+    return new Response(JSON.stringify({ ok: false, reason: 'internal_error' }), {
       status: 500,
       headers: { 'content-type': 'application/json' }
     });

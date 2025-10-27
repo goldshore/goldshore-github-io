@@ -1,18 +1,9 @@
 ---
+import "./AdSlot.css";
+
 const { clientId = "YOUR_ID" } = Astro.props as { clientId?: string };
+const adSlotScript = await import("../scripts/adSlot.ts?url");
 ---
-<div class="ad-slot" style="min-height:280px" data-ads="1" data-client={clientId}></div>
-<script>
-const slot=document.querySelector('.ad-slot[data-ads="1"]');
-if(slot){
-  const id=slot.getAttribute('data-client')||'YOUR_ID';
-  const idle=window.requestIdleCallback? (cb)=>requestIdleCallback(cb,{timeout:2000}) : (cb)=>setTimeout(cb,2000);
-  idle(()=>{
-    const s=document.createElement('script');
-    s.async=true;
-    s.src=`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(id)}`;
-    s.crossOrigin='anonymous';
-    document.head.appendChild(s);
-  });
-}
-</script>
+<div class="ad-slot" data-ads="1" data-client={clientId}></div>
+<script type="module" src={adSlotScript.default}></script>
+<script type="module" src={Astro.resolve("./ad-slot.client.ts")}></script>

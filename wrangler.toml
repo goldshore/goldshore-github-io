@@ -47,6 +47,10 @@ routes = [
 ASSETS_ORIGIN = "https://goldshore-org.pages.dev"
 
 [env.preview]
+# Mirror any marketing hostnames added above so preview deployments have
+# explicit routes for their `preview.<domain>` hostnames. Avoid wildcard
+# routes here as well to keep service-specific subdomains pointed at their
+# dedicated infrastructure.
 routes = [
   { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "preview.gearswipe.com/*", zone_name = "gearswipe.com" },
@@ -58,6 +62,10 @@ routes = [
 ASSETS_ORIGIN = "https://goldshore-org-preview.pages.dev"
 
 [env.dev]
+# Development routes should receive the matching `dev.<domain>` hostnames
+# for any marketing site onboarded above. Continue to avoid wildcard
+# patterns so environment-specific services stay mapped to their own
+# infrastructure.
 routes = [
   { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "dev.gearswipe.com/*", zone_name = "gearswipe.com" },

@@ -14,8 +14,12 @@ Empowering communities through secure, scalable, and intelligent infrastructure.
 
 Use the "Deploy to Cloudflare" workflow to publish updates on demand by selecting the desired environment. API hostnames such as `api.goldshore.org` stay mapped to their dedicated services and are intentionally excluded from the router worker routes. When new marketing hostnames are introduced:
 
-1. Add them to this table and register the same hostname in `wrangler.toml` under the appropriate environment.
+1. Add them to this table and then mirror the hostname in each `wrangler.toml` environment:
+   - Append a route under `[env.production].routes` for the marketing hostname only.
+   - Add the matching preview hostname (for example `preview.<domain>`) under `[env.preview].routes`.
+   - Add the matching development hostname (for example `dev.<domain>`) under `[env.dev].routes`.
 2. Avoid `*.<domain>` wildcard routes—those would capture API, SMTP, MX, and other service subdomains that should keep resolving to their dedicated infrastructure instead of the worker router.
+3. Confirm DNS continues to point service subdomains (such as `api.<domain>` or `smtp.<domain>`) at their dedicated origins so the worker router never intercepts them.
 
 ## Environment configuration
 

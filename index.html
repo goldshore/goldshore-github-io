@@ -326,9 +326,14 @@
 
             const bootstrap = async () => {
               const wrapper = document.getElementById('primaryTurnstileWrapper');
+              if (!wrapper) {
+                return;
+              }
 
               try {
-                const response = await fetch('/api/turnstile/site-key');
+                const response = await fetch('/api/turnstile/site-key', {
+                  cache: 'no-store'
+                });
                 if (!response.ok) {
                   return;
                 }

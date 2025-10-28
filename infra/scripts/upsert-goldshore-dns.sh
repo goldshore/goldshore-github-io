@@ -21,6 +21,9 @@ parse_zone_names() {
 }
 
 parse_zone_names
+old_ifs=$IFS
+IFS=',' read -r -a zones <<< "$ZONE_NAMES"
+IFS=$old_ifs
 
 for raw_zone in "${zones[@]}"; do
   zone_name=$(echo "$raw_zone" | xargs)

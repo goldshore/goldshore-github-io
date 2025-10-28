@@ -12,7 +12,7 @@ APP_NAME = "GoldShore"
 PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
 PREVIEW_ASSETS = "https://goldshore-org-preview.pages.dev"
 DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
-GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https://preview.goldshore.org, https://dev.goldshore.org, https://trade.goldshore.org"
+GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https://preview.goldshore.org, https://dev.goldshore.org, https://trade.goldshore.org, https://goldshore.foundation, https://www.goldshore.foundation, https://goldshorefoundation.org, https://www.goldshorefoundation.org, https://fortune-fund.com, https://www.fortune-fund.com, https://fortune-fund.games, https://www.fortune-fund.games"
 
 # Secrets such as FORMSPREE_ENDPOINT, TURNSTILE_SECRET, OPENAI_API_KEY, and
 # GPT_SHARED_SECRET (or legacy GPT_PROXY_SECRET) are provided via
@@ -22,7 +22,30 @@ GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https:/
 name = "goldshore-production"
 routes = [
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
-  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "web.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "goldshore.foundation/*", zone_name = "goldshore.foundation" },
+  { pattern = "www.goldshore.foundation/*", zone_name = "goldshore.foundation" },
+  { pattern = "admin.goldshore.foundation/*", zone_name = "goldshore.foundation" },
+  { pattern = "api.goldshore.foundation/*", zone_name = "goldshore.foundation" },
+  { pattern = "web.goldshore.foundation/*", zone_name = "goldshore.foundation" },
+  { pattern = "goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
+  { pattern = "www.goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
+  { pattern = "admin.goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
+  { pattern = "api.goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
+  { pattern = "web.goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
+  { pattern = "fortune-fund.com/*", zone_name = "fortune-fund.com" },
+  { pattern = "www.fortune-fund.com/*", zone_name = "fortune-fund.com" },
+  { pattern = "admin.fortune-fund.com/*", zone_name = "fortune-fund.com" },
+  { pattern = "api.fortune-fund.com/*", zone_name = "fortune-fund.com" },
+  { pattern = "web.fortune-fund.com/*", zone_name = "fortune-fund.com" },
+  { pattern = "fortune-fund.games/*", zone_name = "fortune-fund.games" },
+  { pattern = "www.fortune-fund.games/*", zone_name = "fortune-fund.games" },
+  { pattern = "admin.fortune-fund.games/*", zone_name = "fortune-fund.games" },
+  { pattern = "api.fortune-fund.games/*", zone_name = "fortune-fund.games" },
+  { pattern = "web.fortune-fund.games/*", zone_name = "fortune-fund.games" }
 ]
 
 [env.production.vars]
@@ -34,17 +57,16 @@ CF_ACCESS_JWKS_URL = "https://rmarston.cloudflareaccess.com/cdn-cgi/access/certs
 [env.preview]
 name = "goldshore-preview"
 routes = [
-  { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
-  { pattern = "fortune-fund.com/*", zone_name = "fortune-fund.com" },
-  { pattern = "fortune-fund.games/*", zone_name = "fortune-fund.games" },
-  { pattern = "goldshore.foundation/*", zone_name = "goldshore.foundation" },
-  { pattern = "goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
+  { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "preview.fortune-fund.com/*", zone_name = "fortune-fund.com" },
+  { pattern = "preview.fortune-fund.games/*", zone_name = "fortune-fund.games" },
+  { pattern = "preview.goldshore.foundation/*", zone_name = "goldshore.foundation" },
+  { pattern = "preview.goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
   { pattern = "rmarston.com/*", zone_name = "rmarston.com" },
   { pattern = "gearswipe.com/*", zone_name = "gearswipe.com" },
   { pattern = "armsway.com/*", zone_name = "armsway.com" },
   { pattern = "armsway.net/*", zone_name = "armsway.net" },
-  { pattern = "banproof.me/*", zone_name = "banproof.me" },
-  { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "banproof.me/*", zone_name = "banproof.me" }
 ]
 
 [[analytics_engine_datasets]]

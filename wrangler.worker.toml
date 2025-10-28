@@ -4,21 +4,6 @@ compatibility_date = "2025-10-05"
 workers_dev = false
 account_id = "f77de112d2019e5456a3198a8bb50bd2"
 
-[[secrets_store_secrets]]
-binding     = "OPENAI_API_KEY"
-store_id    = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "OPENAI_API_KEY"
-
-[[secrets_store_secrets]]
-binding     = "OPENAI_PROJECT_ID"
-store_id    = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "OPENAI_PROJECT_ID"
-
-[[secrets_store_secrets]]
-binding     = "CF_API_TOKEN"
-store_id    = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "CF_API_TOKEN"
-
 [vars]
 APP_NAME = "GoldShore"
 PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
@@ -27,12 +12,41 @@ DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
 
 [env.production]
 routes = [
-  { pattern = "goldshore.org/*",     zone_name = "goldshore.org" },
-  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" }
+  { pattern = "goldshore.org/*",             zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.org/*",         zone_name = "goldshore.org" },
+  { pattern = "admin.goldshore.org/*",       zone_name = "goldshore.org" },
+  { pattern = "api.goldshore.org/*",         zone_name = "goldshore.org" },
+  { pattern = "web.goldshore.org/*",         zone_name = "goldshore.org" },
+  { pattern = "goldshore.foundation/*",      zone_name = "goldshore.foundation" },
+  { pattern = "www.goldshore.foundation/*",  zone_name = "goldshore.foundation" },
+  { pattern = "admin.goldshore.foundation/*",zone_name = "goldshore.foundation" },
+  { pattern = "api.goldshore.foundation/*",  zone_name = "goldshore.foundation" },
+  { pattern = "web.goldshore.foundation/*",  zone_name = "goldshore.foundation" },
+  { pattern = "goldshorefoundation.org/*",   zone_name = "goldshorefoundation.org" },
+  { pattern = "www.goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
+  { pattern = "admin.goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
+  { pattern = "api.goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
+  { pattern = "web.goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
+  { pattern = "fortune-fund.com/*",          zone_name = "fortune-fund.com" },
+  { pattern = "www.fortune-fund.com/*",      zone_name = "fortune-fund.com" },
+  { pattern = "admin.fortune-fund.com/*",    zone_name = "fortune-fund.com" },
+  { pattern = "api.fortune-fund.com/*",      zone_name = "fortune-fund.com" },
+  { pattern = "web.fortune-fund.com/*",      zone_name = "fortune-fund.com" },
+  { pattern = "fortune-fund.games/*",        zone_name = "fortune-fund.games" },
+  { pattern = "www.fortune-fund.games/*",    zone_name = "fortune-fund.games" },
+  { pattern = "admin.fortune-fund.games/*",  zone_name = "fortune-fund.games" },
+  { pattern = "api.fortune-fund.games/*",    zone_name = "fortune-fund.games" },
+  { pattern = "web.fortune-fund.games/*",    zone_name = "fortune-fund.games" }
 ]
 
 [env.preview]
-routes = [{ pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }]
+routes = [
+  { pattern = "preview.goldshore.org/*",      zone_name = "goldshore.org" },
+  { pattern = "preview.fortune-fund.com/*",   zone_name = "fortune-fund.com" },
+  { pattern = "preview.fortune-fund.games/*", zone_name = "fortune-fund.games" },
+  { pattern = "preview.goldshore.foundation/*", zone_name = "goldshore.foundation" },
+  { pattern = "preview.goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" }
+]
 
 [env.dev]
 routes = [{ pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" }]

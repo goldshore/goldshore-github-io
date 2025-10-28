@@ -41,25 +41,35 @@ function jsonResponse(body, init = {}, corsOrigin = null) {
     headers.set(key, value);
   }
 
-  if (allowedOrigin) {
-    headers.set("Access-Control-Allow-Origin", allowedOrigin);
-  } else {
-    headers.delete("Access-Control-Allow-Origin");
+  if (origin) {
+    headers.set("Access-Control-Allow-Origin", origin);
+    headers.set("Vary", "Origin");
   }
 
-  headers.append("Vary", "Origin");
-
+  headers.set("Access-Control-Allow-Methods", ALLOWED_METHODS);
+  headers.set("Access-Control-Allow-Headers", ALLOWED_HEADERS);
   return headers;
 }
 
-function jsonResponse(body, init = {}, allowedOrigin) {
-  const headers = applyCorsHeaders(new Headers(init.headers || {}), allowedOrigin);
-  headers.set("content-type", "application/json");
+function jsonResponse(body, init = {}, corsOrigin = null) {
+  const headers = new Headers(init.headers || {});
+  const corsHeaders = buildCorsHeaders(corsOrigin);
 
-  return new Response(JSON.stringify(body), {
-    ...init,
-    headers,
-  });
+  if (init.headers) {
+    const initHeaders = new Headers(init.headers);
+    for (const [key, value] of initHeaders.entries()) {
+      headers.set(key, value);
+    }
+  }
+  for (const [key, value] of corsHeaders.entries()) {
+    headers.set(key, value);
+  }
+
+  if (!headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
+
+  return new Response(JSON.stringify(body), { ...init, headers });
 }
 
 function constantTimeEquals(a, b) {
@@ -173,14 +183,7 @@ async function handlePost(request, env, corsOrigin) {
     return jsonResponse({ error: "Invalid JSON body." }, { status: 400 }, corsOrigin);
   }
 
-  const {
-    messages,
-    prompt,
-    model,
-    purpose: rawPurpose = DEFAULT_PURPOSE,
-    temperature,
-    ...rest
-  } = payload || {};
+  const { role, content, name } = message;
 
   if (!Array.isArray(messages) && typeof prompt !== "string") {
     return jsonResponse(
@@ -193,32 +196,112 @@ async function handlePost(request, env, corsOrigin) {
     );
   }
 
-  const purpose = resolvePurpose(rawPurpose);
+  const normalized = {
+    role: role.trim(),
+    content: normalizedContent,
+  };
 
-  const chatMessages = Array.isArray(messages)
+  if (name !== undefined) {
+    if (typeof name !== "string" || name.trim() === "") {
+      throw new Error(`messages[${index}].name must be a non-empty string when provided.`);
+    }
+    normalized.name = name.trim();
+  }
+
+  return normalized;
+}
+
+function buildChatCompletionPayload(payload) {
+  if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error("Request body must be a JSON object.");
+  }
+
+  const { model = DEFAULT_MODEL, messages, prompt, stream, ...rest } = payload;
+
+  if (typeof model !== "string" || model.trim() === "") {
+    throw new Error("model must be a non-empty string.");
+  }
+
+  const trimmedModel = model.trim();
+  if (SUPPORTED_MODELS.size > 0 && !SUPPORTED_MODELS.has(trimmedModel)) {
+    throw new Error("Model is not supported.");
+  }
+
+  if (!Array.isArray(messages) && typeof prompt !== "string") {
+    throw new Error("Request body must include either a 'messages' array or a 'prompt' string.");
+  }
+
+  const normalizedMessages = (Array.isArray(messages) && messages.length > 0
     ? messages
     : [
         {
           role: "user",
           content: prompt,
         },
-      ];
+      ])
+    .map((message, index) => normalizeMessage(message, index));
 
-  const selectedModel = model || MODEL_BY_PURPOSE[purpose] || MODEL_BY_PURPOSE[DEFAULT_PURPOSE];
-
-  const openAIOptions = { ...rest };
-
-  if (typeof temperature === "number" && !Number.isNaN(temperature)) {
-    openAIOptions.temperature = temperature;
-  } else if (!("temperature" in openAIOptions)) {
-    openAIOptions.temperature = purpose === CODING_PURPOSE ? 0.2 : 0.7;
+  if (typeof stream !== "undefined") {
+    if (typeof stream === "string") {
+      const normalized = stream.trim().toLowerCase();
+      if (normalized && normalized !== "false" && normalized !== "0") {
+        throw new Error("stream option is not supported by this proxy.");
+      }
+    } else if (stream) {
+      throw new Error("stream option is not supported by this proxy.");
+    }
   }
 
   const requestBody = {
-    model: selectedModel,
-    messages: chatMessages,
-    ...openAIOptions,
+    model: typeof model === "string" ? model.trim() : DEFAULT_MODEL,
+    model: trimmedModel,
+    messages: normalizedMessages,
   };
+
+  for (const [key, value] of Object.entries(rest)) {
+    if (!ALLOWED_CHAT_COMPLETION_OPTIONS.has(key) || value === undefined) {
+      continue;
+    }
+    if (key === "stream") {
+      if (typeof value !== "boolean") {
+        throw new Error("stream option must be a boolean value.");
+      }
+      if (value) {
+        requestBody[key] = true;
+      }
+      continue;
+    }
+    requestBody[key] = value;
+  }
+
+  return requestBody;
+}
+
+async function handlePost(request, env, corsOrigin) {
+  if (!env.OPENAI_API_KEY) {
+    return errorResponse("Missing OpenAI API key.", 500, undefined, corsOrigin);
+  }
+
+  let payload;
+  try {
+    payload = await request.json();
+  } catch (error) {
+    return errorResponse("Invalid JSON body.", 400, undefined, corsOrigin);
+  }
+
+  let requestBody;
+  try {
+    requestBody = buildChatCompletionPayload(payload);
+  } catch (error) {
+    return errorResponse(
+      error instanceof Error ? error.message : String(error),
+      400,
+      undefined,
+      corsOrigin,
+    );
+  }
+
+  const wantsStream = requestBody.stream === true;
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {

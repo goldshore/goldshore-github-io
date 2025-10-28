@@ -1,13 +1,34 @@
-import fs from 'fs';
-import path from 'path';
-import sharp from 'sharp';
-const src="apps/web/public/images/raw", out="apps/web/public/images/optimized";
-fs.mkdirSync(out,{recursive:true});
-for(const f of fs.readdirSync(src)){
-  if(!/\.(jpe?g|png)$/i.test(f)) continue;
-  const base=path.parse(f).name, p=path.join(src,f);
-  const img=sharp(p).modulate({brightness:.98,saturation:.92})
-    .webp({quality:82,effort:4});
-  await img.toFile(path.join(out,`${base}.webp`));
+import fs from "node:fs";
+import path from "node:path";
+import sharp from "sharp";
+
+const srcDir = "apps/web/public/images/raw";
+const outDir = "apps/web/public/images/optimized";
+
+if (!fs.existsSync(srcDir)) {
+  console.log("Source directory missing, skipping image optimisation.");
+  process.exit(0);
 }
-console.log("✓ images optimized");
+
+fs.mkdirSync(outDir, { recursive: true });
+
+const files = fs.readdirSync(srcDir);
+
+for (const file of files) {
+  if (!/\.(jpe?g|png)$/i.test(file)) {
+    continue;
+  }
+
+  const sourcePath = path.join(srcDir, file);
+  const base = path.parse(file).name;
+  const image = sharp(sourcePath).modulate({ brightness: 0.98, saturation: 0.92 });
+
+  await Promise.all([
+    image.clone().webp({ quality: 82, effort: 4 }).toFile(path.join(outDir, `${base}.webp`)),
+    image.clone().avif({ quality: 75 }).toFile(path.join(outDir, `${base}.avif`))
+  ]);
+
+  console.log(`✓ Optimised ${file}`);
+}
+
+console.log("✓ Image optimisation complete");

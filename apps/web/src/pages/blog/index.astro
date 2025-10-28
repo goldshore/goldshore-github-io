@@ -1,0 +1,36 @@
+---
+import BaseLayout from "../../layouts/Base.astro";
+
+const meta = {
+  title: "Gold Shore Signals — Research and analysis",
+  description: "Read the latest Gold Shore research on market catalysts, launch tactics, and narrative design for high-velocity founders.",
+  canonical: "https://goldshore.org/blog"
+};
+
+const posts = [
+  {
+    title: "Designing launch systems that compound",
+    summary: "A primer on sequencing announcements, capital updates, and product drops without burning trust.",
+    href: "/repo/launch-systems"
+  },
+  {
+    title: "Reputation defense playbook",
+    summary: "What it takes to neutralise policy shocks across platforms without losing growth momentum.",
+    href: "/repo/reputation-defense"
+  }
+];
+---
+<BaseLayout {...meta}>
+  <h1 class="section-title">Signals</h1>
+  <p class="section-subtitle">Analytical notes, campaign retrospectives, and market intel direct from the Gold Shore desk.</p>
+
+  <div class="grid">
+    {posts.map((post) => (
+      <article class="card">
+        <h2>{post.title}</h2>
+        <p>{post.summary}</p>
+        <a href={post.href}>Read more →</a>
+      </article>
+    ))}
+  </div>
+</BaseLayout>

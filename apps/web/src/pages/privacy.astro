@@ -1,0 +1,27 @@
+---
+import BaseLayout from "../layouts/Base.astro";
+
+const meta = {
+  title: "Gold Shore Privacy",
+  description: "How Gold Shore collects, stores, and protects data across our sites and services.",
+  canonical: "https://goldshore.org/privacy"
+};
+---
+<BaseLayout {...meta}>
+  <h1 class="section-title">Privacy policy</h1>
+  <p class="section-subtitle">Gold Shore respects your privacy and only collects data required to deliver our services.</p>
+
+  <div class="card">
+    <h2>Data we collect</h2>
+    <ul>
+      <li>Contact details provided through forms.</li>
+      <li>Analytics events used to improve product experience.</li>
+      <li>Support conversations and onboarding documents.</li>
+    </ul>
+  </div>
+
+  <section class="section-spacing">
+    <h2 class="section-title">Your controls</h2>
+    <p>You can request data deletion or export at any time by emailing <a href="mailto:privacy@goldshore.org">privacy@goldshore.org</a>.</p>
+  </section>
+</BaseLayout>

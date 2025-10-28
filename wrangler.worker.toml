@@ -49,4 +49,10 @@ routes = [
 ]
 
 [env.dev]
-routes = [{ pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" }]
+routes = [
+  { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "dev.goldshore.foundation/*", zone_name = "goldshore.foundation" },
+  { pattern = "dev.goldshorefoundation.org/*", zone_name = "goldshorefoundation.org" },
+  { pattern = "dev.fortune-fund.com/*", zone_name = "fortune-fund.com" },
+  { pattern = "dev.fortune-fund.games/*", zone_name = "fortune-fund.games" }
+]

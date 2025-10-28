@@ -2,7 +2,71 @@
   "applications": [
     {
       "name": "GoldShore Admin",
-      "domain": "goldshore.org/admin",
+      "domain": "admin.goldshore.org",
+      "type": "self_hosted",
+      "session_duration": "24h",
+      "policies": [
+        {
+          "name": "GoldShore Team",
+          "precedence": 1,
+          "decision": "allow",
+          "include": [
+            { "email_domain": { "domain": "goldshore.org" } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "GoldShore Foundation Admin",
+      "domain": "admin.goldshore.foundation",
+      "type": "self_hosted",
+      "session_duration": "24h",
+      "policies": [
+        {
+          "name": "GoldShore Team",
+          "precedence": 1,
+          "decision": "allow",
+          "include": [
+            { "email_domain": { "domain": "goldshore.org" } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "GoldShore Foundation Org Admin",
+      "domain": "admin.goldshorefoundation.org",
+      "type": "self_hosted",
+      "session_duration": "24h",
+      "policies": [
+        {
+          "name": "GoldShore Team",
+          "precedence": 1,
+          "decision": "allow",
+          "include": [
+            { "email_domain": { "domain": "goldshore.org" } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fortune Fund Admin",
+      "domain": "admin.fortune-fund.com",
+      "type": "self_hosted",
+      "session_duration": "24h",
+      "policies": [
+        {
+          "name": "GoldShore Team",
+          "precedence": 1,
+          "decision": "allow",
+          "include": [
+            { "email_domain": { "domain": "goldshore.org" } }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fortune Fund Games Admin",
+      "domain": "admin.fortune-fund.games",
       "type": "self_hosted",
       "session_duration": "24h",
       "policies": [

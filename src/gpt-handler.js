@@ -66,8 +66,6 @@ function buildCorsHeaders(origin) {
     headers.set(key, value);
   }
 
-function buildCorsHeaders(origin) {
-  const headers = new Headers();
   if (origin) {
     headers.set("Access-Control-Allow-Origin", origin);
     headers.set("Vary", "Origin");
@@ -88,8 +86,6 @@ function jsonResponse(body, init = {}, corsOrigin = null) {
       headers.set(key, value);
     }
   }
-
-  const corsHeaders = buildCorsHeaders(origin);
   for (const [key, value] of corsHeaders.entries()) {
     headers.set(key, value);
   }

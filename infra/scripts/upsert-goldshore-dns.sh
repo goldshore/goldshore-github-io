@@ -13,7 +13,14 @@ DEFAULT_ADMIN_PAGES_HOST=${ADMIN_PAGES_HOST:-goldshore-org.pages.dev}
 DEFAULT_WEB_PAGES_HOST=${WEB_PAGES_HOST:-goldshore-org.pages.dev}
 DEFAULT_API_WORKER_HOST=${API_WORKER_HOST:-}
 
-IFS=',' read -r -a zones <<< "$ZONE_NAMES"
+zones=()
+
+parse_zone_names() {
+  local IFS=','
+  read -r -a zones <<< "$ZONE_NAMES"
+}
+
+parse_zone_names
 
 for raw_zone in "${zones[@]}"; do
   zone_name=$(echo "$raw_zone" | xargs)

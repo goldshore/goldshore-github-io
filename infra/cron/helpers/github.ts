@@ -1,4 +1,5 @@
 import { Octokit } from "octokit";
+import { RequestError } from "@octokit/request-error";
 
 export const gh = new Octokit({ auth: process.env.GH_TOKEN! });
 
@@ -33,7 +34,15 @@ export async function createFixBranchAndPR(
   const baseRef = await gh.rest.git.getRef({ owner, repo, ref: `heads/${base}` });
   const baseSha = baseRef.data.object.sha;
 
-  await gh.rest.git.createRef({ owner, repo, ref: `refs/heads/${head}`, sha: baseSha });
+  try {
+    await gh.rest.git.createRef({ owner, repo, ref: `refs/heads/${head}`, sha: baseSha });
+  } catch (error) {
+    if (error instanceof RequestError && error.status === 422) {
+      // Branch already exists; continue so we can update it below.
+    } else {
+      throw error;
+    }
+  }
 
   const blobs = await Promise.all(
     changes.map(c =>
@@ -63,6 +72,20 @@ export async function createFixBranchAndPR(
 
   await gh.rest.git.updateRef({ owner, repo, ref: `heads/${head}`, sha: commit.data.sha, force: true });
 
-  const pr = await gh.rest.pulls.create({ owner, repo, head, base, title, body });
-  return pr.data;
+  try {
+    const pr = await gh.rest.pulls.create({ owner, repo, head, base, title, body });
+    return pr.data;
+  } catch (error) {
+    if (error instanceof RequestError && error.status === 422) {
+      const existing = await gh.rest.pulls.list({
+        owner,
+        repo,
+        state: "open",
+        head: `${owner}:${head}`,
+        per_page: 1
+      });
+      if (existing.data.length > 0) return existing.data[0];
+    }
+    throw error;
+  }
 }

@@ -1,9 +1,10 @@
 {
   "name": "@goldshore/theme",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
+  "private": true,
   "exports": {
-    "./styles": "./src/theme.css"
+    "./styles": "./src/theme.css",
+    "./tokens.css": "./src/tokens.css"
   }
 }

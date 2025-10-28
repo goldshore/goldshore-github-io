@@ -1,0 +1,92 @@
+---
+import BaseLayout from "../layouts/Base.astro";
+import "../styles/contact.css";
+
+const meta = {
+  title: "Contact Gold Shore — Book a strategy session",
+  description: "Request a working session with Gold Shore to plan your launch, narrative defense, or growth initiative.",
+  canonical: "https://goldshore.org/contact"
+};
+
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+const contactScript = await import("../scripts/contactSuccess.ts?url");
+---
+<BaseLayout {...meta}>
+  <h1 class="section-title">Let’s build momentum</h1>
+  <p class="section-subtitle">
+    Share your focus area and timeline. We’ll align on scope within one business day and route you to the right operator.
+  </p>
+
+  <form
+    class="card contact-form"
+    action="/api/contact"
+    method="POST"
+  >
+    <input type="hidden" name="_redirect" value="/contact#contact-success" />
+    <div>
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" required placeholder="Ada Lovelace" class="contact-field" />
+    </div>
+    <div>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required placeholder="you@example.com" class="contact-field" />
+    </div>
+    <div>
+      <label for="focus">What do you need?</label>
+      <select id="focus" name="focus" required class="contact-field">
+  <form class="card contact-form" action="/api/contact" method="POST">
+    <input type="hidden" name="_redirect" value="/contact#contact-success" />
+    <div>
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" required placeholder="Ada Lovelace" class="contact-control" />
+    </div>
+    <div>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required placeholder="you@example.com" class="contact-control" />
+    </div>
+    <div>
+      <label for="focus">What do you need?</label>
+      <select id="focus" name="focus" required class="contact-control">
+        <option value="">Select a track</option>
+        <option>Launch architecture</option>
+        <option>Reputation defense</option>
+        <option>Intelligence ops</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <div>
+      <label for="message">Context</label>
+      <textarea
+        id="message"
+        name="message"
+        rows="5"
+        required
+        placeholder="Tell us about the product, timeline, and any material we should review."
+        class="contact-control"
+      ></textarea>
+    </div>
+    {turnstileSiteKey && (
+      <div class="turnstile-wrapper">
+        <div class="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="dark"></div>
+      </div>
+    )}
+    <button class="btn" type="submit">Submit request</button>
+  </form>
+
+  <div id="contact-success" class="card contact-success" hidden>
+    <p class="contact-success__message">Thanks for the note—we’ll reach out within one business day.</p>
+  </div>
+
+  {turnstileSiteKey && (
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  )}
+  <script type="module" src={contactScript.default}></script>
+
+  <section class="contact-availability">
+    <h2 class="section-title">Availability</h2>
+    <p class="section-subtitle">We host strategy calls on Tuesdays and Thursdays. Urgent reputation work is on-call 24/7.</p>
+    <div class="card">
+      <p class="no-margin">Prefer async? Email <a href="mailto:intake@goldshore.org">intake@goldshore.org</a> with decks, briefs, or data rooms.</p>
+    </div>
+  </section>
+</BaseLayout>

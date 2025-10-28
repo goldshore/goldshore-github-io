@@ -44,3 +44,25 @@ This split keeps Git branches and preview deploys from colliding with the live d
 - Monitor analytics with the `GOLD_ANALYTICS` dataset; it is already defined in `wrangler.toml`.
 
 With this layout, Cloudflare Pages delivers the site, Workers protects the domain, and billing stays predictable.
+
+## 5. Troubleshooting Cloudflare error 522
+
+If `goldshore.org` ever throws **Cloudflare Error 522 (Connection timed out)**, the CDN reached the origin but GitHub Pages did
+not answer within Cloudflare's window. Work through the following checklist:
+
+1. **DNS records** – In Cloudflare DNS, keep only the four GitHub Pages A records on the apex (`@`):
+   - `185.199.108.153`
+   - `185.199.109.153`
+   - `185.199.110.153`
+   - `185.199.111.153`
+
+   Each entry should stay **Proxied** (orange cloud). Point `www` at `<org>.github.io` with a proxied CNAME and remove stray A
+   records that target other infrastructure.
+2. **SSL mode** – On the Cloudflare **SSL/TLS → Overview** screen, set the encryption mode to **Full (Strict)** so Cloudflare
+   requires a valid certificate from GitHub Pages.
+3. **GitHub Pages custom domain** – In the repository **Settings → Pages** panel, confirm the custom domain reads
+   `www.goldshore.org` and that **Enforce HTTPS** is checked. This prompts GitHub Pages to provision the certificate Cloudflare
+   validates.
+
+Allow five to ten minutes for DNS propagation, clear the browser cache, and retest `https://www.goldshore.org/`. When these
+three items are aligned the 522 timeout clears.

@@ -6,11 +6,12 @@ on:
     - cron: "0 12 * * *"
 name: Sync DNS (manual)
 name: Sync DNS records
-permissions:
-  contents: read
 
 on:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   sync:

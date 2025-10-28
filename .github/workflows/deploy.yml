@@ -12,9 +12,6 @@ on:
       - "package.json"
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -31,6 +28,7 @@ jobs:
       CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
       CF_API_TOKEN:  ${{ secrets.CF_API_TOKEN }}
       CF_SECRET_STORE_ID: ${{ secrets.CF_SECRET_STORE_ID }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
 
     steps:
       - uses: actions/checkout@v4
@@ -60,6 +58,28 @@ jobs:
 
       - name: Build web (Astro)
         run: npm run build:web
+
+      - name: Deploy web assets (${{ matrix.env }})
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          case "${{ matrix.env }}" in
+            production)
+              project="goldshore-org"
+              ;;
+            preview)
+              project="goldshore-org-preview"
+              ;;
+            dev)
+              project="goldshore-org-dev"
+              ;;
+            *)
+              echo "Unknown environment: ${{ matrix.env }}" >&2
+              exit 1
+              ;;
+          esac
+          npx wrangler pages deploy apps/web/dist --project-name "$project"
 
       - name: Deploy Worker (${{ matrix.env }})
         run: npx wrangler deploy --env=${{ matrix.env }} --minify

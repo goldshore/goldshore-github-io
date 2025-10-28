@@ -13,6 +13,14 @@ DEFAULT_ADMIN_PAGES_HOST=${ADMIN_PAGES_HOST:-goldshore-org.pages.dev}
 DEFAULT_WEB_PAGES_HOST=${WEB_PAGES_HOST:-goldshore-org.pages.dev}
 DEFAULT_API_WORKER_HOST=${API_WORKER_HOST:-}
 
+zones=()
+
+parse_zone_names() {
+  local IFS=','
+  read -r -a zones <<< "$ZONE_NAMES"
+}
+
+parse_zone_names
 old_ifs=$IFS
 IFS=',' read -r -a zones <<< "$ZONE_NAMES"
 IFS=$old_ifs

@@ -31,145 +31,170 @@ const jsonResponse = (body: JsonValue | Record<string, any>, status = 200, heade
   return new Response(JSON.stringify(body), { status, headers: merged });
 };
 
-const router = {
+type RouteContext = {
+  corsHeaders: HeadersInit;
+  jsonHeaders: HeadersInit;
+  headers: HeadersInit;
+};
+
+type RouteParams = Record<string, string>;
+
+type RouteHandlerResult = Response | JsonValue | Record<string, any>;
+
+type RouteHandler = (
+  req: Request,
+  env: Env,
+  ctx: RouteContext,
+  params: RouteParams
+) => Promise<RouteHandlerResult> | RouteHandlerResult;
+
+type Router = Record<string, Partial<Record<string, RouteHandler>>>;
+
+const buildRouter = (ctx: RouteContext): Router => ({
   "/v1/health": {
-    GET: () => ({ ok: true, ts: Date.now() }),
+    GET: (_req: Request, _env: Env, ctx: RouteContext) => jsonResponse({ ok: true, ts: Date.now() }, 200, ctx.jsonHeaders),
   },
   "/v1/whoami": {
-    GET: (req: Request) => {
+    GET: (req: Request, _env: Env, ctx: RouteContext) => {
       const email = req.headers.get("cf-access-authenticated-user-email");
       const ok = !!email;
-      return ok ? { ok, email } : { ok: false, error: "UNAUTHENTICATED" };
+      return jsonResponse(ok ? { ok, email } : { ok: false, error: "UNAUTHENTICATED" }, ok ? 200 : 401, ctx.jsonHeaders);
     },
   },
   "/v1/lead": {
-    POST: async (req: Request, env: Env) => {
-      const headers = { ...JSON_CONTENT_HEADERS, ...cors(req, env.CORS_ORIGINS) };
+    POST: async (req: Request, env: Env, ctx: RouteContext) => {
+      const headers = { ...ctx.jsonHeaders };
       const ct = req.headers.get("content-type") || "";
-      const body = ct.includes("application/json") ? await req.json() : Object.fromEntries((await req.formData()).entries());
-      const email = (body.email||"").toString().trim();
-      const emailRegex = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-      if (!email) return new Response(JSON.stringify({ ok:false, error:"EMAIL_REQUIRED" }), { status:400, headers });
-      if (!emailRegex.test(email)) return new Response(JSON.stringify({ ok:false, error:"INVALID_EMAIL" }), { status:400, headers });
-      await env.DB.prepare("CREATE TABLE IF NOT EXISTS leads (email TEXT PRIMARY KEY, ts TEXT DEFAULT CURRENT_TIMESTAMP)").run();
+      const body = ct.includes("application/json")
+        ? await req.json()
+        : Object.fromEntries((await req.formData()).entries());
+      const email = (body.email || "").toString().trim();
+      const emailRegex =
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      if (!email) return jsonResponse({ ok: false, error: "EMAIL_REQUIRED" }, 400, headers);
+      if (!emailRegex.test(email)) return jsonResponse({ ok: false, error: "INVALID_EMAIL" }, 400, headers);
+      await env.DB.prepare(
+        "CREATE TABLE IF NOT EXISTS leads (email TEXT PRIMARY KEY, ts TEXT DEFAULT CURRENT_TIMESTAMP)"
+      ).run();
       await env.DB.prepare("INSERT OR IGNORE INTO leads (email) VALUES (?)").bind(email).run();
-      return { ok: true };
+      return jsonResponse({ ok: true }, 200, headers);
     },
   },
   "/v1/orders": {
-    GET: async (req: Request, env: Env) => {
-      const jsonHeaders = { ...JSON_CONTENT_HEADERS, ...cors(req, env.CORS_ORIGINS) };
-      await env.DB.prepare("CREATE TABLE IF NOT EXISTS orders (id TEXT PRIMARY KEY, symbol TEXT, qty REAL, side TEXT, ts TEXT DEFAULT CURRENT_TIMESTAMP)").run();
+    GET: async (req: Request, env: Env, ctx: RouteContext) => {
+      await env.DB.prepare(
+        "CREATE TABLE IF NOT EXISTS orders (id TEXT PRIMARY KEY, symbol TEXT, qty REAL, side TEXT, ts TEXT DEFAULT CURRENT_TIMESTAMP)"
+      ).run();
       const { results } = await env.DB.prepare("SELECT * FROM orders ORDER BY ts DESC LIMIT 50").all();
-      return jsonResponse({ ok: true, data: results }, 200, jsonHeaders);
+      return jsonResponse({ ok: true, data: results }, 200, ctx.jsonHeaders);
     },
   },
   "/v1/customers": {
-    POST: async (req: Request, env: Env) => {
+    POST: async (req: Request, env: Env, ctx: RouteContext) => {
       const { name, email } = await req.json();
       const customer = await createCustomer(env.DB, name, email);
-      return new Response(JSON.stringify({ ok: true, data: customer }), { status: 201 });
+      return jsonResponse({ ok: true, data: customer }, 201, ctx.jsonHeaders);
     },
-    GET: async (req: Request, env: Env) => {
+    GET: async (_req: Request, env: Env, ctx: RouteContext) => {
       const customers = await listCustomers(env.DB);
-      return { ok: true, data: customers };
+      return jsonResponse({ ok: true, data: customers }, 200, ctx.jsonHeaders);
     },
   },
   "/v1/customers/:id": {
-    GET: async (req: Request, env: Env, params: { id: string }) => {
+    GET: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
       const customer = await getCustomer(env.DB, params.id);
-      return { ok: true, data: customer };
+      return jsonResponse({ ok: true, data: customer }, 200, ctx.jsonHeaders);
     },
-    PUT: async (req: Request, env: Env, params: { id: string }) => {
+    PUT: async (req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
       const { name, email } = await req.json();
       await updateCustomer(env.DB, params.id, name, email);
-      return { ok: true };
+      return jsonResponse({ ok: true }, 200, ctx.jsonHeaders);
     },
-    DELETE: async (req: Request, env: Env, params: { id: string }) => {
+    DELETE: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
       await deleteCustomer(env.DB, params.id);
-      return { ok: true };
+      return jsonResponse({ ok: true }, 200, ctx.jsonHeaders);
     },
   },
   "/v1/subscriptions": {
-    POST: async (req: Request, env: Env) => {
+    POST: async (req: Request, env: Env, ctx: RouteContext) => {
       const { name, price, billing_cycle } = await req.json();
       const subscription = await createSubscription(env.DB, name, price, billing_cycle);
-      return new Response(JSON.stringify({ ok: true, data: subscription }), { status: 201 });
+      return jsonResponse({ ok: true, data: subscription }, 201, ctx.jsonHeaders);
     },
-    GET: async (req: Request, env: Env) => {
+    GET: async (_req: Request, env: Env, ctx: RouteContext) => {
       const subscriptions = await listSubscriptions(env.DB);
-      return { ok: true, data: subscriptions };
+      return jsonResponse({ ok: true, data: subscriptions }, 200, ctx.jsonHeaders);
     },
   },
   "/v1/subscriptions/:id": {
-    GET: async (req: Request, env: Env, params: { id: string }) => {
+    GET: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
       const subscription = await getSubscription(env.DB, params.id);
-      return { ok: true, data: subscription };
+      return jsonResponse({ ok: true, data: subscription }, 200, ctx.jsonHeaders);
     },
-    PUT: async (req: Request, env: Env, params: { id: string }) => {
+    PUT: async (req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
       const { name, price, billing_cycle } = await req.json();
       await updateSubscription(env.DB, params.id, name, price, billing_cycle);
-      return { ok: true };
+      return jsonResponse({ ok: true }, 200, ctx.jsonHeaders);
     },
-    DELETE: async (req: Request, env: Env, params: { id: string }) => {
+    DELETE: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
       await deleteSubscription(env.DB, params.id);
-      return { ok: true };
+      return jsonResponse({ ok: true }, 200, ctx.jsonHeaders);
     },
   },
   "/v1/risk/config": {
-    POST: async (req: Request, env: Env) => {
+    POST: async (req: Request, env: Env, ctx: RouteContext) => {
       const { name, is_published, limits } = await req.json();
       const config = await setRiskConfig(env.DB, name, is_published, limits);
-      return new Response(JSON.stringify({ ok: true, data: config }), { status: 201 });
+      return jsonResponse({ ok: true, data: config }, 201, ctx.jsonHeaders);
     },
-    GET: async (req: Request, env: Env) => {
+    GET: async (_req: Request, env: Env, ctx: RouteContext) => {
       const config = await getRiskConfig(env.DB);
-      return { ok: true, data: config };
+      return jsonResponse({ ok: true, data: config }, 200, ctx.jsonHeaders);
     },
   },
   "/v1/risk/check": {
-    POST: async (req: Request, env: Env) => {
+    POST: async (req: Request, env: Env, ctx: RouteContext) => {
       const order = await req.json();
       const result = await checkRisk(env.DB, order);
-      return result;
+      return jsonResponse(result, 200, ctx.jsonHeaders);
     },
   },
   "/v1/risk/killswitch": {
-    POST: async (req: Request, env: Env) => {
+    POST: async (_req: Request, env: Env, ctx: RouteContext) => {
       const result = await killSwitch(env.DB);
-      return result;
+      return jsonResponse(result, 200, ctx.jsonHeaders);
     },
   },
   "/v1/customer_subscriptions": {
-    POST: async (req: Request, env: Env) => {
+    POST: async (req: Request, env: Env, ctx: RouteContext) => {
       const { customer_id, subscription_id } = await req.json();
       const customerSubscription = await createCustomerSubscription(env.DB, customer_id, subscription_id);
-      return new Response(JSON.stringify({ ok: true, data: customerSubscription }), { status: 201 });
+      return jsonResponse({ ok: true, data: customerSubscription }, 201, ctx.jsonHeaders);
     },
-    GET: async (req: Request, env: Env) => {
+    GET: async (req: Request, env: Env, ctx: RouteContext) => {
       const url = new URL(req.url);
       const customer_id = url.searchParams.get("customer_id");
       const customerSubscriptions = await listCustomerSubscriptions(env.DB, customer_id);
-      return { ok: true, data: customerSubscriptions };
+      return jsonResponse({ ok: true, data: customerSubscriptions }, 200, ctx.jsonHeaders);
     },
   },
   "/v1/customer_subscriptions/:id": {
-    GET: async (req: Request, env: Env, params: { id: string }) => {
+    GET: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
       const customerSubscription = await getCustomerSubscription(env.DB, params.id);
-      return { ok: true, data: customerSubscription };
+      return jsonResponse({ ok: true, data: customerSubscription }, 200, ctx.jsonHeaders);
     },
-    PATCH: async (req: Request, env: Env, params: { id: string }) => {
+    PATCH: async (req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
       const { status } = await req.json();
       await updateCustomerSubscription(env.DB, params.id, status);
       const customerSubscription = await getCustomerSubscription(env.DB, params.id);
-      return { ok: true, data: customerSubscription };
+      return jsonResponse({ ok: true, data: customerSubscription }, 200, ctx.jsonHeaders);
     },
-    DELETE: async (req: Request, env: Env, params: { id: string }) => {
+    DELETE: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
       await deleteCustomerSubscription(env.DB, params.id);
-      return new Response(null, { status: 204 });
+      return new Response(null, { status: 204, headers: ctx.corsHeaders });
     },
   },
-};
+});
 
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -177,6 +202,9 @@ export default {
     const jsonHeaders = { ...JSON_CONTENT_HEADERS, ...corsHeaders };
     const headers = { ...jsonHeaders };
     if (req.method === "OPTIONS") return new Response(null, { headers });
+
+    const routeContext: RouteContext = { corsHeaders, jsonHeaders, headers };
+    const router = buildRouter(routeContext);
 
     const url = new URL(req.url);
     const path = url.pathname;
@@ -194,11 +222,11 @@ export default {
         });
 
         if (router[route][method]) {
-          const result = await router[route][method](req, env, params);
+          const result = await router[route][method](req, env, routeContext, params);
           if (result instanceof Response) {
             return result;
           }
-          return new Response(JSON.stringify(result), { headers });
+          return jsonResponse(result ?? { ok: true }, 200, routeContext.jsonHeaders);
         }
       }
     }

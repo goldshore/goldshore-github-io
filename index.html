@@ -4,9 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gold Shore Labs -- Shaping the waves that move markets.</title>
-  <meta name="description" content="Gold Shore Labs delivers capital intelligence, private networks, and resilient IT products for leaders who steer capital instead of merely managing it." />
-  <title>Gold Shore Labs -- We steer capital, not manage it.</title>
-  <meta name="description" content="Gold Shore Labs equips leaders with capital intelligence, private networks, and resilient IT products to steer capital beyond routine management." />
+  <meta name="description" content="Gold Shore Labs advances capital intelligence, private networks, and resilient IT products that help leaders steer capital with conviction." />
   <meta property="og:title" content="Gold Shore Labs" />
   <meta property="og:description" content="We do not manage capital -- we steer it." />
   <meta property="og:type" content="website" />
@@ -117,8 +115,8 @@
             Integrated wealth analysis, trusted relationship pathways, and IT product enablement give decision-makers leverage without inviting noise.
           </p>
           <div class="mt-8 flex flex-wrap gap-3">
-            <a href="#work" data-cta="hero-see-work" class="inline-flex items-center rounded bg-white text-neutral-900 px-4 py-2 font-semibold hover:bg-white/90">Review capital, network, and product briefs</a>
-            <a href="#contact" data-cta="hero-join-lore" class="inline-flex items-center rounded border border-white/20 px-4 py-2 font-semibold hover:bg-neutral-900">Request a confidential network alignment</a>
+            <a href="#work" data-cta="hero-see-work" class="inline-flex items-center rounded bg-white text-neutral-900 px-4 py-2 font-semibold hover:bg-white/90">Review capital, network, and enablement briefs</a>
+            <a href="#contact" data-cta="hero-join-lore" class="inline-flex items-center rounded border border-white/20 px-4 py-2 font-semibold hover:bg-neutral-900">Request a confidential alignment session</a>
           </div>
         </div>
 
@@ -170,7 +168,7 @@
               <h3 class="text-lg font-semibold">Network Access Console</h3>
               <p class="text-sm text-white/80">Invitation-only mapping unlocks trusted operators and alliance pathways without exposing the circle.</p>
               <h3 class="text-lg font-semibold">Social Capital Console</h3>
-              <p class="text-sm text-white/80">Invite-only mapping reveals trusted operators and peers without exposing the underlying social graph.</p>
+              <p class="text-sm text-white/80">Invite-only mapping surfaces trusted operators and peer corridors while preserving discretion.</p>
               <span class="mt-2 inline-block text-sm font-semibold text-white/90 underline underline-offset-4">Read the brief →</span>
             </div>
           </a>
@@ -183,7 +181,7 @@
               <h3 class="text-lg font-semibold">Product Enablement Spine</h3>
               <p class="text-sm text-white/80">Modular enablement spine readies compliant digital infrastructure so launches stay agile.</p>
               <h3 class="text-lg font-semibold">IT Enablement Spine</h3>
-              <p class="text-sm text-white/80">Modular IT foundations accelerate compliant launches while keeping infrastructure signatures discreet.</p>
+              <p class="text-sm text-white/80">Modular IT foundations accelerate compliant launches without disclosing infrastructure signatures.</p>
               <span class="mt-2 inline-block text-sm font-semibold text-white/90 underline underline-offset-4">See the stack →</span>
             </div>
           </a>
@@ -269,7 +267,7 @@
         <h2 class="text-2xl md:text-3xl font-bold">Contact</h2>
         <p class="mt-2 text-white/80">Have a project or idea? Reach out anytime.</p>
         
-        <form id="contactForm" class="mt-6 grid gap-4" method="POST" action="/api/contact">
+        <form id="primaryContactForm" class="mt-6 grid gap-4" method="POST" action="/api/contact">
           <label class="grid gap-1">
             <span class="text-sm text-white/70">Your email</span>
             <input name="email" type="email" required class="bg-neutral-900 border border-neutral-800 rounded px-3 py-2" />
@@ -306,6 +304,13 @@
                 form_id: 'primaryContactForm',
                 transport_type: 'redirect'
               });
+            }
+            try {
+              window.dispatchEvent(new CustomEvent('contact:success', {
+                detail: { formId: 'primaryContactForm', transportType: 'redirect' }
+              }));
+            } catch (err) {
+              console.warn('contact success event failed', err);
             }
           }
         </script>

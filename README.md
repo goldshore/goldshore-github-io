@@ -9,7 +9,7 @@ Empowering communities through secure, scalable, and intelligent infrastructure.
 - **Route**: `POST /api/gpt`
 - **Handler**: Cloudflare Worker module at [`src/gpt-handler.js`](src/gpt-handler.js)
 
-Incoming requests first enter `src/router.js`, which proxies static assets to the
+Incoming requests first enter `apps/api-worker/src/index.ts`, which proxies static assets to the
 Pages origin. Requests whose pathname starts with `/api/gpt` are passed to the
 GPT handler module, which formats the payload, calls OpenAI's Responses API,
 and streams the result back to the client.
@@ -25,10 +25,10 @@ can authenticate with OpenAI:
 | `TURNSTILE_SECRET` | Server-side Turnstile verification secret | `wrangler secret put TURNSTILE_SECRET` (or add to `.dev.vars`) |
 | `OPENAI_API_KEY` | Authenticates calls to the `/api/gpt` handler | `wrangler secret put OPENAI_API_KEY` (or add to `.dev.vars`) |
 | `GPT_PROXY_SECRET` | Shared secret browsers must send when calling `/api/gpt` | `wrangler secret put GPT_PROXY_SECRET` (or add to `.dev.vars`) |
-| `GPT_ALLOWED_ORIGINS` | Comma-separated list of origins that receive CORS access | Define in `wrangler.toml` (`[vars]`) or add to `.dev.vars` |
-| `CF_ACCESS_AUD` | Audience identifier expected inside Cloudflare Access JWTs for `/api/gpt` | Define per-environment in `wrangler.toml` or via `wrangler secret put CF_ACCESS_AUD` |
-| `CF_ACCESS_ISS` | (Optional) Cloudflare Access issuer URL to pin for JWT validation | Define per-environment in `wrangler.toml` |
-| `CF_ACCESS_JWKS_URL` | (Optional) Override for the Cloudflare Access JWKS endpoint | Define per-environment in `wrangler.toml` |
+| `GPT_ALLOWED_ORIGINS` | Comma-separated list of origins that receive CORS access | Define in `apps/api-worker/wrangler.toml` (`[vars]`) or add to `.dev.vars` |
+| `CF_ACCESS_AUD` | Audience identifier expected inside Cloudflare Access JWTs for `/api/gpt` | Define per-environment in `apps/api-worker/wrangler.toml` or via `wrangler secret put CF_ACCESS_AUD` |
+| `CF_ACCESS_ISS` | (Optional) Cloudflare Access issuer URL to pin for JWT validation | Define per-environment in `apps/api-worker/wrangler.toml` |
+| `CF_ACCESS_JWKS_URL` | (Optional) Override for the Cloudflare Access JWKS endpoint | Define per-environment in `apps/api-worker/wrangler.toml` |
 | `GPT_PROXY_SECRET` | Shared secret required by the `/api/gpt` handler | `wrangler secret put GPT_PROXY_SECRET` (or add to `.dev.vars`) |
 ```bash
 wrangler secret put OPENAI_API_KEY
@@ -41,7 +41,7 @@ or the GitHub Action `cloudflare/wrangler-action` `secrets` input).
 ### Where to store KV-style configuration
 
 - **Secrets and API keys**: use Cloudflare's encrypted secrets store via `wrangler secret put <NAME>` for each environment. These values are only visible within Cloudflare and to the Worker at runtime. For local development, copy `.dev.vars.example` to `.dev.vars` (already ignored by Git) and fill in throwaway credentials.
-- **Worker KV data**: if you need persistent key/value configuration, define a KV namespace in `wrangler.toml` (under `kv_namespaces`) and populate it with `wrangler kv:key put`. The namespace contents stay inside Cloudflare's infrastructure, so nothing sensitive is committed to the repo.
+- **Worker KV data**: if you need persistent key/value configuration, define a KV namespace in `apps/api-worker/wrangler.toml` (under `kv_namespaces`) and populate it with `wrangler kv:key put`. The namespace contents stay inside Cloudflare's infrastructure, so nothing sensitive is committed to the repo.
 - **CI/CD pipelines**: inject the same secrets and KV namespace identifiers through your build provider's secret manager (for example GitHub Actions' encrypted secrets) so automated deploys can bind them without revealing the values in logs or commits.
 
 ### GPT handler API
@@ -258,22 +258,21 @@ infrastructure scripts in one place so the CI agent can ship predictable deploym
 ```
 goldshore/
 ├─ apps/
-│  ├─ api-router/      # Cloudflare Worker router
-│  └─ web/             # Astro marketing site
+│  ├─ api-worker/      # Cloudflare Worker API/router project
+│  └─ site/            # Cloudflare Pages (Astro) marketing site + functions
 ├─ packages/
 │  └─ image-tools/         # Sharp image optimisation scripts
 ├─ infra/
 │  └─ scripts/             # DNS & Access automation
 ├─ .github/workflows/      # Deploy / maintenance CI
-├─ wrangler.toml           # Cloudflare Pages configuration
-├─ wrangler.worker.toml    # Worker + bindings configuration
 └─ package.json            # npm workspaces + shared tooling
 ```
 
 ### Key files
 
-- `apps/api-router/src/router.ts` — Worker proxy that selects the correct asset origin per host and stamps immutable cache headers for assets.
-- `apps/web/src` — Astro site with a shared theme (`styles/theme.css`), reusable components, and hero animation.
+- `apps/api-worker/src/index.ts` — Worker proxy that selects the correct asset origin per host and stamps immutable cache headers for assets.
+- `apps/site/src` — Astro site with a shared theme (`styles/theme.css`), reusable components, and hero animation.
+- `apps/site/functions/api/contact.js` — Cloudflare Pages Function that verifies Turnstile responses and relays the contact form to Formspree.
 - `packages/image-tools/process-images.mjs` — Sharp pipeline that emits AVIF/WEBP variants before every build.
 - `infra/scripts/*.sh` — Shell scripts that upsert required DNS records and ensure Cloudflare Access policies for `/admin`.
 
@@ -291,11 +290,10 @@ For a deeper end-to-end playbook that covers design, accessibility, deployment, 
 
 | Command | Description |
 | --- | --- |
-| `npm run dev` | Start the Astro dev server from `apps/web`. |
+| `npm run dev` | Start the Astro dev server from `apps/site`. |
 | `npm run build` | Optimise images then build the production site. |
-| `npm run deploy:prod` | Deploy the Worker to the production environment. |
-| `npm run deploy:preview` | Deploy the Worker to the preview environment. |
-| `npm run deploy:dev` | Deploy the Worker to the dev environment. |
+| `npm run deploy:pages` | Deploy the Astro site to Cloudflare Pages (`goldshore-org`). |
+| `npm run deploy:worker` | Deploy the API Worker (`api-goldshore`). |
 | `npm run qa` | Execute the local QA helper defined in `.github/workflows/local-qa.mjs`. |
 
 ## GitHub Actions
@@ -322,9 +320,9 @@ These secrets are consumed by the Worker (via the Secrets Store binding) and Git
    ```bash
    npm run build
    ```
-4. Deploy the Worker preview when ready:
+4. Deploy the Worker when ready:
    ```bash
-   npm run deploy:preview
+   npm run deploy:worker
    ```
 
 ## Secrets required in CI
@@ -335,13 +333,14 @@ These secrets are consumed by the Worker (via the Secrets Store binding) and Git
    ```
 2. Start Astro locally:
    ```bash
-   cd apps/web
+   cd apps/site
    npm install
    npm run dev
    ```
-3. Deploy the Worker preview when ready:
+3. Deploy the Worker when ready:
    ```bash
-   npx wrangler dev --config wrangler.worker.toml
+   cd apps/api-worker
+   wrangler dev
    ```
 
 - `CF_API_TOKEN`
@@ -349,10 +348,10 @@ These secrets are consumed by the Worker (via the Secrets Store binding) and Git
 
 If either secret is missing the deploy workflow will fail early, prompting the operator to add them before proceeding.
 
-Provision a Cloudflare D1 database named `goldshore-db` and copy its ID into `wrangler.worker.toml` under the `[[d1_databases]]` block. Initial seed tables can be created by running:
+Provision a Cloudflare D1 database named `goldshore-db` and copy its ID into `apps/api-worker/wrangler.toml` under the `[[d1_databases]]` block if you attach it to the Worker in the future. Initial seed tables can be created by running:
 The public contact form posts to Formspree after passing Cloudflare Turnstile validation. To finish wiring the production form:
 
-The Worker expects Cloudflare Pages projects mapped to:
+The Worker expects Cloudflare Pages projects mapped to the appropriate origins via `PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, and `DEV_ASSETS` variables in `apps/api-worker/wrangler.toml`.
 
 Example Worker binding block:
 
@@ -369,7 +368,7 @@ The DNS upsert script keeps these hostnames pointed at the correct Pages project
 `goldshore.org`, `www.goldshore.org`, `preview.goldshore.org`, and `dev.goldshore.org`.
 
 - The Worker deploy relies on the Cloudflare Secrets Store; be sure the store already contains the mapped secrets (`OPENAI_API_KEY`, `OPENAI_PROJECT_ID`, `CF_API_TOKEN`).
-- Worker-related commands should pass `--config wrangler.worker.toml` so they continue to load bindings and routes, while Cloudflare Pages reads the root `wrangler.toml` for its build output directory.
+- Run Worker commands from `apps/api-worker` so Wrangler automatically reads the colocated `wrangler.toml`, while Cloudflare Pages commands execute from `apps/site` and read its own configuration file.
 - Cloudflare Access automation defaults to allowing `@goldshore.org` addresses. Adjust `ALLOWED_DOMAIN` when running the script if your allowlist differs.
 - The AI maintenance workflow is conservative and only opens pull requests when copy changes are suggested. Merge decisions stay in human hands.
 - Worker asset environment variables (`PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, `DEV_ASSETS`) accept either a single origin or a comma-separated list. The router will select the first valid HTTPS origin and will automatically prepend `https://` when a scheme is omitted, which makes it easy to rotate between legacy and renamed domains without downtime.

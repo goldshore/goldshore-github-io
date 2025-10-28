@@ -7,13 +7,12 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "cd apps/web && astro dev",
-    "build": "node packages/image-tools/process-images.mjs && cd apps/web && astro build",
+    "dev": "cd apps/site && astro dev",
+    "build": "node packages/image-tools/process-images.mjs && cd apps/site && astro build",
     "build:web": "npm run build",
     "process-images": "node packages/image-tools/process-images.mjs",
-    "deploy:prod": "wrangler deploy --env=production",
-    "deploy:preview": "wrangler deploy --env=preview",
-    "deploy:dev": "wrangler deploy --env=dev",
+    "deploy:pages": "cd apps/site && wrangler pages deploy dist --project-name=goldshore-org --commit-dirty=true",
+    "deploy:worker": "cd apps/api-worker && wrangler deploy",
     "qa": "node .github/workflows/local-qa.mjs"
   },
   "devDependencies": {

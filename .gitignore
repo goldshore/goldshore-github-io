@@ -6,3 +6,8 @@ _site/
 .bundle/
 vendor/
 .dev.vars
+node_modules/
+apps/**/node_modules/
+apps/site/.astro/
+apps/site/dist/
+dist/

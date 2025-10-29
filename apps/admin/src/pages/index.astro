@@ -1,19 +1,431 @@
 ---
 import Admin from "../layouts/Admin.astro";
+
+const metrics = [
+  {
+    label: "Net New Leads",
+    value: "128",
+    delta: "+18.4%",
+    caption: "vs. trailing 7 days",
+  },
+  {
+    label: "Active Customers",
+    value: "2,417",
+    delta: "+62",
+    caption: "accounts trading in the last 48h",
+  },
+  {
+    label: "Monthly Recurring Revenue",
+    value: "$312K",
+    delta: "+5.6%",
+    caption: "forecast, normalized",
+  },
+  {
+    label: "Risk Buffer",
+    value: "78%",
+    delta: "Healthy",
+    caption: "of configured loss limits",
+  },
+];
+
+const executionFeed = [
+  { ts: "14:22", type: "BUY", symbol: "EUR/USD", notional: "$1.2M", owner: "Falcon Desk" },
+  { ts: "14:10", type: "SELL", symbol: "BTC/USD", notional: "$850K", owner: "Delta Ops" },
+  { ts: "13:58", type: "BUY", symbol: "XAU/USD", notional: "$640K", owner: "Helios Desk" },
+  { ts: "13:40", type: "BUY", symbol: "AAPL", notional: "$410K", owner: "Syndicate" },
+];
+
+const riskAlerts = [
+  { level: "warning", message: "Order book imbalance rising on BTC-USD", owner: "Delta Ops", ago: "6m" },
+  { level: "info", message: "Lead scoring model retrained", owner: "Growth AI", ago: "18m" },
+  { level: "critical", message: "Credit spread widening above limit", owner: "Risk Core", ago: "27m" },
+];
+
+const retention = [
+  { cohort: "Apr", customers: 412, retention: "82%" },
+  { cohort: "May", customers: 388, retention: "79%" },
+  { cohort: "Jun", customers: 365, retention: "77%" },
+  { cohort: "Jul", customers: 352, retention: "76%" },
+];
 ---
 <Admin>
-  <section class="space-y-4">
-    <h1 class="text-2xl font-bold">Trading Ops Overview</h1>
-    <p>Welcome to the GoldShore admin console. Choose a module from the sidebar to review customer activity, risk posture, and real-time trading telemetry.</p>
-    <div class="grid gap-4 md:grid-cols-2">
-      <article class="border rounded p-4">
-        <h2 class="font-semibold">Leads</h2>
-        <p>Monitor newly captured leads from marketing funnels synced via the API.</p>
-      </article>
-      <article class="border rounded p-4">
-        <h2 class="font-semibold">Risk Alerts</h2>
-        <p>Review threshold breaches, net exposure drifts, and automated interventions.</p>
-      </article>
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Operations heartbeat</p>
+      <h1>GoldShore admin dashboard</h1>
+      <p class="lede">
+        Monitor customer growth, subscription health, and risk posture from a single console. This snapshot refreshes every
+        five minutes from the edge workers running in production.
+      </p>
+    </div>
+    <div class="status-card">
+      <span class="status-dot" aria-hidden="true"></span>
+      <div>
+        <p class="status-title">Worker status</p>
+        <p class="status-meta">All regions nominal</p>
+      </div>
     </div>
   </section>
+
+  <section class="metrics">
+    {metrics.map(metric => (
+      <article class="metric-card">
+        <header>
+          <span>{metric.label}</span>
+          <strong>{metric.value}</strong>
+        </header>
+        <footer>
+          <span>{metric.delta}</span>
+          <span>{metric.caption}</span>
+        </footer>
+      </article>
+    ))}
+  </section>
+
+  <section class="grid">
+    <article class="panel">
+      <header>
+        <h2>Latest executions</h2>
+        <span class="meta">Synced from worker queues</span>
+      </header>
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Time</th>
+            <th scope="col">Side</th>
+            <th scope="col">Symbol</th>
+            <th scope="col">Notional</th>
+            <th scope="col">Desk</th>
+          </tr>
+        </thead>
+        <tbody>
+          {executionFeed.map(row => (
+            <tr>
+              <td>{row.ts}</td>
+              <td>
+                <span class={`badge badge--${row.type === "BUY" ? "buy" : "sell"}`}>{row.type}</span>
+              </td>
+              <td>{row.symbol}</td>
+              <td>{row.notional}</td>
+              <td>{row.owner}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </article>
+
+    <article class="panel">
+      <header>
+        <h2>Risk control center</h2>
+        <span class="meta">Escalations & automations</span>
+      </header>
+      <ul class="alert-list">
+        {riskAlerts.map(alert => (
+          <li class={`alert alert--${alert.level}`}>
+            <div>
+              <p>{alert.message}</p>
+              <span>{alert.owner}</span>
+            </div>
+            <time>{alert.ago}</time>
+          </li>
+        ))}
+      </ul>
+      <footer class="panel-footer">
+        <a href="/risk" class="link">Open risk module</a>
+        <span>Automated playbooks are active</span>
+      </footer>
+    </article>
+  </section>
+
+  <section class="grid grid--secondary">
+    <article class="panel">
+      <header>
+        <h2>Customer retention cohorts</h2>
+        <span class="meta">Quarterly review</span>
+      </header>
+      <ul class="cohort-list">
+        {retention.map(item => (
+          <li>
+            <span class="cohort-tag">{item.cohort}</span>
+            <span>{item.customers} customers</span>
+            <span>{item.retention} retained</span>
+          </li>
+        ))}
+      </ul>
+    </article>
+
+    <article class="panel">
+      <header>
+        <h2>Integrations</h2>
+        <span class="meta">Cloudflare & partner APIs</span>
+      </header>
+      <div class="integrations">
+        <div>
+          <h3>Cloudflare Access</h3>
+          <p>Admin routes protected via Access policies with hardware key enforcement.</p>
+        </div>
+        <div>
+          <h3>Realtime telemetry</h3>
+          <p>Orders stream to durable objects for replay and compliance exports.</p>
+        </div>
+        <div>
+          <h3>Analytics lake</h3>
+          <p>Snapshots land in R2 for modeling and generative reporting each night.</p>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <style>
+    :global(h1), :global(h2) {
+      margin: 0;
+    }
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 2rem;
+    }
+    .eyebrow {
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      font-size: 0.75rem;
+      color: rgba(233,236,244,0.6);
+      margin-bottom: 0.5rem;
+    }
+    .hero h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.96);
+      margin-bottom: 0.75rem;
+    }
+    .lede {
+      margin: 0;
+      max-width: 42ch;
+      color: rgba(233,236,244,0.78);
+      line-height: 1.6;
+    }
+    .status-card {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(20,24,35,0.85);
+      border: 1px solid rgba(227,179,65,0.35);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      min-width: 16rem;
+    }
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 30%, #6ee7b7, #10b981);
+      box-shadow: 0 0 12px rgba(16,185,129,0.5);
+    }
+    .status-title {
+      font-weight: 600;
+      color: rgba(233,236,244,0.9);
+    }
+    .status-meta {
+      font-size: 0.85rem;
+      color: rgba(233,236,244,0.65);
+    }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1.5rem;
+    }
+    .metric-card {
+      background: rgba(20,24,35,0.82);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      border: 1px solid rgba(255,255,255,0.05);
+      box-shadow: 0 12px 32px rgba(8,10,18,0.35);
+    }
+    .metric-card header span {
+      color: rgba(233,236,244,0.65);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .metric-card header strong {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.95);
+    }
+    .metric-card footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: rgba(233,236,244,0.7);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.75rem;
+      align-items: start;
+    }
+    .grid--secondary {
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    .panel {
+      background: rgba(14,16,24,0.82);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      box-shadow: 0 18px 40px rgba(6,8,16,0.35);
+    }
+    .panel header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+    }
+    .panel h2 {
+      font-size: 1.1rem;
+      color: rgba(255,255,255,0.94);
+    }
+    .meta {
+      font-size: 0.85rem;
+      color: rgba(233,236,244,0.55);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.5rem 0.25rem;
+    }
+    th {
+      color: rgba(233,236,244,0.58);
+      font-weight: 500;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.7rem;
+    }
+    tr + tr td {
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 0.15rem 0.75rem;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+    .badge--buy {
+      background: rgba(16,185,129,0.18);
+      color: #6ee7b7;
+    }
+    .badge--sell {
+      background: rgba(248,113,113,0.18);
+      color: #fca5a5;
+    }
+    .alert-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .alert {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      background: rgba(24, 29, 45, 0.78);
+      border-radius: calc(var(--radius) - 6px);
+      padding: 0.85rem 1rem;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .alert p {
+      margin: 0 0 0.25rem;
+      color: rgba(255,255,255,0.9);
+      font-weight: 500;
+    }
+    .alert span {
+      color: rgba(233,236,244,0.6);
+      font-size: 0.8rem;
+    }
+    .alert time {
+      color: rgba(233,236,244,0.5);
+      font-size: 0.75rem;
+    }
+    .alert--warning {
+      border-color: rgba(251,191,36,0.4);
+    }
+    .alert--critical {
+      border-color: rgba(248,113,113,0.45);
+      box-shadow: 0 0 12px rgba(248,113,113,0.25);
+    }
+    .panel-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: rgba(233,236,244,0.6);
+    }
+    .link {
+      color: var(--brand);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .cohort-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .cohort-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(18,21,33,0.78);
+      padding: 0.85rem 1rem;
+      border-radius: calc(var(--radius) - 6px);
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .cohort-tag {
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+      width: 3rem;
+    }
+    .integrations {
+      display: grid;
+      gap: 1rem;
+    }
+    .integrations h3 {
+      margin: 0 0 0.35rem;
+      font-size: 1rem;
+      color: rgba(255,255,255,0.88);
+    }
+    .integrations p {
+      margin: 0;
+      color: rgba(233,236,244,0.65);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+    @media (max-width: 960px) {
+      .hero {
+        flex-direction: column;
+      }
+      .status-card {
+        width: 100%;
+      }
+    }
+  </style>
 </Admin>

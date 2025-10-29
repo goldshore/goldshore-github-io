@@ -1,5 +1,5 @@
 {
-  "name": "@goldshore/admin",
+  "name": "@goldshore/admin-package",
   "version": "0.0.0",
   "private": true,
   "scripts": {

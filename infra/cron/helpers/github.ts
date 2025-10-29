@@ -33,14 +33,48 @@ export async function createFixBranchAndPR(
 ) {
   const baseRef = await gh.rest.git.getRef({ owner, repo, ref: `heads/${base}` });
   const baseSha = baseRef.data.object.sha;
+  const baseCommit = await gh.rest.git.getCommit({ owner, repo, commit_sha: baseSha });
+  const baseTreeSha = baseCommit.data.tree.sha;
+
+  let branchExists = false;
+  let existingOpenPR: Awaited<ReturnType<typeof gh.rest.pulls.list>>["data"][number] | undefined;
 
   try {
-    await gh.rest.git.createRef({ owner, repo, ref: `refs/heads/${head}`, sha: baseSha });
+    await gh.rest.git.getRef({ owner, repo, ref: `heads/${head}` });
+    branchExists = true;
+    const existing = await gh.rest.pulls.list({
+      owner,
+      repo,
+      state: "open",
+      head: `${owner}:${head}`,
+      per_page: 1
+    });
+    existingOpenPR = existing.data[0];
   } catch (error) {
-    if (error instanceof RequestError && error.status === 422) {
-      // Branch already exists; continue so we can update it below.
+    if (error instanceof RequestError && error.status === 404) {
+      branchExists = false;
     } else {
       throw error;
+    }
+  }
+
+  if (!branchExists) {
+    try {
+      await gh.rest.git.createRef({ owner, repo, ref: `refs/heads/${head}`, sha: baseSha });
+    } catch (error) {
+      if (error instanceof RequestError && error.status === 422) {
+        branchExists = true;
+        const existing = await gh.rest.pulls.list({
+          owner,
+          repo,
+          state: "open",
+          head: `${owner}:${head}`,
+          per_page: 1
+        });
+        existingOpenPR = existing.data[0];
+      } else {
+        throw error;
+      }
     }
   }
 
@@ -58,7 +92,7 @@ export async function createFixBranchAndPR(
   const tree = await gh.rest.git.createTree({
     owner,
     repo,
-    base_tree: baseSha,
+    base_tree: baseTreeSha,
     tree: changes.map((c, i) => ({ path: c.path, mode: "100644", type: "blob", sha: blobs[i].data.sha }))
   });
 
@@ -70,7 +104,15 @@ export async function createFixBranchAndPR(
     parents: [baseSha]
   });
 
-  await gh.rest.git.updateRef({ owner, repo, ref: `heads/${head}`, sha: commit.data.sha, force: true });
+  await gh.rest.git.updateRef({
+    owner,
+    repo,
+    ref: `heads/${head}`,
+    sha: commit.data.sha,
+    force: branchExists
+  });
+
+  if (existingOpenPR) return existingOpenPR;
 
   try {
     const pr = await gh.rest.pulls.create({ owner, repo, head, base, title, body });

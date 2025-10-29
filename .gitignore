@@ -1,21 +1,11 @@
-dist/
-node_modules/
-.dev.vars
-.env
-.env.*
-astro.config.ts.timestamp
-.astro/
-node_modules/
-package-lock.json
-pnpm-lock.yaml
-apps/web/node_modules/
-apps/web/.astro/
 # Build artifacts
+.astro/
+dist/
 _site/
-apps/web/dist/
 apps/web/.astro/
+apps/web/dist/
 
-# Node modules
+# Dependencies
 node_modules/
 apps/*/node_modules/
 packages/*/node_modules/
@@ -24,12 +14,16 @@ packages/*/node_modules/
 package-lock.json
 apps/*/package-lock.json
 packages/*/package-lock.json
+pnpm-lock.yaml
 
-# Local configs
+# Environment and local config
 .dev.vars
 .dev.vars.local
+.env
+.env.*
+astro.config.ts.timestamp
 
-# Legacy
+# Legacy caches
 .sass-cache/
 .jekyll-cache/
 .jekyll-metadata

@@ -5,54 +5,41 @@ import sharp from 'sharp';
 const srcDir = 'apps/web/public/images/raw';
 const outDir = 'apps/web/public/images/optimized';
 
-fs.mkdirSync(outDir, { recursive: true });
-
-for (const entry of fs.readdirSync(srcDir, { withFileTypes: true })) {
-  if (!entry.isFile()) continue;
-
-  const inputPath = path.join(srcDir, entry.name);
-  if (!/\.(png|jpe?g)$/i.test(inputPath)) continue;
-
-  const base = path.parse(entry.name).name;
-  const pipeline = sharp(inputPath)
-    .modulate({ brightness: 0.95, saturation: 0.9 })
-    .composite([
-      {
-        input: Buffer.from([255, 255, 255, 230]),
-        raw: { width: 1, height: 1, channels: 4 },
-        tile: true,
-        blend: 'overlay'
-      }
-    ]);
-
-  await Promise.all([
-    pipeline.clone().webp({ quality: 82 }).toFile(path.join(outDir, `${base}.webp`)),
-    pipeline.clone().avif({ quality: 60 }).toFile(path.join(outDir, `${base}.avif`))
-  ]);
-}
-
-console.log('Images processed →', outDir);
-fs.mkdirSync(outDir, { recursive: true });
-
-const compositeOverlay = {
+const overlay = {
   input: Buffer.from([255, 255, 255, 230]),
   raw: { width: 1, height: 1, channels: 4 },
   tile: true,
   blend: 'overlay'
 };
 
-const processImages = async () => {
-  for (const file of fs.readdirSync(srcDir)) {
-    const fullPath = path.join(srcDir, file);
-    if (!/\.(png|jpe?g)$/i.test(fullPath)) continue;
-    const base = path.parse(file).name;
-    const pipeline = sharp(fullPath)
-      .modulate({ brightness: 0.95, saturation: 0.9 })
-      .composite([compositeOverlay]);
+const isImage = (file) => /\.(png|jpe?g)$/i.test(file);
 
-    await pipeline.clone().webp({ quality: 82 }).toFile(path.join(outDir, `${base}.webp`));
-    await pipeline.clone().avif({ quality: 60 }).toFile(path.join(outDir, `${base}.avif`));
+const processFile = async (fileName) => {
+  const base = path.parse(fileName).name;
+  const fullPath = path.join(srcDir, fileName);
+  const pipeline = sharp(fullPath)
+    .modulate({ brightness: 0.95, saturation: 0.9 })
+    .composite([overlay]);
+
+  await Promise.all([
+    pipeline.clone().webp({ quality: 82 }).toFile(path.join(outDir, `${base}.webp`)),
+    pipeline.clone().avif({ quality: 60 }).toFile(path.join(outDir, `${base}.avif`))
+  ]);
+};
+
+const processImages = async () => {
+  if (!fs.existsSync(srcDir)) {
+    throw new Error(`Source directory not found: ${srcDir}`);
   }
+
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const entries = fs.readdirSync(srcDir, { withFileTypes: true });
+  const tasks = entries
+    .filter((entry) => entry.isFile() && isImage(entry.name))
+    .map((entry) => processFile(entry.name));
+
+  await Promise.all(tasks);
   console.log('Images processed →', outDir);
 };
 

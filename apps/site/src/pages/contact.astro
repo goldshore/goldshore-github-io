@@ -48,16 +48,21 @@ const sanitizedBuildTimeKey =
       <label for="message">Context</label>
       <textarea id="message" name="message" rows="5" required placeholder="Tell us about the product, timeline, and any material we should review." style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(10,15,26,.6); color: var(--fg);"></textarea>
     </div>
-    <div id="turnstile-error" style="display: none; font-size: 0.9rem; text-align: center; color: rgba(255, 180, 180, 0.85);">
-      Verification is unavailable. Refresh the page or email
-      <a href="mailto:intake@goldshore.org" style="color: inherit; text-decoration: underline;">intake@goldshore.org</a>.
-    </div>
-    <div
-      id="turnstile-wrapper"
-      data-build-sitekey={sanitizedBuildTimeKey}
-      style="display: none; justify-content: center;"
-    >
-      <div id="turnstile-container" class="cf-turnstile" data-theme="dark"></div>
+    <div style="display: grid; gap: 12px;">
+      <div
+        id="turnstile-error"
+        style="display: none; font-size: 0.9rem; text-align: center; color: rgba(255, 180, 180, 0.85);"
+      >
+        Verification is unavailable. Refresh the page or email
+        <a href="mailto:intake@goldshore.org" style="color: inherit; text-decoration: underline;">intake@goldshore.org</a>.
+      </div>
+      <div
+        id="turnstile-wrapper"
+        data-build-sitekey={sanitizedBuildTimeKey}
+        style="display: none; justify-content: center;"
+      >
+        <div id="turnstile-container" class="cf-turnstile" data-theme="dark"></div>
+      </div>
     </div>
     <button class="btn" type="submit">Submit request</button>
   </form>

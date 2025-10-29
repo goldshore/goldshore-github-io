@@ -10,7 +10,6 @@ vendor/
 packages/*/dist/
 node_modules/
 **/node_modules/
-package-lock.json
 pnpm-lock.yaml
 apps/web/node_modules/
 apps/web/.astro/

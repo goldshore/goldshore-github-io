@@ -12,6 +12,8 @@ CORS_ORIGINS = "https://goldshore.org,https://admin.goldshore.org"
 [[d1_databases]]
 binding = "DB"
 database_name = "goldshore_db"
+# Placeholder UUID so wrangler --dry-run validation passes in CI. Replace with the real D1 database ID when wiring production.
+database_id = "00000000-0000-0000-0000-000000000000"
 
 [[kv_namespaces]]
 binding = "AGENT_PROMPT_KV"

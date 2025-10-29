@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --no-package-lock
+      - run: npm ci
 
       - name: Build admin (conditional)
         if: contains(steps.diff.outputs.changed, 'apps/admin/')

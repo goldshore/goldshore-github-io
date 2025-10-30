@@ -57,24 +57,19 @@ export async function onRequestPost({ request, env }) {
     const redirectRaw = form.get('_redirect');
     let redirect = '/#contact-success';
 
-    if (typeof redirectRaw === 'string') {
-      const redirectCandidate = redirectRaw.trim();
+    if (typeof redirectRaw === 'string' && redirectRaw.trim()) {
+      try {
+        const requestUrl = new URL(request.url);
+        const redirectUrl = new URL(redirectRaw, requestUrl);
 
-      if (redirectCandidate) {
-        try {
-          const requestUrl = new URL(request.url);
-          const redirectUrl = new URL(redirectCandidate, requestUrl);
-
-          if (
-            redirectUrl.origin === requestUrl.origin &&
-            redirectUrl.pathname.startsWith('/') &&
-            !redirectCandidate.startsWith('//')
-          ) {
-            redirect = `${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}` || '/';
-          }
-        } catch (_) {
-          // fall back to default redirect
+        if (
+          redirectUrl.origin === requestUrl.origin &&
+          !redirectUrl.pathname.startsWith('//')
+        ) {
+          redirect = `${redirectUrl.pathname}${redirectUrl.search}${redirectUrl.hash}` || '/';
         }
+      } catch (_) {
+        // fall back to default redirect
       }
     }
 

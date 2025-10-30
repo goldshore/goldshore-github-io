@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if ! command -v jq >/dev/null 2>&1; then
+  echo "jq is required" >&2
+  exit 1
+fi
+
 if [[ -z "${CF_API_TOKEN:-}" ]]; then
   echo "CF_API_TOKEN environment variable must be set" >&2
   exit 1
@@ -123,24 +128,70 @@ upsert_record() {
     curl -sS -X POST "${API}/zones/${zone_id}/dns_records" "${AUTH_HEADER[@]}" --data "$payload" >/dev/null
     echo "Created ${type} record for ${name}" >&2
   fi
-}
 
-echo "$CONFIG" | jq -c '.[]' | while read -r zone; do
-  zone_name=$(echo "$zone" | jq -r '.zone')
-  echo "Synchronising zone ${zone_name}" >&2
-  zone_lookup=$(curl -sS -X GET "${API}/zones?name=${zone_name}" "${AUTH_HEADER[@]}")
-  zone_id=$(echo "$zone_lookup" | jq -r '.result[0].id // empty')
-  if [[ -z "$zone_id" ]]; then
-    echo "Unable to resolve zone id for ${zone_name}" >&2
-    continue
+main() {
+  local zone_id=$1
+
+  local ipv4_target=${IPv4_TARGET:-192.0.2.1}
+  local ipv6_target=${IPv6_TARGET:-}
+  local apex_cname_target=${APEX_CNAME_TARGET:-}
+  local preview_cname_target=${PREVIEW_CNAME_TARGET:-"goldshore-org-preview.pages.dev"}
+  local dev_cname_target=${DEV_CNAME_TARGET:-"goldshore-org-dev.pages.dev"}
+  local www_cname_target=${WWW_CNAME_TARGET:-$ZONE_NAME}
+  local default_proxied=${DEFAULT_PROXIED:-true}
+
+  local -a records=()
+
+  if [[ -n "$apex_cname_target" ]]; then
+    records+=("$ZONE_NAME|CNAME|$apex_cname_target|$default_proxied")
+  else
+    records+=("$ZONE_NAME|A|$ipv4_target|$default_proxied")
+
+    if [[ -n "$ipv6_target" ]]; then
+      records+=("$ZONE_NAME|AAAA|$ipv6_target|$default_proxied")
+    fi
   fi
 
-  echo "$zone" | jq -c '.records[]' | while read -r record; do
-    type=$(echo "$record" | jq -r '.type')
-    name=$(echo "$record" | jq -r '.name')
-    content=$(echo "$record" | jq -r '.content')
-    proxied=$(echo "$record" | jq '.proxied // false')
-    upsert_record "$zone_id" "$name" "$type" "$content" "$proxied"
+  if [[ -n "$www_cname_target" ]]; then
+    records+=("www.$ZONE_NAME|CNAME|$www_cname_target|$default_proxied")
+  fi
+
+  if [[ -n "$preview_cname_target" ]]; then
+    records+=("preview.$ZONE_NAME|CNAME|$preview_cname_target|$default_proxied")
+  fi
+
+  if [[ -n "$dev_cname_target" ]]; then
+    records+=("dev.$ZONE_NAME|CNAME|$dev_cname_target|$default_proxied")
+  fi
+
+  declare -A host_record_types=()
+  local record
+  for record in "${records[@]}"; do
+    IFS='|' read -r name type content proxied <<<"$record"
+
+    if [[ -z "$name" || -z "$type" || -z "$content" ]]; then
+      echo "Skipping malformed record definition: $record" >&2
+      continue
+    fi
+
+    case "$type" in
+      CNAME)
+        if [[ "${host_record_types[$name]:-}" == "address" ]]; then
+          echo "Configuration error: $name cannot have both address and CNAME records" >&2
+          exit 1
+        fi
+        host_record_types[$name]="cname"
+        ;;
+      A|AAAA)
+        if [[ "${host_record_types[$name]:-}" == "cname" ]]; then
+          echo "Configuration error: $name cannot have both address and CNAME records" >&2
+          exit 1
+        fi
+        host_record_types[$name]="address"
+        ;;
+    esac
+
+    upsert_record "$zone_id" "$name" "$type" "$content" "${proxied:-$default_proxied}"
   done
 
 done

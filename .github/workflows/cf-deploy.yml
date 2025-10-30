@@ -18,12 +18,25 @@ jobs:
       url: https://goldshore.org/
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Detect changed paths
         id: diff
         run: |
-          git fetch origin main
-          echo "changed=$(git diff --name-only origin/main... | tr '\n' ',' )" >> $GITHUB_OUTPUT
+          PREVIOUS_SHA="${{ github.event.before }}"
+          CURRENT_SHA="${{ github.sha }}"
+
+          if [ -z "$PREVIOUS_SHA" ] || [ "$PREVIOUS_SHA" = "0000000000000000000000000000000000000000" ]; then
+            if git rev-parse HEAD^ >/dev/null 2>&1; then
+              PREVIOUS_SHA=$(git rev-parse HEAD^)
+            else
+              PREVIOUS_SHA="$CURRENT_SHA"
+            fi
+          fi
+
+          CHANGED=$(git diff --name-only "$PREVIOUS_SHA" "$CURRENT_SHA" | tr '\n' ',')
+          echo "changed=$CHANGED" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-node@v4
         with:

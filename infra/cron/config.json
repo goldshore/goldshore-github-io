@@ -5,7 +5,7 @@
   "max_parallel_checks": 6,
   "github": {
     "org": "goldshore",
-    "repos": ["goldshore", "goldshore-web", "goldshore-admin", "goldshore-api"],
+    "repos": ["goldshore", "goldshore-web", "goldshore-admin", "goldshore-api-worker"],
     "branch_protection": {
       "required_approving_review_count": 1,
       "dismiss_stale_reviews": true,
@@ -19,13 +19,15 @@
     "checks": [
       { "type": "pages_build_status", "project": "goldshore-web" },
       { "type": "pages_build_status", "project": "goldshore-admin" },
-      { "type": "worker_health", "script": "goldshore-api", "path": "/health" },
+      { "type": "worker_health", "script": "goldshore-api-worker", "path": "/v1/health" },
       {
         "type": "dns_records",
         "required": [
           { "name": "goldshore.org", "type": "CNAME" },
           { "name": "api.goldshore.org", "type": "CNAME" },
           { "name": "admin.goldshore.org", "type": "CNAME" },
+          { "name": "api-preview.goldshore.org", "type": "CNAME" },
+          { "name": "api-dev.goldshore.org", "type": "CNAME" },
           { "name": "_dmarc.goldshore.org", "type": "TXT", "contains": "v=DMARC1; p=reject" },
           { "name": "goldshore.org", "type": "TXT", "contains": "v=spf1" }
         ]

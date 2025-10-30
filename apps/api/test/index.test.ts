@@ -9,7 +9,7 @@ let mf: Miniflare;
 let buildDir: string;
 
 beforeAll(async () => {
-  buildDir = mkdtempSync(path.join(tmpdir(), "goldshore-api-"));
+  buildDir = mkdtempSync(path.join(tmpdir(), "goldshore-router-"));
   const outfile = path.join(buildDir, "worker.mjs");
   await build({
     entryPoints: ["src/index.ts"],

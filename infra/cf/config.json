@@ -126,48 +126,64 @@
     },
     {
       "name": "goldshore-api",
-      "main_entrypoint": "apps/api/dist/index.js",
-      "compatibility_date": "2025-10-20",
+      "main_entrypoint": "packages/api/dist/index.js",
+      "compatibility_date": "2024-11-21",
       "routes": [
-        "api.goldshore.org/*"
+        "api.goldshore.org/*",
+        "api-preview.goldshore.org/*",
+        "api-dev.goldshore.org/*"
       ],
       "bindings": {
         "KV": [
           {
-            "binding": "AGENT_PROMPT_KV",
-            "id": "${AGENT_PROMPT_KV_ID}"
+            "binding": "KV_SESSIONS",
+            "id": "${KV_SESSIONS_ID}"
+          },
+          {
+            "binding": "KV_CACHE",
+            "id": "${KV_CACHE_ID}"
           }
         ],
         "D1": [
           {
-            "binding": "DB",
-            "database": "goldshore_db"
+            "binding": "D1_CORE",
+            "database": "goldshore-core"
           }
         ],
         "R2": [
           {
-            "binding": "SNAP_R2",
-            "bucket": "goldshore-bucket"
+            "binding": "R2_PUBLIC",
+            "bucket": "goldshore-public"
+          }
+        ],
+        "durable_objects": [
+          {
+            "name": "DO_SESSIONS",
+            "class_name": "SessionDO"
           }
         ],
         "queues": {
           "producers": [
             {
-              "binding": "JOBS_QUEUE",
-              "queue": "jobs"
+              "binding": "Q_EVENTS",
+              "queue": "goldshore-events"
             }
           ],
           "consumers": [
             {
-              "queue": "jobs",
-              "max_batch_size": 10,
-              "max_batch_timeout": 5,
-              "max_retries": 3
+              "queue": "goldshore-events",
+              "max_batch_size": 50,
+              "max_wait_ms": 2000,
+              "dead_letter_queue": "goldshore-dlq"
             }
           ]
         },
         "vars": {
-          "CORS_ORIGINS": "https://goldshore.org,https://admin.goldshore.org"
+          "GOLDSHORE_ENV": "production",
+          "GOLDSHORE_ORIGIN": "https://goldshore.org",
+          "GOLDSHORE_CORS": "https://goldshore.org,https://admin.goldshore.org",
+          "FF_ENABLE_TRADING": "true",
+          "FF_ENABLE_SENTIMENT": "true"
         }
       }
     }

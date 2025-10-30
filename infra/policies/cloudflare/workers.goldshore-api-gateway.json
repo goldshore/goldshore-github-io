@@ -1,0 +1,141 @@
+{
+  "script": "goldshore-api-gateway",
+  "description": "Zero-trust API gateway handling trading, CRM, and partner integrations for Goldshore services.",
+  "compatibility_date": "2025-10-20",
+  "environments": {
+    "production": {
+      "routes": [
+        "api.goldshore.org/*"
+      ],
+      "vars": {
+        "PRIMARY_API_HOST": "api.goldshore.org",
+        "ALLOWED_ORIGINS": "https://goldshore.org,https://admin.goldshore.org",
+        "JWT_AUDIENCE": "goldshore-api",
+        "JWT_ISSUER": "https://auth.goldshore.org"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database": "goldshore_api_prod"
+        },
+        {
+          "binding": "AUDIT_DB",
+          "database": "goldshore_audit_prod"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "SESSIONS_KV",
+          "id": "${KV_SESSIONS_PROD}"
+        },
+        {
+          "binding": "CACHE_KV",
+          "id": "${KV_CACHE_PROD}"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "SNAPSHOTS",
+          "bucket_name": "goldshore-api-prod"
+        }
+      ],
+      "queues": {
+        "producers": [
+          {
+            "binding": "JOBS_QUEUE",
+            "queue": "goldshore-api-jobs"
+          },
+          {
+            "binding": "WEBHOOK_QUEUE",
+            "queue": "goldshore-webhooks"
+          }
+        ],
+        "consumers": [
+          {
+            "queue": "goldshore-api-jobs",
+            "max_batch_size": 10,
+            "max_batch_timeout": 5,
+            "max_retries": 3
+          }
+        ]
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "API_ANALYTICS",
+          "dataset": "goldshore-api-events"
+        }
+      ]
+    },
+    "preview": {
+      "routes": [
+        "api-preview.goldshore.org/*"
+      ],
+      "vars": {
+        "PRIMARY_API_HOST": "api-preview.goldshore.org",
+        "ALLOWED_ORIGINS": "https://preview.goldshore.org",
+        "JWT_AUDIENCE": "goldshore-api-preview",
+        "JWT_ISSUER": "https://auth-preview.goldshore.org"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database": "goldshore_api_preview"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "SESSIONS_KV",
+          "id": "${KV_SESSIONS_PREVIEW}"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "SNAPSHOTS",
+          "bucket_name": "goldshore-api-preview"
+        }
+      ]
+    },
+    "development": {
+      "routes": [
+        "api-dev.goldshore.org/*"
+      ],
+      "vars": {
+        "PRIMARY_API_HOST": "api-dev.goldshore.org",
+        "ALLOWED_ORIGINS": "http://localhost:8787,http://localhost:8788",
+        "JWT_AUDIENCE": "goldshore-api-dev",
+        "JWT_ISSUER": "https://auth-dev.goldshore.org"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database": "goldshore_api_dev"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "SESSIONS_KV",
+          "id": "${KV_SESSIONS_DEV}"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "SNAPSHOTS",
+          "bucket_name": "goldshore-api-dev"
+        }
+      ]
+    }
+  },
+  "logpush": {
+    "dataset": "http_requests",
+    "destination": "r2://goldshore-observability/api-gateway/${DATE}.ndjson",
+    "fields": [
+      "ClientIP",
+      "ClientRequestHost",
+      "ClientRequestURI",
+      "EdgeResponseStatus",
+      "WorkerSubrequest",
+      "EdgeStartTimestamp",
+      "EdgeEndTimestamp"
+    ]
+  }
+}

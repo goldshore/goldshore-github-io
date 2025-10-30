@@ -17,7 +17,12 @@ type DNSRequirement = { name: string; type: string; contains?: string };
 
 type PagesCheck = { type: "pages_build_status"; project: string };
 
-type WorkerCheck = { type: "worker_health"; script: string; path: string };
+type WorkerCheck = {
+  type: "worker_health";
+  script: string;
+  path: string;
+  domain_override?: string;
+};
 
 type DNSCheck = { type: "dns_records"; required: DNSRequirement[] };
 

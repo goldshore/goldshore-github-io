@@ -1,18 +1,23 @@
 {
   "project": "goldshore-admin",
-  "description": "Cloudflare Pages project hosting the admin console gated behind Access.",
+  "description": "Cloudflare Pages project hosting the Access-gated Goldshore admin console.",
   "production_branch": "main",
   "preview_branches": [
-    "admin-preview"
+    "admin-preview",
+    "admin-develop"
   ],
   "deployment_configs": {
     "production": {
-      "compatibility_date": "2024-02-19",
+      "compatibility_date": "2025-01-15",
       "environment_variables": {
         "NODE_VERSION": "20",
         "ACCESS_TAG": "goldshore-admin",
-        "WORKER_HOSTNAME": "admin.goldshore.org"
+        "WORKER_HOSTNAME": "admin.goldshore.org",
+        "API_BASE_URL": "https://api.goldshore.org"
       },
+      "routes": [
+        "admin.goldshore.org/*"
+      ],
       "access_policies": [
         {
           "name": "Goldshore Admin Access",
@@ -32,9 +37,20 @@
       ]
     },
     "preview": {
-      "compatibility_date": "2024-02-19",
+      "compatibility_date": "2025-01-15",
       "environment_variables": {
-        "WORKER_HOSTNAME": "admin-preview.goldshore.org"
+        "WORKER_HOSTNAME": "admin-preview.goldshore.org",
+        "API_BASE_URL": "https://api-preview.goldshore.org"
+      },
+      "routes": [
+        "admin-preview.goldshore.org/*"
+      ]
+    },
+    "development": {
+      "compatibility_date": "2025-01-15",
+      "environment_variables": {
+        "WORKER_HOSTNAME": "admin-dev.goldshore.org",
+        "API_BASE_URL": "https://api-dev.goldshore.org"
       }
     }
   },

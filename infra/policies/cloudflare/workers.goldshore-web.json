@@ -1,0 +1,72 @@
+{
+  "script": "goldshore-web-router",
+  "description": "Edge router delivering the public marketing site and shared assets for goldshore.org.",
+  "compatibility_date": "2025-10-05",
+  "environments": {
+    "production": {
+      "routes": [
+        "goldshore.org/*",
+        "www.goldshore.org/*"
+      ],
+      "vars": {
+        "APP_NAME": "Goldshore Web Router",
+        "PRODUCTION_ASSETS": "https://goldshore-web.pages.dev",
+        "PREVIEW_ASSETS": "https://preview.goldshore-web.pages.dev",
+        "DEV_ASSETS": "https://dev.goldshore-web.pages.dev"
+      },
+      "services": [
+        {
+          "binding": "API",
+          "service": "goldshore-api-gateway",
+          "environment": "production"
+        }
+      ],
+      "analytics_engine_datasets": [
+        {
+          "binding": "WEB_ANALYTICS",
+          "dataset": "goldshore-web-events"
+        }
+      ]
+    },
+    "preview": {
+      "routes": [
+        "preview.goldshore.org/*"
+      ],
+      "vars": {
+        "APP_NAME": "Goldshore Preview Router",
+        "PRODUCTION_ASSETS": "https://goldshore-web.pages.dev",
+        "PREVIEW_ASSETS": "https://preview.goldshore-web.pages.dev",
+        "DEV_ASSETS": "https://dev.goldshore-web.pages.dev"
+      ],
+      "services": [
+        {
+          "binding": "API",
+          "service": "goldshore-api-gateway",
+          "environment": "preview"
+        }
+      ]
+    },
+    "development": {
+      "routes": [
+        "dev.goldshore.org/*"
+      ],
+      "vars": {
+        "APP_NAME": "Goldshore Dev Router",
+        "PRODUCTION_ASSETS": "https://goldshore-web.pages.dev",
+        "PREVIEW_ASSETS": "https://preview.goldshore-web.pages.dev",
+        "DEV_ASSETS": "https://dev.goldshore-web.pages.dev"
+      ],
+      "services": [
+        {
+          "binding": "API",
+          "service": "goldshore-api-gateway",
+          "environment": "development"
+        }
+      ]
+    }
+  },
+  "logpush": {
+    "dataset": "http_requests",
+    "destination": "r2://goldshore-observability/web-router/${DATE}.ndjson"
+  }
+}

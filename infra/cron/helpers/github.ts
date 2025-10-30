@@ -32,6 +32,8 @@ export async function createFixBranchAndPR(
 ) {
   const baseRef = await gh.rest.git.getRef({ owner, repo, ref: `heads/${base}` });
   const baseSha = baseRef.data.object.sha;
+  const baseCommit = await gh.rest.git.getCommit({ owner, repo, commit_sha: baseSha });
+  const baseTreeSha = baseCommit.data.tree.sha;
 
   let headExists = true;
   try {
@@ -79,7 +81,7 @@ export async function createFixBranchAndPR(
   const tree = await gh.rest.git.createTree({
     owner,
     repo,
-    base_tree: baseSha,
+    base_tree: baseTreeSha,
     tree: changes.map((c, i) => ({ path: c.path, mode: "100644", type: "blob", sha: blobs[i].data.sha }))
   });
 

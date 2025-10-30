@@ -22,6 +22,7 @@ GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https:/
 name = "goldshore-production"
 routes = [
   { pattern = "goldshore.org/*", zone_name = "goldshore.org" },
+  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" }
   { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "admin.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" },

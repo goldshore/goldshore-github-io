@@ -28,6 +28,8 @@ function loadConfig() {
 
 const cfg: any = loadConfig();
 const org: string = cfg.github.org;
+const dryRunFlag = String(process.env.DRY_RUN ?? "").toLowerCase();
+const isDryRun = dryRunFlag === "1" || dryRunFlag === "true" || dryRunFlag === "yes";
 
 function log(...a: unknown[]) {
   console.log("[agent]", ...a);
@@ -37,6 +39,10 @@ async function ensurePagesOutputDirRule() {
   const rules: PagesRule[] = cfg.rules?.pages_output_dirs ?? [];
   for (const rule of rules) {
     const { repo, path: out } = rule;
+    if (isDryRun) {
+      log(`[dry-run] would validate Pages output dir for ${repo} -> ${out}`);
+      continue;
+    }
     const pkgRes = await fetch(`https://api.github.com/repos/${org}/${repo}/contents/package.json`, {
       headers: { Authorization: `Bearer ${process.env.GH_TOKEN}` }
     })
@@ -82,6 +88,10 @@ async function ensurePagesOutputDirRule() {
 }
 
 async function checkCloudflare() {
+  if (isDryRun) {
+    log("[dry-run] skipping Cloudflare checks");
+    return;
+  }
   const checks: CloudflareCheck[] = cfg.cloudflare.checks || [];
   for (const check of checks) {
     if (check.type === "pages_build_status") {
@@ -132,6 +142,10 @@ async function checkCloudflare() {
 }
 
 async function scanGitConflicts() {
+  if (isDryRun) {
+    log("[dry-run] skipping conflict scan");
+    return;
+  }
   const repos: string[] = cfg.github.repos || [];
   for (const repo of repos) {
     const conflicts = await findOpenConflicts(org, repo);
@@ -150,6 +164,9 @@ async function scanGitConflicts() {
 }
 
 (async function main() {
+  if (isDryRun) {
+    log("Running in dry-run mode; no external requests will be made.");
+  }
   await checkCloudflare();
   await ensurePagesOutputDirRule();
   await scanGitConflicts();

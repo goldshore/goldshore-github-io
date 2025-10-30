@@ -1,4 +1,4 @@
-            - name: Upload a Build Artifact
+- name: Upload a Build Artifact
   uses: actions/upload-artifact@v4.6.2
   with:
     # Artifact name
@@ -54,7 +54,7 @@ jobs:
 
       - name: Lighthouse (static)
         run: |
-          npx http-server apps/web/dist -p 4173 &
+          npx http-server apps/site/dist -p 4173 &
           sleep 5
           npx lighthouse http://localhost:4173 \
             --only-categories=performance,accessibility,seo \

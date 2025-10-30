@@ -1,0 +1,35 @@
+{
+  "script": "goldshore-admin",
+  "description": "Routes authenticated admin traffic to the Pages deployment while enforcing Access tokens.",
+  "compatibility_date": "2024-02-19",
+  "environments": {
+    "production": {
+      "routes": [
+        "admin.goldshore.org/*"
+      ],
+      "vars": {
+        "APP_NAME": "Goldshore Admin Router",
+        "PRODUCTION_ASSETS": "https://goldshore-admin.pages.dev",
+        "PREVIEW_ASSETS": "https://goldshore-admin-preview.pages.dev",
+        "DEV_ASSETS": "https://goldshore-admin-preview.pages.dev",
+        "ACCESS_AUD": "goldshore-admin"
+      }
+    },
+    "preview": {
+      "routes": [
+        "admin-preview.goldshore.org/*"
+      ],
+      "vars": {
+        "APP_NAME": "Goldshore Admin Preview Router",
+        "PRODUCTION_ASSETS": "https://goldshore-admin.pages.dev",
+        "PREVIEW_ASSETS": "https://goldshore-admin-preview.pages.dev",
+        "DEV_ASSETS": "https://goldshore-admin-preview.pages.dev",
+        "ACCESS_AUD": "goldshore-admin"
+      }
+    }
+  },
+  "logpush": {
+    "dataset": "http_requests",
+    "destination": "r2://goldshore-logs/admin/${DATE}.json"
+  }
+}

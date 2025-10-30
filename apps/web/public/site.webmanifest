@@ -1,0 +1,14 @@
+{
+  "name": "GoldShore",
+  "short_name": "GoldShore",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#FAFBFF",
+  "background_color": "#FAFBFF",
+  "display": "standalone"
+}

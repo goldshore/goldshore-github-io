@@ -1,0 +1,11 @@
+{
+  "name": "@goldshore/workers",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p dist && printf 'Workers build placeholder\n' > dist/README.md",
+    "dev": "echo 'use wrangler dev with individual worker packages'",
+    "lint": "echo 'lint not yet configured for @goldshore/workers'",
+    "typecheck": "echo 'typecheck not yet configured for @goldshore/workers'"
+  }
+}

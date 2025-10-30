@@ -21,19 +21,13 @@ const hero: HeroContent = {
   cta: { text: 'Explore the suite', href: '/products' },
 };
 ---
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <link rel="stylesheet" href="/styles/theme.css" />
-    <title>GoldShore</title>
-  </head>
-  <body>
-    <header class="container grid grid-2">
-      <div>
-        <h1>{hero.title}</h1>
-        <p style="color:var(--muted)">{hero.subtitle}</p>
-        <a class="btn" href={hero.cta.href}>{hero.cta.text}</a>
+<Base>
+  <main class="mx-auto max-w-6xl p-6">
+    <section class="py-12">
+      <h1 class="font-display text-4xl">GoldShore — trading infrastructure & insights</h1>
+      <div class="mt-4 flex gap-3">
+        <a href="/dash" class="px-4 py-2 rounded bg-[var(--brand)] text-[var(--brand-contrast)]">Launch Dashboard</a>
+        <a href="https://api.goldshore.org/v1/docs" class="px-4 py-2 rounded border border-[var(--border)]">View API Docs</a>
       </div>
       <div class="card">Charts/CTA image slot</div>
     </header>

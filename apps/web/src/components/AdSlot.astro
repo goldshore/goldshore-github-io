@@ -1,0 +1,9 @@
+---
+import "./AdSlot.css";
+
+const { clientId = "YOUR_ID" } = Astro.props as { clientId?: string };
+const adSlotScript = await import("../scripts/adSlot.ts?url");
+---
+<div class="ad-slot" data-ads="1" data-client={clientId}></div>
+<script type="module" src={adSlotScript.default}></script>
+<script type="module" src={Astro.resolve("./ad-slot.client.ts")}></script>

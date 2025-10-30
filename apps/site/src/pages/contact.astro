@@ -174,15 +174,16 @@ const sanitizedBuildTimeKey =
       } else {
         initTurnstile();
       }
-    })();
 
-    if (typeof window !== 'undefined' && window.location.hash === '#contact-success') {
-      const success = document.getElementById('contact-success');
-      if (success) {
-        success.style.display = 'block';
+      if (typeof window !== 'undefined' && window.location.hash === '#contact-success') {
+        const success = document.getElementById('contact-success');
+        if (success) {
+          success.style.display = 'block';
+        }
       }
-    }
+    })();
   </script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" data-turnstile="true" async defer></script>
 
   <section style="margin-top: clamp(48px, 8vw, 96px);">
     <h2 class="section-title">Availability</h2>

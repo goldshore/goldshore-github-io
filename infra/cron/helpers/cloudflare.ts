@@ -55,17 +55,37 @@ function pickPrimaryRoute(routes: WorkerRoute[]): WorkerRoute {
 }
 
 function buildRouteURL(pattern: string, routePath: string): string {
-  let normalized = pattern;
-  if (!normalized.includes("://")) {
-    normalized = `https://${normalized}`;
+  const ensureScheme = (input: string) => (input.includes("://") ? input : `https://${input}`);
+  const sanitizeHostname = (hostname: string) => {
+    const replaced = hostname.replace(/\*+/g, "wildcard");
+    const collapsedDots = replaced.replace(/\.+/g, ".");
+    const trimmed = collapsedDots.replace(/^\.+/, "").replace(/\.+$/, "");
+    return trimmed || "wildcard";
+  };
+
+  const withScheme = ensureScheme(pattern);
+  const schemeEnd = withScheme.indexOf("://") + 3;
+  const remainder = withScheme.slice(schemeEnd);
+  const firstSlash = remainder.indexOf("/");
+  const hostPort = firstSlash === -1 ? remainder : remainder.slice(0, firstSlash);
+  const rawPath = firstSlash === -1 ? "" : remainder.slice(firstSlash);
+
+  const [rawHost, ...portParts] = hostPort.split(":");
+  const port = portParts.length ? `:${portParts.join(":")}` : "";
+  const hostname = sanitizeHostname(rawHost);
+  const safeHost = `${hostname}${port}`;
+
+  let path = rawPath.replace(/\*/g, "");
+  path = path.replace(/\/+/g, "/");
+  if (!path.startsWith("/")) {
+    path = `/${path}`;
   }
-  normalized = normalized.replace(/\*/g, "");
-  normalized = normalized.replace(/:\/\/\./g, "://");
-  if (!normalized.endsWith("/")) {
-    normalized = `${normalized}/`;
+  if (!path.endsWith("/")) {
+    path = `${path}/`;
   }
+
+  const base = new URL(`${withScheme.slice(0, schemeEnd)}${safeHost}${path}`);
   const sanitizedPath = routePath.startsWith("/") ? routePath.slice(1) : routePath;
-  const base = new URL(normalized);
   return new URL(sanitizedPath, base).toString();
 }
 

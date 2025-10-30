@@ -37,14 +37,14 @@ export async function getWorkerBindings(script: string) {
 
 type WorkerRoute = { pattern: string };
 
-type WorkerSubdomain = { subdomain?: string | null };
-
 function pickPrimaryRoute(routes: WorkerRoute[]): WorkerRoute {
   if (routes.length === 1) return routes[0];
   const scored = routes
     .map((route, index) => {
       const pattern = route.pattern.toLowerCase();
-      const penalty = /preview|dev|staging|test/.test(pattern) ? 1 : 0;
+      const envPenalty = /preview|dev|staging|test/.test(pattern) ? 1 : 0;
+      const wildcardPenalty = route.pattern.includes("*") ? 1 : 0;
+      const penalty = envPenalty * 10 + wildcardPenalty;
       return { route, penalty, index };
     })
     .sort((a, b) => {
@@ -55,61 +55,51 @@ function pickPrimaryRoute(routes: WorkerRoute[]): WorkerRoute {
 }
 
 function buildRouteURL(pattern: string, routePath: string): string {
-  let base = pattern;
-  if (!base.includes("://")) base = `https://${base}`;
-  const starIndex = base.indexOf("*");
-  if (starIndex !== -1) {
-    base = base.slice(0, starIndex);
+  const ensureScheme = (input: string) => (input.includes("://") ? input : `https://${input}`);
+  const sanitizeHostname = (hostname: string) => {
+    const replaced = hostname.replace(/\*+/g, "wildcard");
+    const collapsedDots = replaced.replace(/\.+/g, ".");
+    const trimmed = collapsedDots.replace(/^\.+/, "").replace(/\.+$/, "");
+    return trimmed || "wildcard";
+  };
+
+  const withScheme = ensureScheme(pattern);
+  const schemeEnd = withScheme.indexOf("://") + 3;
+  const remainder = withScheme.slice(schemeEnd);
+  const firstSlash = remainder.indexOf("/");
+  const hostPort = firstSlash === -1 ? remainder : remainder.slice(0, firstSlash);
+  const rawPath = firstSlash === -1 ? "" : remainder.slice(firstSlash);
+
+  const [rawHost, ...portParts] = hostPort.split(":");
+  const port = portParts.length ? `:${portParts.join(":")}` : "";
+  const hostname = sanitizeHostname(rawHost);
+  const safeHost = `${hostname}${port}`;
+
+  let path = rawPath.replace(/\*/g, "");
+  path = path.replace(/\/+/g, "/");
+  if (!path.startsWith("/")) {
+    path = `/${path}`;
   }
-  if (!base.endsWith("/")) {
-    base = `${base}/`;
+  if (!path.endsWith("/")) {
+    path = `${path}/`;
   }
+
+  const base = new URL(`${withScheme.slice(0, schemeEnd)}${safeHost}${path}`);
   const sanitizedPath = routePath.startsWith("/") ? routePath.slice(1) : routePath;
   return new URL(sanitizedPath, base).toString();
 }
 
-function buildWorkersSubdomainURL(subdomain: string, script: string, routePath: string): string {
-  let base: string;
-  if (subdomain.includes("://")) {
-    base = subdomain;
-  } else if (subdomain.includes(".")) {
-    base = `https://${subdomain}`;
-  } else {
-    base = `https://${subdomain}.workers.dev`;
-  }
-  const trimmedScript = script.replace(/^\/+|\/+$/g, "");
-  const sanitizedPath = routePath.startsWith("/") ? routePath : `/${routePath}`;
-  const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
-  return `${normalizedBase}/${trimmedScript}${sanitizedPath}`;
-}
-
-type FetchWorkerRouteOptions = {
-  init?: RequestInitWithHeaders;
-  domainOverride?: string;
-};
-
 export async function fetchWorkerRoute(
   script: string,
   routePath: string,
-  options?: FetchWorkerRouteOptions
+  init?: RequestInitWithHeaders
 ): Promise<{ url: string; response: Response }> {
-  const { init, domainOverride } = options ?? {};
   const routes = await cfFetch<WorkerRoute[]>(`/accounts/${acc}/workers/scripts/${script}/routes`);
-  let url: string;
-  if (domainOverride) {
-    url = buildRouteURL(domainOverride, routePath);
-  } else if (routes.length) {
-    const route = pickPrimaryRoute(routes);
-    url = buildRouteURL(route.pattern, routePath);
-  } else {
-    const { subdomain } = await cfFetch<WorkerSubdomain>(`/accounts/${acc}/workers/subdomain`);
-    if (!subdomain) {
-      throw new Error(
-        `No routes configured for Worker ${script} and account is missing a workers.dev subdomain`
-      );
-    }
-    url = buildWorkersSubdomainURL(subdomain, script, routePath);
+  if (!routes.length) {
+    throw new Error(`No routes configured for Worker ${script}`);
   }
+  const route = pickPrimaryRoute(routes);
+  const url = buildRouteURL(route.pattern, routePath);
   const { headers: initHeaders, ...rest } = init ?? {};
   const headers: Record<string, string> = {
     "user-agent": "goldshore-agent/worker-health-check",

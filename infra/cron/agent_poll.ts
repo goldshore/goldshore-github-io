@@ -167,9 +167,7 @@ async function checkCloudflare() {
     }
     if (check.type === "worker_health") {
       try {
-        const { response, url } = await fetchWorkerRoute(check.script, check.path, {
-          domainOverride: check.domain_override
-        });
+        const { response, url } = await fetchWorkerRoute(check.script, check.path);
         const bodyText = await response.text();
         if (!response.ok) {
           await openWorkerHealthIncident(
@@ -199,12 +197,61 @@ async function checkCloudflare() {
           );
           continue;
         }
-        if (!payload || typeof payload !== "object" || (payload as any).ok !== true) {
+        if (!payload || typeof payload !== "object") {
           await openWorkerHealthIncident(
             check.script,
             check.path,
-            `Health endpoint \`${url}\` reported failure payload.${formatBodyPreview(bodyText)}`
+            `Health endpoint \`${url}\` returned a non-object payload.${formatBodyPreview(bodyText)}`
           );
+          continue;
+        }
+        type WorkerHealthPayload = {
+          ok?: unknown;
+          failures?: unknown;
+          errors?: unknown;
+        } & Record<string, unknown>;
+        const health = payload as WorkerHealthPayload;
+        if (health.ok !== true) {
+          await openWorkerHealthIncident(
+            check.script,
+            check.path,
+            `Health endpoint \`${url}\` reported \`ok !== true\`.${formatBodyPreview(bodyText)}`
+          );
+          continue;
+        }
+        const normalizeMessages = (items: unknown[]): string[] =>
+          items
+            .map(item => {
+              if (typeof item === "string") return item;
+              if (item && typeof item === "object") {
+                const maybeMessage = (item as Record<string, unknown>).message;
+                if (typeof maybeMessage === "string") return maybeMessage;
+                try {
+                  return JSON.stringify(item);
+                } catch {
+                  return String(item);
+                }
+              }
+              return String(item);
+            })
+            .filter((msg): msg is string => Boolean(msg));
+        const failures = Array.isArray(health.failures) ? normalizeMessages(health.failures) : [];
+        if (failures.length > 0) {
+          await openWorkerHealthIncident(
+            check.script,
+            check.path,
+            `Health endpoint \`${url}\` reported failures:\n- ${failures.join("\n- ")}.${formatBodyPreview(bodyText)}`
+          );
+          continue;
+        }
+        const errors = Array.isArray(health.errors) ? normalizeMessages(health.errors) : [];
+        if (errors.length > 0) {
+          await openWorkerHealthIncident(
+            check.script,
+            check.path,
+            `Health endpoint \`${url}\` reported additional errors despite \`ok: true\`:\n- ${errors.join("\n- ")}.${formatBodyPreview(bodyText)}`
+          );
+          continue;
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

@@ -65,74 +65,117 @@ const buildTimeTurnstileKey =
 
   <script>
     (function () {
-      const revealWidget = (siteKey) => {
-        if (!siteKey) {
-          return;
-        }
+      const wrapper = document.getElementById('turnstile-wrapper');
+      const container = document.getElementById('turnstile-container');
+      const errorMessage = document.getElementById('turnstile-error');
 
-        const wrapper = document.getElementById('turnstile-wrapper');
+      if (!container) {
+        return;
+      }
+
+      const showError = () => {
+        if (errorMessage) {
+          errorMessage.style.display = 'block';
+        }
+      };
+
+      const revealWrapper = () => {
         if (wrapper) {
           wrapper.style.display = 'flex';
         }
-
-        const renderWidget = () => {
-          if (typeof turnstile === 'undefined') {
-            setTimeout(renderWidget, 100);
-            return;
-          }
-
-          try {
-            turnstile.render('#turnstile-container', {
-              sitekey: siteKey,
-              theme: 'dark'
-            });
-          } catch (error) {
-            console.error('Failed to render Turnstile widget', error);
-          }
-        };
-
-        renderWidget();
       };
 
-      const bootstrap = async () => {
-        const wrapper = document.getElementById('turnstile-wrapper');
-        const buildTimeKey = wrapper?.dataset?.buildSitekey;
-        if (buildTimeKey && buildTimeKey !== 'undefined') {
-          revealWidget(buildTimeKey);
-          return;
-        }
-
-        try {
-          const response = await fetch('/api/turnstile/site-key');
-          if (!response.ok) {
+      const ensureTurnstileScript = () =>
+        new Promise((resolve, reject) => {
+          if (window.turnstile && typeof window.turnstile.render === 'function') {
+            resolve(window.turnstile);
             return;
           }
 
-          const payload = await response.json();
-          if (payload && payload.siteKey) {
-            revealWidget(payload.siteKey);
+          const existing =
+            document.querySelector('script[data-turnstile]') ??
+            document.querySelector('script[src="https://challenges.cloudflare.com/turnstile/v0/api.js"]');
+
+          if (existing) {
+            existing.dataset.turnstile = existing.dataset.turnstile || 'true';
+            existing.addEventListener('load', () => resolve(window.turnstile), { once: true });
+            existing.addEventListener('error', reject, { once: true });
+            return;
           }
+
+          const script = document.createElement('script');
+          script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+          script.async = true;
+          script.defer = true;
+          script.dataset.turnstile = 'true';
+          script.addEventListener('load', () => resolve(window.turnstile), { once: true });
+          script.addEventListener('error', reject, { once: true });
+          document.head.appendChild(script);
+        });
+
+      const resolveSiteKey = async () => {
+        const buildTimeKey =
+          typeof wrapper?.dataset?.buildSitekey === 'string'
+            ? wrapper.dataset.buildSitekey.trim()
+            : '';
+        if (buildTimeKey && buildTimeKey !== 'undefined') {
+          return buildTimeKey;
+        }
+
+        const response = await fetch('/api/turnstile/site-key', {
+          headers: { accept: 'application/json' }
+        });
+
+        if (!response.ok) {
+          throw new Error(`unexpected status ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const siteKey = typeof payload?.siteKey === 'string' ? payload.siteKey.trim() : '';
+
+        if (!siteKey || siteKey === 'undefined') {
+          throw new Error('missing site key');
+        }
+
+        return siteKey;
+      };
+
+      const initTurnstile = async () => {
+        try {
+          const siteKey = await resolveSiteKey();
+          const turnstile = await ensureTurnstileScript();
+
+          if (!turnstile || typeof turnstile.render !== 'function') {
+            throw new Error('turnstile unavailable');
+          }
+
+          revealWrapper();
+
+          turnstile.render(container, {
+            sitekey: siteKey,
+            theme: 'dark'
+          });
         } catch (error) {
-          console.error('Failed to fetch Turnstile site key', error);
+          console.error('Failed to initialize Turnstile widget', error);
+          showError();
         }
       };
 
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', bootstrap);
+        document.addEventListener('DOMContentLoaded', initTurnstile, { once: true });
       } else {
-        bootstrap();
+        initTurnstile();
+      }
+
+      if (typeof window !== 'undefined' && window.location.hash === '#contact-success') {
+        const success = document.getElementById('contact-success');
+        if (success) {
+          success.style.display = 'block';
+        }
       }
     })();
   </script>
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <script>
-    if (typeof window !== 'undefined' && window.location.hash === '#contact-success') {
-      const success = document.getElementById('contact-success');
-      if (success) {
-        success.style.display = 'block';
-      }
-    }
-  </script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" data-turnstile="true" async defer></script>
 
   <section style="margin-top: clamp(48px, 8vw, 96px);">
     <h2 class="section-title">Availability</h2>

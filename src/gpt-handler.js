@@ -85,25 +85,31 @@ function validateOrigin(request, env) {
 
   if (allowedOrigins.length === 0) {
     return {
-      errorResponse: jsonResponse(
-        { error: "Server misconfigured: no allowed origins configured." },
-        { status: 500 },
+      errorResponse: errorResponse(
+        "Server misconfigured: no allowed origins configured.",
+        500,
       ),
     };
   }
 
-  const origin = request.headers.get("Origin");
+  const requestOrigin = request.headers.get("Origin");
 
-  if (origin && !allowedOrigins.includes(origin)) {
+  if (!requestOrigin) {
+    return { origin: null };
+  }
+
+  const resolved = resolveAllowedOrigin(requestOrigin, allowedOrigins);
+  if (!resolved) {
     return {
-      errorResponse: jsonResponse(
-        { error: "Origin is not allowed." },
-        { status: 403 },
+      errorResponse: errorResponse(
+        "Origin is not allowed.",
+        403,
+        undefined,
       ),
     };
   }
 
-  return { origin: origin && allowedOrigins.includes(origin) ? origin : null };
+  return { origin: resolved };
 }
 
 function readClientToken(request) {
@@ -235,7 +241,7 @@ function buildChatCompletionPayload(payload) {
     throw new Error("Request body must include either a 'messages' array or a 'prompt' string.");
   }
 
-  const normalizedMessages = (Array.isArray(messages) && messages.length > 0
+  const normalizedMessages = (hasMessages
     ? messages
     : [
         {
@@ -345,3 +351,4 @@ export default {
     return handlePost(request, env, origin);
   },
 };
+

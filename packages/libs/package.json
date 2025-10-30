@@ -1,0 +1,11 @@
+{
+  "name": "@goldshore/libs",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p dist && printf 'Library build placeholder\n' > dist/README.md",
+    "dev": "echo 'library packages do not have a dev server'",
+    "lint": "echo 'lint not yet configured for @goldshore/libs'",
+    "typecheck": "echo 'typecheck not yet configured for @goldshore/libs'"
+  }
+}

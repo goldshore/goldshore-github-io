@@ -16,6 +16,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Ensure repository is conflict-free
+        run: |
+          conflicts=$(git ls-files -u)
+          if [ -n "$conflicts" ]; then
+            echo "::error::Unresolved merge conflicts detected" >&2
+            echo "$conflicts" >&2
+            exit 1
+          fi
+
+          markers=$(git grep -n '<<<<<<<' || true)
+          if [ -n "$markers" ]; then
+            echo "::error::Merge conflict markers present in working tree" >&2
+            echo "$markers" >&2
+            exit 1
+          fi
+
+          echo "No merge conflicts detected."
+
       - name: Install node
         uses: actions/setup-node@v4
         with: { node-version: 20 }
@@ -35,7 +53,9 @@ jobs:
 
       - name: CSS Guardrails (block binaries/huge files)
         run: |
-          bad=$(find apps/web -name "*.css" -size +500k -print -o -type f -name "*.css" -exec file -bi {} \; | grep -v "text/")
+          oversized=$(find apps/web -name "*.css" -size +500k -print)
+          binaries=$(find apps/web -type f -name "*.css" -exec sh -c 'for f in "$@"; do mime=$(file -bi "$f"); case $mime in text/*) ;; *) echo "$f: $mime";; esac; done' sh {} +)
+          bad=$(printf '%s\n%s' "$oversized" "$binaries" | sed '/^$/d')
           if [ -n "$bad" ]; then echo "❌ Bad CSS detected"; echo "$bad"; exit 1; fi
 
       - name: Build site (Astro)
@@ -43,6 +63,14 @@ jobs:
         run: |
           npm install --no-package-lock
           npx astro build
+
+      - name: Archive site assets
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-maint-web-dist
+          path: apps/web/dist
+          retention-days: 7
 
       - name: Lighthouse smoke (static)
         env:
@@ -60,6 +88,15 @@ jobs:
           score=$(jq '[.categories.performance.score,.categories.accessibility.score,.categories.seo.score] | add/3' lh.json)
           echo "Average score: $score"
           node -e "const score=parseFloat(process.argv[1]);const threshold=parseFloat(process.env.LH_THRESHOLD);if(!(score>=threshold)){console.error('Lighthouse average below threshold');process.exit(1);}" "$score"
+
+      - name: Persist audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-maint-lighthouse-report
+          path: lh.json
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: AI copy/link suggestions (PR only)
         env:

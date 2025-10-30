@@ -1,0 +1,48 @@
+---
+import BaseLayout from "../../layouts/Base.astro";
+
+const meta = {
+  title: "Gold Shore Services — Launch, defend, and scale",
+  description: "Explore Gold Shore’s modular services spanning launch architecture, reputation defense, and intelligence operations.",
+  canonical: "https://goldshore.org/services"
+};
+---
+<BaseLayout {...meta}>
+  <h1 class="section-title">Services</h1>
+  <p class="section-subtitle">
+    Start with a single blueprint or stitch tracks together for an always-on partnership. Every engagement includes a dedicated
+    operator, access to our research desk, and Cloudflare-secured infrastructure.
+  </p>
+
+  <div class="grid grid-2">
+    <article class="card">
+      <h2>Bridgekeeper</h2>
+      <p>Launch architecture from positioning to activation with a four-week playbook.</p>
+      <a href="/services/bridgekeeper">View service overview →</a>
+    </article>
+    <article class="card">
+      <h2>Banproof</h2>
+      <p>Reputation defense and incident response designed for regulated and frontier markets.</p>
+      <a href="/services/banproof">View service overview →</a>
+    </article>
+    <article class="card">
+      <h2>Fractional comms desk</h2>
+      <p>Embed a senior strategist and creative pod to manage launches, announcements, and stakeholder comms.</p>
+      <a href="/contact">Book a discovery call →</a>
+    </article>
+    <article class="card">
+      <h2>Intelligence ops</h2>
+      <p>Dashboards, analytics, and revenue reporting to keep your GTM machine accountable.</p>
+      <a href="/contact">Request a scope →</a>
+    </article>
+  </div>
+
+  <section class="section-spacing">
+    <h2 class="section-title">How we work</h2>
+    <ul>
+      <li>Preview every deliverable in a Cloudflare Pages environment before it ships to production.</li>
+      <li>Protect sensitive dashboards behind Cloudflare Access with hardware key support.</li>
+      <li>Pair founders with asynchronous updates delivered via Notion or Linear.</li>
+    </ul>
+  </section>
+</BaseLayout>

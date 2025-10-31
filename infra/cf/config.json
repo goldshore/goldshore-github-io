@@ -136,6 +136,8 @@
       "bindings": {
         "KV": [
           {
+            "binding": "AGENT_PROMPT_KV",
+            "id": "${AGENT_PROMPT_KV_ID}",
             "binding": "KV_SESSIONS",
             "id": "${KV_SESSIONS_ID}"
           },
@@ -146,12 +148,16 @@
         ],
         "D1": [
           {
+            "binding": "DB",
+            "database": "goldshore_db",
             "binding": "D1_CORE",
             "database": "goldshore-core"
           }
         ],
         "R2": [
           {
+            "binding": "SNAP_R2",
+            "bucket": "goldshore-bucket",
             "binding": "R2_PUBLIC",
             "bucket": "goldshore-public"
           }
@@ -165,12 +171,18 @@
         "queues": {
           "producers": [
             {
+              "binding": "JOBS_QUEUE",
+              "queue": "jobs",
               "binding": "Q_EVENTS",
               "queue": "goldshore-events"
             }
           ],
           "consumers": [
             {
+              "queue": "jobs",
+              "max_batch_size": 10,
+              "max_batch_timeout": 5,
+              "max_retries": 3,
               "queue": "goldshore-events",
               "max_batch_size": 50,
               "max_wait_ms": 2000,

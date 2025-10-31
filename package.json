@@ -20,6 +20,9 @@
     "agent:poll": "tsx infra/cron/agent_poll.ts",
     "agent:dryrun": "DRY_RUN=1 tsx infra/cron/agent_poll.ts"
   },
+  "dependencies": {
+    "yaml": "^2.6.0"
+  },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241022.0",
     "astro": "^4.13.0",
@@ -30,7 +33,6 @@
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "wrangler": "^3.82.0",
-    "yaml": "^2.6.0",
     "@types/node": "^22.9.0"
   }
 }

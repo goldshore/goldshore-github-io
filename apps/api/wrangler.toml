@@ -1,4 +1,4 @@
-name = "goldshore-api"
+name = "goldshore-api-v2"
 main = "src/index.ts"
 compatibility_date = "2025-10-20"
 account_id = "f77de112d2019e5456a3198a8bb50bd2"
@@ -12,6 +12,16 @@ CORS_ORIGINS = "https://goldshore.org,https://admin.goldshore.org"
 [[d1_databases]]
 binding = "DB"
 database_name = "goldshore_db"
+# Placeholder UUID so wrangler --dry-run validation passes in CI. Replace with the real D1 database ID when wiring production.
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[[env.ci.d1_databases]]
+binding = "DB"
+database_name = "goldshore_db"
+# Placeholder UUID so wrangler --dry-run validation passes in CI. The CI environment
+# uses this fake ID, while real deployments rely on Wrangler to resolve the actual
+# database identifier from `database_name`.
+database_id = "00000000-0000-0000-0000-000000000000"
 
 [[kv_namespaces]]
 binding = "AGENT_PROMPT_KV"

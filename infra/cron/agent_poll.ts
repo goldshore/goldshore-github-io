@@ -3,7 +3,12 @@ import fs from "node:fs";
 import path from "node:path";
 import YAML from "yaml";
 import { commentOnPR, createFixBranchAndPR, findOpenConflicts, openOpsIssue } from "./helpers/github";
-import { getDNSRecords, getPagesProjectBuildStatus, getWorkerBindings } from "./helpers/cloudflare";
+import {
+  fetchWorkerRoute,
+  getDNSRecords,
+  getPagesProjectBuildStatus,
+  getWorkerBindings
+} from "./helpers/cloudflare";
 
 
 type PagesRule = { repo: string; path: string };
@@ -12,7 +17,12 @@ type DNSRequirement = { name: string; type: string; contains?: string };
 
 type PagesCheck = { type: "pages_build_status"; project: string };
 
-type WorkerCheck = { type: "worker_health"; script: string; path: string };
+type WorkerCheck = {
+  type: "worker_health";
+  script: string;
+  path: string;
+  domain_override?: string;
+};
 
 type DNSCheck = { type: "dns_records"; required: DNSRequirement[] };
 
@@ -28,21 +38,54 @@ function loadConfig() {
 
 const cfg: any = loadConfig();
 const org: string = cfg.github.org;
-const dryRunFlag = String(process.env.DRY_RUN ?? "").toLowerCase();
-const isDryRun = dryRunFlag === "1" || dryRunFlag === "true" || dryRunFlag === "yes";
 
 function log(...a: unknown[]) {
   console.log("[agent]", ...a);
+}
+
+function truncate(text: string, limit = 500) {
+  if (text.length <= limit) return text;
+  return `${text.slice(0, limit)}…`;
+}
+
+function formatBodyPreview(body: string) {
+  if (!body) return "\n\n_No response body_";
+  return `\n\n\`\`\`\n${truncate(body, 800)}\n\`\`\``;
+}
+
+async function getWorkerBindingsWarning(script: string) {
+  try {
+    const bindings = await getWorkerBindings(script);
+    if (!Array.isArray(bindings) || bindings.length === 0) {
+      return "Cloudflare API returned no bindings for this Worker. Verify wrangler configuration and deployment.";
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return `Unable to load Worker bindings: ${message}`;
+  }
+  return null;
+}
+
+async function openWorkerHealthIncident(script: string, routePath: string, detail: string) {
+  let body = detail;
+  const bindingsWarning = await getWorkerBindingsWarning(script);
+  if (bindingsWarning) {
+    body += `\n\nBindings warning: ${bindingsWarning}`;
+  }
+  log("Worker health incident", script, detail);
+  await openOpsIssue(
+    org,
+    "goldshore",
+    `Worker health check failed: ${script}`,
+    `Check path: \`${routePath}\`\n\n${body}`,
+    cfg.ai_agent.triage_labels
+  );
 }
 
 async function ensurePagesOutputDirRule() {
   const rules: PagesRule[] = cfg.rules?.pages_output_dirs ?? [];
   for (const rule of rules) {
     const { repo, path: out } = rule;
-    if (isDryRun) {
-      log(`[dry-run] would validate Pages output dir for ${repo} -> ${out}`);
-      continue;
-    }
     const pkgRes = await fetch(`https://api.github.com/repos/${org}/${repo}/contents/package.json`, {
       headers: { Authorization: `Bearer ${process.env.GH_TOKEN}` }
     })
@@ -88,10 +131,6 @@ async function ensurePagesOutputDirRule() {
 }
 
 async function checkCloudflare() {
-  if (isDryRun) {
-    log("[dry-run] skipping Cloudflare checks");
-    return;
-  }
   const checks: CloudflareCheck[] = cfg.cloudflare.checks || [];
   for (const check of checks) {
     if (check.type === "pages_build_status") {
@@ -127,14 +166,99 @@ async function checkCloudflare() {
       }
     }
     if (check.type === "worker_health") {
-      const bindings = await getWorkerBindings(check.script);
-      if (!Array.isArray(bindings) || bindings.length === 0) {
-        await openOpsIssue(
-          org,
-          "goldshore",
-          `Worker missing bindings: ${check.script}`,
-          `No bindings returned for Worker \`${check.script}\`. Verify wrangler.toml and deployment.`,
-          cfg.ai_agent.triage_labels
+      try {
+        const { response, url } = await fetchWorkerRoute(check.script, check.path);
+        const bodyText = await response.text();
+        if (!response.ok) {
+          await openWorkerHealthIncident(
+            check.script,
+            check.path,
+            `Health endpoint \`${url}\` returned HTTP ${response.status}.${formatBodyPreview(bodyText)}`
+          );
+          continue;
+        }
+        if (!bodyText) {
+          await openWorkerHealthIncident(
+            check.script,
+            check.path,
+            `Health endpoint \`${url}\` returned an empty body. Expected JSON payload with \`{ ok: true }\`.`
+          );
+          continue;
+        }
+        let payload: unknown;
+        try {
+          payload = JSON.parse(bodyText);
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          await openWorkerHealthIncident(
+            check.script,
+            check.path,
+            `Health endpoint \`${url}\` returned invalid JSON (${message}).${formatBodyPreview(bodyText)}`
+          );
+          continue;
+        }
+        if (!payload || typeof payload !== "object") {
+          await openWorkerHealthIncident(
+            check.script,
+            check.path,
+            `Health endpoint \`${url}\` returned a non-object payload.${formatBodyPreview(bodyText)}`
+          );
+          continue;
+        }
+        type WorkerHealthPayload = {
+          ok?: unknown;
+          failures?: unknown;
+          errors?: unknown;
+        } & Record<string, unknown>;
+        const health = payload as WorkerHealthPayload;
+        if (health.ok !== true) {
+          await openWorkerHealthIncident(
+            check.script,
+            check.path,
+            `Health endpoint \`${url}\` reported \`ok !== true\`.${formatBodyPreview(bodyText)}`
+          );
+          continue;
+        }
+        const normalizeMessages = (items: unknown[]): string[] =>
+          items
+            .map(item => {
+              if (typeof item === "string") return item;
+              if (item && typeof item === "object") {
+                const maybeMessage = (item as Record<string, unknown>).message;
+                if (typeof maybeMessage === "string") return maybeMessage;
+                try {
+                  return JSON.stringify(item);
+                } catch {
+                  return String(item);
+                }
+              }
+              return String(item);
+            })
+            .filter((msg): msg is string => Boolean(msg));
+        const failures = Array.isArray(health.failures) ? normalizeMessages(health.failures) : [];
+        if (failures.length > 0) {
+          await openWorkerHealthIncident(
+            check.script,
+            check.path,
+            `Health endpoint \`${url}\` reported failures:\n- ${failures.join("\n- ")}.${formatBodyPreview(bodyText)}`
+          );
+          continue;
+        }
+        const errors = Array.isArray(health.errors) ? normalizeMessages(health.errors) : [];
+        if (errors.length > 0) {
+          await openWorkerHealthIncident(
+            check.script,
+            check.path,
+            `Health endpoint \`${url}\` reported additional errors despite \`ok: true\`:\n- ${errors.join("\n- ")}.${formatBodyPreview(bodyText)}`
+          );
+          continue;
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        await openWorkerHealthIncident(
+          check.script,
+          check.path,
+          `Failed to reach Worker health endpoint. Error: ${message}`
         );
       }
     }
@@ -142,10 +266,6 @@ async function checkCloudflare() {
 }
 
 async function scanGitConflicts() {
-  if (isDryRun) {
-    log("[dry-run] skipping conflict scan");
-    return;
-  }
   const repos: string[] = cfg.github.repos || [];
   for (const repo of repos) {
     const conflicts = await findOpenConflicts(org, repo);
@@ -164,9 +284,6 @@ async function scanGitConflicts() {
 }
 
 (async function main() {
-  if (isDryRun) {
-    log("Running in dry-run mode; no external requests will be made.");
-  }
   await checkCloudflare();
   await ensurePagesOutputDirRule();
   await scanGitConflicts();

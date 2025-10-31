@@ -1,0 +1,25 @@
+name: Codex Budget Watch
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 13 * * *"
+
+jobs:
+  enforce-budget:
+    if: ${{ secrets.CODEX_BUDGET_USD != '' && secrets.CODEX_USAGE_USD != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run Codex limiter
+        env:
+          CODEX_BUDGET_USD: ${{ secrets.CODEX_BUDGET_USD }}
+          CODEX_USAGE_USD: ${{ secrets.CODEX_USAGE_USD }}
+          CODEX_BUDGET_TOLERANCE_USD: ${{ vars.CODEX_BUDGET_TOLERANCE_USD }}
+        run: npx tsx infra/limits/codex_limiter.ts --label "Codex" --format text

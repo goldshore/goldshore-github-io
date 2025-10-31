@@ -5,7 +5,7 @@
   "max_parallel_checks": 6,
   "github": {
     "org": "goldshore",
-    "repos": ["goldshore", "goldshore-web", "goldshore-admin", "goldshore-api-worker"],
+    "repos": ["goldshore"],
     "branch_protection": {
       "required_approving_review_count": 1,
       "dismiss_stale_reviews": true,

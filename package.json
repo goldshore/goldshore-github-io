@@ -18,7 +18,8 @@
     "deploy:api": "wrangler deploy --config apps/api-worker/wrangler.toml",
     "enforce:dns": "bash infra/scripts/enforce-dns.sh",
     "agent:poll": "tsx infra/cron/agent_poll.ts",
-    "agent:dryrun": "DRY_RUN=1 tsx infra/cron/agent_poll.ts"
+    "agent:dryrun": "DRY_RUN=1 tsx infra/cron/agent_poll.ts",
+    "validate:codex-config": "tsx infra/limits/validate_codex_config.ts"
   },
   "dependencies": {
     "yaml": "^2.6.0"

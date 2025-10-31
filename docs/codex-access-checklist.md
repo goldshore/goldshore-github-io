@@ -43,7 +43,7 @@ fi
 | --- | --- | --- |
 | `OPENAI_API_KEY` | `curl https://api.openai.com/v1/models -H "Authorization: Bearer $OPENAI_API_KEY"` | HTTP 200 with model list. |
 | `OPENAI_ORG_ID` (if used) | `curl https://api.openai.com/v1/organizations -H "Authorization: Bearer $OPENAI_API_KEY"` | HTTP 200 with organization info. |
-| Limiter Config | `test -f infra/codex/limiter.config.json` | File exists with numeric budgets. |
+| Limiter Config | `npm run validate:codex-config` | Config passes validation (budgets + actions wired correctly). |
 
 ## 4. Cloudflare Worker & Pages Bindings
 
@@ -97,11 +97,20 @@ infra/
   cf/config.yaml
   cron/config.yaml
   codex/limiter.config.json
+  codex/limiter.schema.json
 .github/workflows/
-  cf-deploy.yml
   agent-cron.yml
-  codex-limiter.yml
+  cf-deploy.yml
+  codex-budget-watch.yml
 ```
+
+`infra/codex/limiter.config.json` encodes the agreed budgets and the follow-up actions:
+
+- **Core automation budget** – $250 monthly allowance with a $25 tolerance for routine triage jobs. Actions: `notifyWebhook`, `openIssue`.
+- **Research burst buffer** – $325 soft ceiling with a $15 tolerance for experimentation. Action: `notifyWebhook`.
+- **Hard stop monthly ceiling** – $400 cap with no tolerance. Actions: `pauseAutomation`, `openIssue`.
+
+Actions resolve to concrete responses in the same file: posting to the automation webhook (`notifyWebhook`), filing an ops ticket in `goldshore/goldshore` (`openIssue`), or pausing costly workflows (`pauseAutomation`). The limiter script reads this config via `npx tsx infra/limits/codex_limiter.ts --config infra/codex/limiter.config.json`, so updating the JSON instantly feeds the CI budget check.
 
 ## 9. Ready / Not-Ready Summary Script
 

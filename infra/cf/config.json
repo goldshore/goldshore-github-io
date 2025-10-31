@@ -128,16 +128,40 @@
       "name": "goldshore-api",
       "main_entrypoint": "packages/api/dist/index.js",
       "compatibility_date": "2024-11-21",
+      "placement": {
+        "mode": "smart"
+      },
       "routes": [
         "api.goldshore.org/*",
         "api-preview.goldshore.org/*",
         "api-dev.goldshore.org/*"
       ],
+      "triggers": {
+        "crons": [
+          "*/5 * * * *"
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_classes": [
+            "SessionDO"
+          ]
+        },
+        {
+          "tag": "v2",
+          "new_classes": [
+            "RateLimiterDO"
+          ]
+        }
+      ],
       "bindings": {
         "KV": [
           {
             "binding": "AGENT_PROMPT_KV",
-            "id": "${AGENT_PROMPT_KV_ID}",
+            "id": "${AGENT_PROMPT_KV_ID}"
+          },
+          {
             "binding": "KV_SESSIONS",
             "id": "${KV_SESSIONS_ID}"
           },
@@ -149,7 +173,9 @@
         "D1": [
           {
             "binding": "DB",
-            "database": "goldshore_db",
+            "database": "goldshore_db"
+          },
+          {
             "binding": "D1_CORE",
             "database": "goldshore-core"
           }
@@ -157,7 +183,9 @@
         "R2": [
           {
             "binding": "SNAP_R2",
-            "bucket": "goldshore-bucket",
+            "bucket": "goldshore-bucket"
+          },
+          {
             "binding": "R2_PUBLIC",
             "bucket": "goldshore-public"
           }
@@ -166,13 +194,19 @@
           {
             "name": "DO_SESSIONS",
             "class_name": "SessionDO"
+          },
+          {
+            "name": "DO_RATE_LIMITER",
+            "class_name": "RateLimiterDO"
           }
         ],
         "queues": {
           "producers": [
             {
               "binding": "JOBS_QUEUE",
-              "queue": "jobs",
+              "queue": "jobs"
+            },
+            {
               "binding": "Q_EVENTS",
               "queue": "goldshore-events"
             }
@@ -182,7 +216,9 @@
               "queue": "jobs",
               "max_batch_size": 10,
               "max_batch_timeout": 5,
-              "max_retries": 3,
+              "max_retries": 3
+            },
+            {
               "queue": "goldshore-events",
               "max_batch_size": 50,
               "max_wait_ms": 2000,
@@ -193,13 +229,37 @@
         "vars": {
           "GOLDSHORE_ENV": "production",
           "GOLDSHORE_ORIGIN": "https://goldshore.org",
-          "GOLDSHORE_CORS": "https://goldshore.org,https://admin.goldshore.org",
+          "GOLDSHORE_CORS": "https://goldshore.org,https://www.goldshore.org,https://admin.goldshore.org,https://preview.goldshore.org,http://localhost:5173,http://127.0.0.1:5173",
           "FF_ENABLE_TRADING": "true",
-          "FF_ENABLE_SENTIMENT": "true"
+          "FF_ENABLE_SENTIMENT": "true",
+          "ACCESS_AUD": "goldshore-admin",
+          "CODEX_JWT_REQUIRED": "true",
+          "CODEX_JWT_ALG": "HS256",
+          "CODEX_JWT_ISS": "goldshore-api",
+          "CODEX_JWT_AUD": "goldshore-codex",
+          "CODEX_JWT_SECRET_KID": "kid-1",
+          "CODEX_JWT_HS256_KEY": "${{ secrets.CODEX_JWT_HS256_KEY }}",
+          "OPENAI_TPM_LIMIT": "180000",
+          "OPENAI_RPM_LIMIT": "3500",
+          "OPENAI_DPM_LIMIT": "9000000",
+          "RATE_LIMIT_WINDOW_MS": "60000",
+          "RATE_LIMIT_BUCKET_SIZE": "3400",
+          "RATE_LIMIT_TOKEN_BUDGET": "170000"
         }
       }
     }
   ],
+  "resources": {
+    "queues": [
+      {
+        "name": "goldshore-events"
+      },
+      {
+        "name": "goldshore-dlq",
+        "type": "dead_letter"
+      }
+    ]
+  },
   "access_applications": [
     {
       "name": "Goldshore Admin",

@@ -1,0 +1,34 @@
+---
+import "@goldshore/theme/tokens.css";
+import "../styles/theme.css";
+import "../styles/utilities.css";
+import logoUrl from "@goldshore/assets/logo-wordmark-on-light.svg?url";
+import faviconUrl from "@goldshore/assets/favicon.svg?url";
+const nav = [
+  {label:"Products", href:"#products"},
+  {label:"Trading Dashboard", href:"/dash"},
+  {label:"Pricing", href:"#pricing"},
+  {label:"Blog", href:"/blog"},
+  {label:"Docs", href:"https://api.goldshore.org/v1/docs"},
+  {label:"Admin", href:"https://admin.goldshore.org"},
+];
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href={faviconUrl} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <title>GoldShore</title>
+  </head>
+  <body class="bg-[var(--bg)] text-[var(--text)]">
+    <header class="mx-auto max-w-7xl p-4 flex items-center gap-6">
+      <img src="/logo-wordmark-on-light.svg" alt="GoldShore" height="28" />
+      <nav class="ml-auto flex gap-5">
+        {nav.map(n => <a href={n.href} class="hover:underline">{n.label}</a>)}
+        <a href="/signup" class="px-3 py-1 rounded bg-[var(--brand)] text-[var(--brand-contrast)]">Get Started</a>
+      </nav>
+    </header>
+    <slot />
+  </body>
+</html>

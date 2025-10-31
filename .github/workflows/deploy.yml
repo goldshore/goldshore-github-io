@@ -1,30 +1,24 @@
 name: Deploy goldshore + infra
-permissions:
-  contents: read
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
     paths:
-      - "apps/**"
-      - "packages/**"
-      - "wrangler.toml"
-      - "package.json"
+      - apps/**
+      - packages/**
+      - infra/**
+      - wrangler.toml
+      - package.json
+      - .github/workflows/deploy.yml
   workflow_dispatch:
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        environment: [production, preview, dev]
-    env:
-      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-      CF_SECRET_STORE_ID: ${{ secrets.CF_SECRET_STORE_ID }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+permissions:
+  contents: read
 
+jobs:
+  build:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -38,19 +32,65 @@ jobs:
       - name: Process images
         run: npm run process:images
 
-      - name: Build web (Astro)
-        run: npm run build:web
+      - name: Build site + assets
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: goldshore-build
+          path: |
+            apps/**/dist
+            packages/**/dist
+
+  deploy-workers:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [preview, dev, production]
+    env:
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-package-lock
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: goldshore-build
+          path: .
 
       - name: Deploy Worker (${{ matrix.environment }})
-        run: npx wrangler deploy --account-id "$CF_ACCOUNT_ID" --env=${{ matrix.environment }} --minify
+        env:
+          DEPLOY_ENVIRONMENT: ${{ matrix.environment }}
+        run: |
+          MINIFY_FLAG="--minify"
+          if [ "$DEPLOY_ENVIRONMENT" = "production" ]; then
+            MINIFY_FLAG=""
+          fi
+          npx wrangler deploy --env="$DEPLOY_ENVIRONMENT" $MINIFY_FLAG
+
+  sync-shared-cloudflare-resources:
+    name: Sync shared Cloudflare resources
+    needs: deploy-workers
+    runs-on: ubuntu-latest
+    env:
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Rebuild Access (goldshore)
-        env:
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
         run: bash infra/scripts/rebuild-goldshore-access.sh
 
       - name: Sync DNS records
-        env:
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: bash infra/scripts/upsert-goldshore-dns.sh

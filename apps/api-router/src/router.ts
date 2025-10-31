@@ -7,12 +7,17 @@ type Env = {
   DEV_ASSETS?: string;
 };
 
-const mapHostToAssets = (host: string, env: Env): string =>
-  host.startsWith('preview.')
-    ? env.PREVIEW_ASSETS ?? 'https://goldshore-org-preview.pages.dev'
-    : host.startsWith('dev.')
-      ? env.DEV_ASSETS ?? 'https://goldshore-org-dev.pages.dev'
-      : env.PRODUCTION_ASSETS ?? 'https://goldshore-org.pages.dev';
+const pickOrigin = (host: string, env: Env): string => {
+  if (host.startsWith('preview.')) {
+    return env.PREVIEW_ASSETS ?? 'https://goldshore-org-preview.pages.dev';
+  }
+
+  if (host.startsWith('dev.')) {
+    return env.DEV_ASSETS ?? 'https://goldshore-org-dev.pages.dev';
+  }
+
+  return env.PRODUCTION_ASSETS ?? 'https://goldshore-org.pages.dev';
+};
 
 const buildCorsHeaders = (origin: string | null): Headers => {
   const headers = new Headers();
@@ -57,8 +62,8 @@ const resolveCorsOrigin = (req: Request): string | null => {
 };
 
 export default {
-  async fetch(req, env): Promise<Response> {
-    const url = new URL(req.url);
+  async fetch(request, env): Promise<Response> {
+    const url = new URL(request.url);
 
     const corsOrigin = resolveCorsOrigin(req);
 
@@ -68,31 +73,32 @@ export default {
       return new Response(null, { status: 204, headers: cors });
     }
 
-    const assetsOrigin = mapHostToAssets(url.hostname, env);
-    const proxyUrl = new URL(req.url.replace(url.origin, assetsOrigin));
+    const origin = pickOrigin(url.hostname, env);
+    const upstream = new URL(request.url.replace(url.origin, origin));
 
-    const headers = new Headers(req.headers);
+    const headers = new Headers(request.headers);
     headers.delete('host');
 
-    const body = req.method === 'GET' || req.method === 'HEAD'
-      ? undefined
-      : await req.arrayBuffer();
-
-    const proxiedResponse = await fetch(proxyUrl.toString(), {
-      method: req.method,
+    const init: RequestInit = {
+      method: request.method,
       headers,
-      body,
-      redirect: 'follow'
-    });
+      redirect: 'follow',
+      body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+    };
 
     const responseHeaders = new Headers(proxiedResponse.headers);
     responseHeaders.set('x-served-by', env.APP_NAME);
     const cors = buildCorsHeaders(corsOrigin);
     cors.forEach((value, key) => responseHeaders.set(key, value));
 
-    return new Response(proxiedResponse.body, {
-      status: proxiedResponse.status,
-      headers: responseHeaders
+    const outgoing = new Headers(response.headers);
+    outgoing.set('x-served-by', env.APP_NAME);
+    outgoing.set('cache-control', cachePolicy(url.pathname));
+    cors.forEach((value, key) => outgoing.set(key, value));
+
+    return new Response(response.body, {
+      status: response.status,
+      headers: outgoing,
     });
-  }
+  },
 } satisfies ExportedHandler<Env>;

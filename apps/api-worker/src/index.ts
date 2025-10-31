@@ -314,7 +314,10 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
   applyRateLimitHeaders(headers, rateLimit, limit);
 
   if (url.pathname.startsWith("/v1/sessions/")) {
-    const sessionId = decodeURIComponent(url.pathname.replace("/v1/sessions/", ""));
+    const sessionId = decodeURIComponent(url.pathname.replace("/v1/sessions/", "")).trim();
+    if (!sessionId) {
+      return jsonResponse({ error: "Missing session ID" }, origin, { status: 400, headers });
+    }
     const sessionResponse = await handleSessionRequest(request, env, origin, sessionId);
     const sessionHeaders = new Headers(sessionResponse.headers);
     applyRateLimitHeaders(sessionHeaders, rateLimit, limit);
@@ -439,13 +442,5 @@ export class SessionDO {
       default:
         return new Response("Method Not Allowed", { status: 405 });
     }
-
-    const response = await handleWebhook(request, env, ctx);
-    for (const [key, value] of Object.entries(headers)) {
-      if (!response.headers.has(key)) {
-        response.headers.set(key, value);
-      }
-    }
-    return response;
   }
 }

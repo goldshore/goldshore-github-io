@@ -16,6 +16,9 @@ APP_NAME = "GoldShore"
 PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
 PREVIEW_ASSETS = "https://goldshore-org-preview.pages.dev"
 DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
+ADMIN_ASSETS = "https://goldshore-admin.pages.dev"
+PREVIEW_ADMIN_ASSETS = "https://goldshore-admin-preview.pages.dev"
+DEV_ADMIN_ASSETS = "https://goldshore-admin-dev.pages.dev"
 GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https://preview.goldshore.org, https://dev.goldshore.org, https://trade.goldshore.org"
 
 # Secrets such as FORMSPREE_ENDPOINT, TURNSTILE_SECRET, OPENAI_API_KEY, and
@@ -34,6 +37,9 @@ ASSETS_ORIGIN = "https://goldshore.org"
 CF_ACCESS_AUD = "3d5916af31a595ca00d8b1ab0157361a953779d939d9df2f63b1802b87a0248e"
 CF_ACCESS_ISS = "https://rmarston.cloudflareaccess.com"
 CF_ACCESS_JWKS_URL = "https://rmarston.cloudflareaccess.com/cdn-cgi/access/certs"
+ADMIN_ASSETS = "https://goldshore-admin.pages.dev"
+PREVIEW_ADMIN_ASSETS = "https://goldshore-admin-preview.pages.dev"
+DEV_ADMIN_ASSETS = "https://goldshore-admin-dev.pages.dev"
 
 [env.preview]
 name = "goldshore-preview"
@@ -60,3 +66,13 @@ name = "goldshore-dev"
 routes = [
   { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" }
 ]
+
+[env.preview.vars]
+ADMIN_ASSETS = "https://goldshore-admin.pages.dev"
+PREVIEW_ADMIN_ASSETS = "https://goldshore-admin-preview.pages.dev"
+DEV_ADMIN_ASSETS = "https://goldshore-admin-dev.pages.dev"
+
+[env.dev.vars]
+ADMIN_ASSETS = "https://goldshore-admin.pages.dev"
+PREVIEW_ADMIN_ASSETS = "https://goldshore-admin-preview.pages.dev"
+DEV_ADMIN_ASSETS = "https://goldshore-admin-dev.pages.dev"

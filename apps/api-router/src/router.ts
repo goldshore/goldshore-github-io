@@ -5,14 +5,29 @@ type Env = {
   PRODUCTION_ASSETS?: string;
   PREVIEW_ASSETS?: string;
   DEV_ASSETS?: string;
+  ADMIN_ASSETS?: string;
+  PREVIEW_ADMIN_ASSETS?: string;
+  DEV_ADMIN_ASSETS?: string;
 };
 
 const pickOrigin = (host: string, env: Env): string => {
+  if (host === 'admin.goldshore.org') {
+    return env.ADMIN_ASSETS ?? 'https://goldshore-admin.pages.dev';
+  }
+
   if (host.startsWith('preview.')) {
+    if (host === 'preview.admin.goldshore.org') {
+      return env.PREVIEW_ADMIN_ASSETS ?? 'https://goldshore-admin-preview.pages.dev';
+    }
+
     return env.PREVIEW_ASSETS ?? 'https://goldshore-org-preview.pages.dev';
   }
 
   if (host.startsWith('dev.')) {
+    if (host === 'dev.admin.goldshore.org') {
+      return env.DEV_ADMIN_ASSETS ?? 'https://goldshore-admin-dev.pages.dev';
+    }
+
     return env.DEV_ASSETS ?? 'https://goldshore-org-dev.pages.dev';
   }
 

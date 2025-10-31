@@ -1,5 +1,8 @@
+import { Octokit } from "octokit";
+
 const GH_API = "https://api.github.com";
 const token = process.env.GH_TOKEN;
+let gh: Octokit | null = null;
 
 function baseHeaders(): Record<string, string> {
   if (!token) throw new Error("Missing GH_TOKEN environment variable");
@@ -67,26 +70,34 @@ export async function createFixBranchAndPR(
   body: string,
   changes: Array<{ path: string; content: string }>
 ) {
-  const baseRef = await gh.rest.git.getRef({ owner, repo, ref: `heads/${base}` });
+  if (!token) throw new Error("Missing GH_TOKEN environment variable");
+  const client = gh ?? (gh = new Octokit({ auth: token }));
+
+  const baseRef = await client.rest.git.getRef({ owner, repo, ref: `heads/${base}` });
   const baseSha = baseRef.data.object.sha;
-  const baseCommit = await gh.rest.git.getCommit({ owner, repo, commit_sha: baseSha });
+  const baseCommit = await client.rest.git.getCommit({ owner, repo, commit_sha: baseSha });
 
   let parentSha = baseSha;
   let baseTreeSha = baseCommit.data.tree.sha;
+  let branchExists = false;
   let existingPR: any | null = null;
 
   try {
-    await gh.rest.git.createRef({ owner, repo, ref: `refs/heads/${head}`, sha: baseSha });
-  } catch (error: any) {
-    if (error?.status !== 422) throw error;
+    await client.rest.git.createRef({ owner, repo, ref: `refs/heads/${head}`, sha: baseSha });
+  } catch (error: unknown) {
+    if (!(error && typeof error === "object" && "status" in error)) throw error;
 
-    const headRef = await gh.rest.git.getRef({ owner, repo, ref: `heads/${head}` });
+    const status = (error as { status?: number }).status;
+    if (status !== 422) throw error;
+
+    branchExists = true;
+    const headRef = await client.rest.git.getRef({ owner, repo, ref: `heads/${head}` });
     parentSha = headRef.data.object.sha;
 
-    const headCommit = await gh.rest.git.getCommit({ owner, repo, commit_sha: parentSha });
+    const headCommit = await client.rest.git.getCommit({ owner, repo, commit_sha: parentSha });
     baseTreeSha = headCommit.data.tree.sha;
 
-    const existingPRs = await gh.rest.pulls.list({ owner, repo, state: "open", head: `${owner}:${head}`, per_page: 1 });
+    const existingPRs = await client.rest.pulls.list({ owner, repo, state: "open", head: `${owner}:${head}`, per_page: 1 });
     if (existingPRs.data.length > 0) {
       existingPR = existingPRs.data[0];
     }
@@ -94,7 +105,7 @@ export async function createFixBranchAndPR(
 
   const blobs = await Promise.all(
     changes.map(c =>
-      gh.rest.git.createBlob({
+      client.rest.git.createBlob({
         owner,
         repo,
         content: c.content,
@@ -103,14 +114,14 @@ export async function createFixBranchAndPR(
     )
   );
 
-  const tree = await gh.rest.git.createTree({
+  const tree = await client.rest.git.createTree({
     owner,
     repo,
     base_tree: baseTreeSha,
     tree: changes.map((c, i) => ({ path: c.path, mode: "100644", type: "blob", sha: blobs[i].data.sha }))
   });
 
-  const commit = await gh.rest.git.createCommit({
+  const commit = await client.rest.git.createCommit({
     owner,
     repo,
     message: title,
@@ -118,7 +129,7 @@ export async function createFixBranchAndPR(
     parents: [parentSha]
   });
 
-  await gh.rest.git.updateRef({
+  await client.rest.git.updateRef({
     owner,
     repo,
     ref: `heads/${head}`,
@@ -126,14 +137,18 @@ export async function createFixBranchAndPR(
     force: branchExists
   });
 
-  if (existingOpenPR) return existingOpenPR;
+  if (existingPR) {
+    await client.rest.pulls.update({ owner, repo, pull_number: existingPR.number, title, body });
+    const refreshed = await client.rest.pulls.get({ owner, repo, pull_number: existingPR.number });
+    return refreshed.data;
+  }
 
   try {
-    const pr = await gh.rest.pulls.create({ owner, repo, head, base, title, body });
+    const pr = await client.rest.pulls.create({ owner, repo, head, base, title, body });
     return pr.data;
-  } catch (error) {
-    if (error instanceof RequestError && error.status === 422) {
-      const existing = await gh.rest.pulls.list({
+  } catch (error: unknown) {
+    if (error && typeof error === "object" && "status" in error && (error as { status?: number }).status === 422) {
+      const existing = await client.rest.pulls.list({
         owner,
         repo,
         state: "open",
@@ -144,69 +159,4 @@ export async function createFixBranchAndPR(
     }
     throw error;
   }
-  const baseRef = await ghJson<{ object: { sha: string } }>(`/repos/${owner}/${repo}/git/ref/heads/${base}`);
-  const baseSha = baseRef.object.sha;
-  const baseCommit = await ghJson<{ tree: { sha: string } }>(`/repos/${owner}/${repo}/git/commits/${baseSha}`);
-  const baseTreeSha = baseCommit.tree.sha;
-
-  const branchRef = `refs/heads/${head}`;
-  const createRefRes = await ghRequest(`/repos/${owner}/${repo}/git/refs`, {
-    method: "POST",
-    body: JSON.stringify({ ref: branchRef, sha: baseSha })
-  });
-  if (!createRefRes.ok && createRefRes.status !== 422) {
-    const text = await createRefRes.text();
-    throw new Error(`Failed to create ref ${branchRef}: ${createRefRes.status} ${text}`);
-  }
-
-  const blobs = await Promise.all(
-    changes.map(async c =>
-      ghJson<{ sha: string }>(`/repos/${owner}/${repo}/git/blobs`, {
-        method: "POST",
-        body: JSON.stringify({ content: c.content, encoding: "utf-8" })
-      })
-    )
-  );
-
-  const tree = await ghJson<{ sha: string }>(`/repos/${owner}/${repo}/git/trees`, {
-    method: "POST",
-    body: JSON.stringify({
-      base_tree: baseTreeSha,
-      tree: changes.map((c, i) => ({ path: c.path, mode: "100644", type: "blob", sha: blobs[i].sha }))
-    })
-  });
-
-  const commit = await ghJson<{ sha: string }>(`/repos/${owner}/${repo}/git/commits`, {
-    method: "POST",
-    body: JSON.stringify({ message: title, tree: tree.sha, parents: [baseSha] })
-  });
-
-  await ghJson(`/repos/${owner}/${repo}/git/refs/heads/${head}`, {
-    method: "PATCH",
-    body: JSON.stringify({ sha: commit.sha, force: true })
-  });
-
-  const prRes = await ghRequest(`/repos/${owner}/${repo}/pulls`, {
-    method: "POST",
-    body: JSON.stringify({ head, base, title, body })
-  });
-
-  if (prRes.ok) {
-    return (await prRes.json()) as PullRequest;
-  }
-
-  if (prRes.status === 422) {
-    const params = new URLSearchParams({ state: "open", head: `${owner}:${head}` });
-    const existing = await ghJson<PullRequest[]>(`/repos/${owner}/${repo}/pulls?${params.toString()}`);
-    if (existing.length > 0) return existing[0];
-  }
-
-  if (existingPR) {
-    await gh.rest.pulls.update({ owner, repo, pull_number: existingPR.number, title, body });
-    const refreshed = await gh.rest.pulls.get({ owner, repo, pull_number: existingPR.number });
-    return refreshed.data;
-  }
-
-  const pr = await gh.rest.pulls.create({ owner, repo, head, base, title, body });
-  return pr.data;
 }

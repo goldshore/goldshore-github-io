@@ -1,3 +1,8 @@
+import { handleOptions, corsHeaders } from "./lib/cors";
+import { handleWebhook, type WebhookEnv } from "./webhook";
+
+export interface Env extends WebhookEnv {}
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 interface SessionRecord {
   id: string;
@@ -442,5 +447,13 @@ export class SessionDO {
       default:
         return new Response("Method Not Allowed", { status: 405 });
     }
+
+    const response = await handleWebhook(request, env, ctx);
+    for (const [key, value] of Object.entries(headers)) {
+      if (!response.headers.has(key)) {
+        response.headers.set(key, value);
+      }
+    }
+    return response;
   }
 }

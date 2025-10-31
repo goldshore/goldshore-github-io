@@ -17,9 +17,11 @@ jobs:
           cache: "npm"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Validate limiter config
+        run: npx tsx infra/limits/validate_codex_config.ts
       - name: Run Codex limiter
         env:
           CODEX_BUDGET_USD: ${{ secrets.CODEX_BUDGET_USD }}
           CODEX_USAGE_USD: ${{ secrets.CODEX_USAGE_USD }}
           CODEX_BUDGET_TOLERANCE_USD: ${{ vars.CODEX_BUDGET_TOLERANCE_USD }}
-        run: npx tsx infra/limits/codex_limiter.ts --label "Codex" --format text
+        run: npx tsx infra/limits/codex_limiter.ts --config infra/codex/limiter.config.json --format text

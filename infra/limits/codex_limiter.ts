@@ -14,7 +14,7 @@
  * `CODEX_BUDGET_TOLERANCE_USD`).
  */
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -29,6 +29,43 @@ interface Report {
 
 type OutputFormat = "text" | "json";
 
+interface ConfigUsageSource {
+  type: "environment" | "file" | "value";
+  key?: string;
+  path?: string;
+  amount?: number;
+  description?: string;
+}
+
+interface ConfigActionDefinition {
+  type: string;
+  description?: string;
+  [key: string]: unknown;
+}
+
+interface ConfiguredBudget {
+  id: string;
+  label: string;
+  amount: number;
+  tolerance?: number;
+  usageSource?: string;
+  actions?: string[];
+  notes?: string;
+}
+
+interface LimiterConfig {
+  currency: string;
+  usageSources?: Record<string, ConfigUsageSource>;
+  budgets: ConfiguredBudget[];
+  actions?: Record<string, ConfigActionDefinition>;
+}
+
+interface ConfigReport extends Report {
+  id: string;
+  actions: string[];
+  actionDetails: ConfigActionDefinition[];
+}
+
 interface CliOptions {
   label?: string;
   budget?: number;
@@ -37,6 +74,8 @@ interface CliOptions {
   tolerance?: number;
   format: OutputFormat;
   allowPartial: boolean;
+  config?: string;
+  budgetId?: string;
 }
 
 interface ParsedArgs {
@@ -62,6 +101,10 @@ const HELP_TEXT = `Usage: tsx infra/limits/codex_limiter.ts [options]\n\n` +
   `  --allow-partial          Do not exit with an error when either usage or\n` +
   `                           budget is missing. This is useful when the\n` +
   `                           workflow is optional.\n` +
+  `  --config <path>          Load budget definitions from a limiter config\n` +
+  `                           file (defaults to infra/codex/limiter.config.json).\n` +
+  `  --budget-id <id>         When using --config, only evaluate the budget\n` +
+  `                           with the matching identifier.\n` +
   `  --help                   Show this help text.\n`;
 
 function printHelp(): void {
@@ -135,12 +178,170 @@ function parseArgs(argv: string[]): ParsedArgs {
       case "--allow-partial":
         options.allowPartial = true;
         break;
+      case "--config": {
+        options.config = argv[++i];
+        if (!options.config) {
+          throw new Error("--config requires a path argument");
+        }
+        break;
+      }
+      case "--budget-id": {
+        options.budgetId = argv[++i];
+        if (!options.budgetId) {
+          throw new Error("--budget-id requires an id argument");
+        }
+        break;
+      }
       default:
         throw new Error(`Unknown argument: ${arg}`);
     }
   }
 
   return { options, showHelp };
+}
+
+function resolveUsageSource(source: ConfigUsageSource): number {
+  switch (source.type) {
+    case "environment": {
+      if (!source.key) {
+        throw new Error("Usage source of type 'environment' requires a key value.");
+      }
+      const value = readNumberFromEnv(source.key);
+      if (value === undefined) {
+        throw new Error(`Environment variable ${source.key} is not set.`);
+      }
+      return value;
+    }
+    case "file": {
+      if (!source.path) {
+        throw new Error("Usage source of type 'file' requires a path value.");
+      }
+      return loadUsageFromFile(source.path);
+    }
+    case "value": {
+      if (source.amount === undefined) {
+        throw new Error("Usage source of type 'value' requires an amount.");
+      }
+      return source.amount;
+    }
+    default:
+      throw new Error(`Unsupported usage source type: ${(source as ConfigUsageSource).type}`);
+  }
+}
+
+function loadLimiterConfig(configPath?: string): LimiterConfig {
+  const defaultPath = resolve(process.cwd(), "infra/codex/limiter.config.json");
+  const resolvedPath = resolve(process.cwd(), configPath ?? "infra/codex/limiter.config.json");
+  const finalPath = configPath ? resolvedPath : (existsSync(resolvedPath) ? resolvedPath : defaultPath);
+
+  if (!existsSync(finalPath)) {
+    throw new Error(`Limiter config not found at ${finalPath}`);
+  }
+
+  const raw = readFileSync(finalPath, "utf8");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    throw new Error(`Unable to parse limiter config: ${(error as Error).message}`);
+  }
+
+  const config = parsed as LimiterConfig;
+  if (!config || typeof config !== "object") {
+    throw new Error("Limiter config must be an object.");
+  }
+  if (!Array.isArray(config.budgets) || config.budgets.length === 0) {
+    throw new Error("Limiter config must include at least one budget.");
+  }
+
+  return config;
+}
+
+function buildReportFromConfig(
+  budget: ConfiguredBudget,
+  config: LimiterConfig,
+  options: CliOptions,
+): ConfigReport {
+  const report = buildReport({
+    ...options,
+    label: budget.label,
+    budget: budget.amount,
+    tolerance: budget.tolerance,
+    usage: options.usage,
+    usageFile: options.usageFile,
+    allowPartial: true,
+  });
+
+  // Override usage if not provided via CLI.
+  if (options.usage === undefined && !options.usageFile) {
+    if (budget.usageSource) {
+      const sources = config.usageSources ?? {};
+      const source = sources[budget.usageSource];
+      if (!source) {
+        throw new Error(`Budget ${budget.id} references unknown usage source ${budget.usageSource}.`);
+      }
+      report.usage = resolveUsageSource(source);
+    } else {
+      const envUsage = readNumberFromEnv("CODEX_USAGE_USD");
+      if (envUsage === undefined) {
+        throw new Error(
+          `Budget ${budget.id} is missing usage data. Provide --usage, --usage-file, or configure a usage source.`,
+        );
+      }
+      report.usage = envUsage;
+    }
+  }
+
+  if (options.budget === undefined) {
+    report.budget = budget.amount;
+  }
+  if (options.tolerance === undefined) {
+    report.tolerance = budget.tolerance ?? 0;
+  }
+
+  report.remaining = report.budget - report.usage;
+  report.exceeded = report.remaining < -Math.abs(report.tolerance);
+
+  const actionIds = budget.actions ?? [];
+  const definitions = actionIds
+    .map((id) => (config.actions ?? {})[id])
+    .filter((action): action is ConfigActionDefinition => action !== undefined);
+
+  return {
+    ...report,
+    id: budget.id,
+    actions: actionIds,
+    actionDetails: definitions,
+  };
+}
+
+function buildConfigReports(config: LimiterConfig, options: CliOptions): ConfigReport[] {
+  const budgets = options.budgetId
+    ? config.budgets.filter((budget) => budget.id === options.budgetId)
+    : config.budgets;
+
+  if (budgets.length === 0) {
+    throw new Error(`No budgets found matching id: ${options.budgetId}`);
+  }
+
+  return budgets.map((budget) => buildReportFromConfig(budget, config, options));
+}
+
+function renderConfigReports(reports: ConfigReport[], format: OutputFormat): string {
+  if (format === "json") {
+    return JSON.stringify(reports, null, 2);
+  }
+
+  return reports
+    .map((report) => {
+      const base = renderReport(report, "text");
+      if (report.exceeded && report.actions.length > 0) {
+        const actionSummary = report.actions.join(", ");
+        return `${base} Follow-up actions: ${actionSummary}.`;
+      }
+      return base;
+    })
+    .join("\n");
 }
 
 function readNumberFromEnv(name: string): number | undefined {
@@ -293,6 +494,21 @@ async function main(): Promise<void> {
 
   if (showHelp) {
     printHelp();
+    return;
+  }
+
+  const configRequested = options.config !== undefined;
+  const defaultConfigPath = resolve(process.cwd(), "infra/codex/limiter.config.json");
+  const configAvailable = existsSync(defaultConfigPath);
+  if (configRequested || (!options.budget && !options.usage && !options.usageFile && configAvailable)) {
+    const config = loadLimiterConfig(options.config);
+    const reports = buildConfigReports(config, options);
+    const output = renderConfigReports(reports, options.format);
+    console.log(output);
+
+    if (reports.some((report) => !Number.isNaN(report.remaining) && report.exceeded)) {
+      process.exitCode = 2;
+    }
     return;
   }
 

@@ -1,3 +1,3 @@
-# @goldshore/admin
+# @goldshore/admin-package
 
 Placeholder package for the admin dashboard. Integrate the actual application build once it migrates to the monorepo workspaces.

@@ -122,13 +122,15 @@ describe("Goldshore API REST handlers", () => {
       })
     });
     expect(riskCreate.res.status).toBe(201);
-    expect(riskCreate.json.data.is_published).toBe(1);
+    expect(riskCreate.json.data.is_published).toBe(true);
 
     const riskLimits = await request("/v1/risk/config", {
       method: "GET",
     });
     expect(riskLimits.res.status).toBe(200);
-    expect(riskLimits.json.data.is_published).toBe(1);
+    expect(Array.isArray(riskLimits.json.data)).toBe(true);
+    expect(riskLimits.json.data.length).toBeGreaterThan(0);
+    expect(riskLimits.json.data[0].is_published).toBe(true);
   });
 
   it("validates email on lead capture", async () => {

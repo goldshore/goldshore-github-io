@@ -26,23 +26,44 @@ const buildCorsHeaders = (origin: string | null): Headers => {
   return headers;
 };
 
-const resolveCorsOrigin = (req: Request, url: URL): string | null => {
-  const headerOrigin = req.headers.get('origin');
-  if (headerOrigin && headerOrigin !== 'null') {
-    return headerOrigin;
+const isAllowedOrigin = (origin: URL): boolean => {
+  if (origin.hostname === 'goldshore.org' || origin.hostname === 'localhost') {
+    return true;
   }
 
-  return `${url.protocol}//${url.host}`;
+  if (origin.hostname.endsWith('.goldshore.org')) {
+    return true;
+  }
+
+  if (origin.hostname === 'goldshore-org.pages.dev' || origin.hostname.endsWith('.goldshore-org.pages.dev')) {
+    return true;
+  }
+
+  return false;
+};
+
+const resolveCorsOrigin = (req: Request): string | null => {
+  const headerOrigin = req.headers.get('origin');
+  if (!headerOrigin || headerOrigin === 'null') {
+    return null;
+  }
+
+  try {
+    const parsedOrigin = new URL(headerOrigin);
+    return isAllowedOrigin(parsedOrigin) ? parsedOrigin.origin : null;
+  } catch {
+    return null;
+  }
 };
 
 export default {
   async fetch(req, env): Promise<Response> {
     const url = new URL(req.url);
 
-    const requestOrigin = req.headers.get('origin');
+    const corsOrigin = resolveCorsOrigin(req);
 
     if (req.method === 'OPTIONS') {
-      const cors = buildCorsHeaders(requestOrigin ?? `${url.protocol}//${url.host}`);
+      const cors = buildCorsHeaders(corsOrigin);
       cors.set('content-length', '0');
       return new Response(null, { status: 204, headers: cors });
     }
@@ -66,7 +87,7 @@ export default {
 
     const responseHeaders = new Headers(proxiedResponse.headers);
     responseHeaders.set('x-served-by', env.APP_NAME);
-    const cors = buildCorsHeaders(requestOrigin ?? `${url.protocol}//${url.host}`);
+    const cors = buildCorsHeaders(corsOrigin);
     cors.forEach((value, key) => responseHeaders.set(key, value));
 
     return new Response(proxiedResponse.body, {

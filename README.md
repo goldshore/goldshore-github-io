@@ -36,6 +36,10 @@ Traffic for `goldshore.org` hits a Worker (`wrangler.toml` target `goldshore`) b
 
 ### Required secrets and configuration
 
+Run `./scripts/verify_codex_env.sh` to confirm your shell or CI job has all of the GoldShore Codex
+secrets loaded before deploying workers or running automation. The script reports missing values and
+links to the relevant runbooks for remediation.
+
 Set the following per environment using `wrangler secret put` (or provider-specific secret managers):
 
 | Variable | Purpose |

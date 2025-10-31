@@ -138,6 +138,7 @@ describe("Goldshore API REST handlers", () => {
       body: JSON.stringify({ email: "test@example.com" })
     });
     expect(validLead.res.status).toBe(200);
+    expect(validLead.json.ok).toBe(true);
 
     const invalidLead = await request("/v1/lead", {
       method: "POST",
@@ -145,21 +146,16 @@ describe("Goldshore API REST handlers", () => {
       body: JSON.stringify({ email: "not-an-email" })
     });
     expect(invalidLead.res.status).toBe(400);
+    expect(invalidLead.json).toEqual({ ok: false, error: "INVALID_EMAIL" });
   });
 
-  it("validates email on lead capture", async () => {
-    const validLead = await request("/v1/lead", {
+  it("requires email on lead capture", async () => {
+    const blankLead = await request("/v1/lead", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: "test@example.com" })
+      body: JSON.stringify({})
     });
-    expect(validLead.res.status).toBe(200);
-
-    const invalidLead = await request("/v1/lead", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: "not-an-email" })
-    });
-    expect(invalidLead.res.status).toBe(400);
+    expect(blankLead.res.status).toBe(400);
+    expect(blankLead.json).toEqual({ ok: false, error: "EMAIL_REQUIRED" });
   });
 });

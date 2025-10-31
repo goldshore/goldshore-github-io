@@ -12,6 +12,7 @@ CORS_ORIGINS = "https://goldshore.org,https://admin.goldshore.org"
 [[d1_databases]]
 binding = "DB"
 database_name = "goldshore_db"
+database_id = "00000000-0000-0000-0000-000000000000"
 
 [[kv_namespaces]]
 binding = "AGENT_PROMPT_KV"

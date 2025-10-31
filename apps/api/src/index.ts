@@ -1,4 +1,4 @@
-import type { MessageBatch } from "@cloudflare/workers-types";
+import type { DurableObjectState, MessageBatch } from "@cloudflare/workers-types";
 
 export interface Env {
   DB: D1Database;
@@ -156,97 +156,7 @@ const router: Record<string, Partial<Record<string, RouteHandler>>> = {
       return tools.respond({ ok: true, message: "Kill switch engaged" });
     },
   },
-  "/v1/lead": {
-    POST: async ({ req, env, tools }) => {
-      await ensureTable(env, "leads");
-      const ct = req.headers.get("content-type") || "";
-      const payload = ct.includes("application/json")
-        ? await req.json()
-        : Object.fromEntries((await req.formData()).entries());
-      const email = (payload.email || "").toString().trim();
-      const emailRegex =
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-      if (!email) {
-        return tools.respond({ ok: false, error: "EMAIL_REQUIRED" }, 400);
-      }
-      if (!emailRegex.test(email)) {
-        return tools.respond({ ok: false, error: "INVALID_EMAIL" }, 400);
-      }
-      await env.DB.prepare(
-        "INSERT OR IGNORE INTO leads (email) VALUES (?)"
-      ).bind(email).run();
-      return tools.respond({ ok: true });
-    },
-  },
-  "/v1/orders": {
-    GET: async ({ env, tools }) => {
-      await ensureTable(env, "orders");
-      const { results } = await env.DB.prepare(
-        "SELECT * FROM orders ORDER BY ts DESC LIMIT 50"
-      ).all();
-      return tools.respond({ ok: true, data: results });
-    },
-  },
-  "/v1/customers": {
-    GET: listCustomers,
-    POST: createCustomer,
-  },
-  "/v1/customers/:id": {
-    GET: getCustomer,
-    PATCH: updateCustomer,
-    PUT: updateCustomer,
-    DELETE: deleteCustomer,
-  },
-  "/v1/subscriptions": {
-    GET: listSubscriptions,
-    POST: createSubscription,
-  },
-  "/v1/subscriptions/:id": {
-    GET: getSubscription,
-    PATCH: updateSubscription,
-    PUT: updateSubscription,
-    DELETE: deleteSubscription,
-  },
-  "/v1/customer_subscriptions": {
-    GET: listCustomerSubscriptions,
-    POST: createCustomerSubscription,
-  },
-  "/v1/customer_subscriptions/:id": {
-    GET: getCustomerSubscription,
-    PATCH: updateCustomerSubscription,
-    PUT: updateCustomerSubscription,
-    DELETE: deleteCustomerSubscription,
-  },
-  "/v1/risk/config": {
-    GET: listRiskConfigs,
-    POST: createRiskConfig,
-  },
-  "/v1/risk/config/:id": {
-    GET: getRiskConfig,
-    PATCH: updateRiskConfig,
-    PUT: updateRiskConfig,
-    DELETE: deleteRiskConfig,
-  },
-  "/v1/risk/check": {
-    POST: async ({ req, env, tools }) => {
-      const order = await req.json();
-      const limits = await getActiveRiskLimits(env);
-      if (!limits) {
-        return tools.respond({ ok: true, message: "No risk limits configured" });
-      }
-      if (typeof order.notional === "number" && limits.max_notional !== undefined && order.notional > limits.max_notional) {
-        return tools.respond({ ok: false, error: "NOTIONAL_EXCEEDS_LIMIT" });
-      }
-      return tools.respond({ ok: true });
-    },
-  },
-  "/v1/risk/killswitch": {
-    POST: async ({ env, tools }) => {
-      await env.DB.prepare("UPDATE risk_configs SET is_published = 0, updated_at = CURRENT_TIMESTAMP").run();
-      return tools.respond({ ok: true, message: "Kill switch engaged" });
-    },
-  },
-});
+};
 
 export default {
   async fetch(req: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
@@ -790,4 +700,106 @@ function mapRiskRow(row: any) {
     is_published: Boolean(row.is_published),
     limits: parseLimits(row.limits),
   };
+}
+
+export class SessionManager {
+  constructor(private readonly state: DurableObjectState) {}
+
+  async fetch(request: Request): Promise<Response> {
+    const method = request.method.toUpperCase();
+
+    if (method === "GET") {
+      const session = await this.state.storage.get<Record<string, unknown> | null>("session");
+      if (!session) {
+        return new Response(null, { status: 404 });
+      }
+      return new Response(JSON.stringify(session), {
+        status: 200,
+        headers: JSON_CONTENT_HEADERS,
+      });
+    }
+
+    if (method === "POST" || method === "PUT") {
+      const payload = await parseJsonBody(request);
+      if (!payload || typeof payload !== "object") {
+        return new Response(JSON.stringify({ ok: false, error: "INVALID_SESSION_PAYLOAD" }), {
+          status: 400,
+          headers: JSON_CONTENT_HEADERS,
+        });
+      }
+      await this.state.storage.put("session", payload);
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 204,
+        headers: JSON_CONTENT_HEADERS,
+      });
+    }
+
+    if (method === "DELETE") {
+      await this.state.storage.delete("session");
+      return new Response(null, { status: 204 });
+    }
+
+    return new Response(JSON.stringify({ ok: false, error: "METHOD_NOT_ALLOWED" }), {
+      status: 405,
+      headers: { ...JSON_CONTENT_HEADERS, Allow: "GET,POST,PUT,DELETE" },
+    });
+  }
+}
+
+export class FeedManager {
+  constructor(private readonly state: DurableObjectState) {}
+
+  async fetch(request: Request): Promise<Response> {
+    const method = request.method.toUpperCase();
+    const url = new URL(request.url);
+
+    if (method === "GET") {
+      const entries = (await this.state.storage.get<any[]>("entries")) ?? [];
+      const limitParam = Number(url.searchParams.get("limit") ?? "50");
+      const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 500) : 50;
+      const data = entries.slice(-limit).reverse();
+      return new Response(JSON.stringify({ ok: true, data }), {
+        status: 200,
+        headers: JSON_CONTENT_HEADERS,
+      });
+    }
+
+    if (method === "POST") {
+      const payload = await parseJsonBody(request);
+      if (!payload || typeof payload !== "object") {
+        return new Response(JSON.stringify({ ok: false, error: "INVALID_FEED_PAYLOAD" }), {
+          status: 400,
+          headers: JSON_CONTENT_HEADERS,
+        });
+      }
+      const entries = (await this.state.storage.get<any[]>("entries")) ?? [];
+      entries.push({ ...payload, ts: payload?.ts ?? new Date().toISOString() });
+      if (entries.length > 1000) {
+        entries.splice(0, entries.length - 1000);
+      }
+      await this.state.storage.put("entries", entries);
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 202,
+        headers: JSON_CONTENT_HEADERS,
+      });
+    }
+
+    if (method === "DELETE") {
+      await this.state.storage.delete("entries");
+      return new Response(null, { status: 204 });
+    }
+
+    return new Response(JSON.stringify({ ok: false, error: "METHOD_NOT_ALLOWED" }), {
+      status: 405,
+      headers: { ...JSON_CONTENT_HEADERS, Allow: "GET,POST,DELETE" },
+    });
+  }
+}
+
+async function parseJsonBody(request: Request) {
+  try {
+    return await request.json();
+  } catch {
+    return null;
+  }
 }

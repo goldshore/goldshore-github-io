@@ -10,10 +10,10 @@
     "process:images": "node scripts/process-images.mjs"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^11.0.0",
+    "@astrojs/cloudflare": "^12.6.10",
     "@goldshore/assets": "file:../../packages/assets",
     "@goldshore/theme": "file:../../packages/theme",
-    "astro": "^4.15.0",
+    "astro": "^5.15.3",
     "tslib": "^2.8.1"
   }
 }

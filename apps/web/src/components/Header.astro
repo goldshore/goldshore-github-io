@@ -179,6 +179,7 @@ const navLinks = [
       isOpen = true;
       mobileMenu.hidden = false;
       mobileMenu.classList.add('is-open');
+      mobileMenu.setAttribute('aria-hidden', 'false');
       const [firstFocusable] = getFocusableItems();
       if (firstFocusable) {
         firstFocusable.focus();
@@ -193,6 +194,7 @@ const navLinks = [
       isOpen = false;
       mobileMenu.classList.remove('is-open');
       mobileMenu.hidden = true;
+      mobileMenu.setAttribute('aria-hidden', 'true');
       setButtonState();
       toggleButton.focus();
       document.removeEventListener('keydown', handleKeyDown);

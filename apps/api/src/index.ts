@@ -34,6 +34,7 @@ const router = {
   },
   "/v1/lead": {
     POST: async (req: Request, env: Env) => {
+      const headers = { "content-type": "application/json", ...cors(req, env.CORS_ORIGINS) };
       const ct = req.headers.get("content-type") || "";
       const body = ct.includes("application/json") ? await req.json() : Object.fromEntries((await req.formData()).entries());
       const email = (body.email||"").toString().trim();

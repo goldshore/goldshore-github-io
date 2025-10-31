@@ -1,5 +1,5 @@
 name = "goldshore-api"
-main = "dist/index.js"
+main = "dist/src/index.js"
 compatibility_date = "2024-11-20"
 minify = true
 

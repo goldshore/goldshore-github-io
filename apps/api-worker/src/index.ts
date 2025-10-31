@@ -1,4 +1,3 @@
-import { handleOptions, corsHeaders } from "./lib/cors";
 import { handleWebhook, type WebhookEnv } from "./webhook";
 
 export interface Env extends WebhookEnv {}
@@ -288,7 +287,11 @@ function rateLimitExceededResponse(origin: string, result: RateLimitResult, limi
   return new Response(JSON.stringify({ error: "Rate limit exceeded", reset: result.reset }), corsWrapped);
 }
 
-async function routeRequest(request: Request, env: Env): Promise<Response> {
+async function routeRequest(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext
+): Promise<Response> {
   const url = new URL(request.url);
   const origin = resolveCorsOrigin(request, env);
   const limit = Number(env.RATE_LIMIT_MAX ?? DEFAULT_RATE_LIMIT) || DEFAULT_RATE_LIMIT;
@@ -299,6 +302,15 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 
   if (url.pathname === "/health") {
     return jsonResponse({ ok: true, env: env.GOLDSHORE_ENV }, origin, { status: 200 });
+  }
+
+  if (url.pathname === "/github/webhook" && request.method === "POST") {
+    const response = await handleWebhook(request, env, ctx);
+    return new Response(response.body, withCors(origin, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers
+    }));
   }
 
   let claims: JwtClaims;
@@ -403,7 +415,7 @@ async function scheduledHandler(controller: ScheduledEvent, env: Env, ctx: Execu
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    return routeRequest(request, env);
+    return routeRequest(request, env, ctx);
   },
   async queue(batch: MessageBatch<EventQueueMessage>, env: Env): Promise<void> {
     return queueHandler(batch, env);
@@ -447,13 +459,5 @@ export class SessionDO {
       default:
         return new Response("Method Not Allowed", { status: 405 });
     }
-
-    const response = await handleWebhook(request, env, ctx);
-    for (const [key, value] of Object.entries(headers)) {
-      if (!response.headers.has(key)) {
-        response.headers.set(key, value);
-      }
-    }
-    return response;
   }
 }

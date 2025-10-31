@@ -85,7 +85,7 @@ remove_conflicting_records() {
     --arg type "$type" \
     --arg name "$name" \
     --arg content "$content" \
-    --argjson proxied $proxied '{type:$type,name:$name,content:$content,ttl:1,proxied:$proxied}')
+    --argjson proxied "$proxied_flag" '{type:$type,name:$name,content:$content,ttl:1,proxied:$proxied}')
 
   if [[ -n "$existing_id" ]]; then
     curl -sS --fail-with-body -X PUT "$API/zones/$zone_id/dns_records/$existing_id" \

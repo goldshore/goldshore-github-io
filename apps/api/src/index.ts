@@ -156,7 +156,97 @@ const router: Record<string, Partial<Record<string, RouteHandler>>> = {
       return tools.respond({ ok: true, message: "Kill switch engaged" });
     },
   },
-};
+  "/v1/lead": {
+    POST: async ({ req, env, tools }) => {
+      await ensureTable(env, "leads");
+      const ct = req.headers.get("content-type") || "";
+      const payload = ct.includes("application/json")
+        ? await req.json()
+        : Object.fromEntries((await req.formData()).entries());
+      const email = (payload.email || "").toString().trim();
+      const emailRegex =
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+      if (!email) {
+        return tools.respond({ ok: false, error: "EMAIL_REQUIRED" }, 400);
+      }
+      if (!emailRegex.test(email)) {
+        return tools.respond({ ok: false, error: "INVALID_EMAIL" }, 400);
+      }
+      await env.DB.prepare(
+        "INSERT OR IGNORE INTO leads (email) VALUES (?)"
+      ).bind(email).run();
+      return tools.respond({ ok: true });
+    },
+  },
+  "/v1/orders": {
+    GET: async ({ env, tools }) => {
+      await ensureTable(env, "orders");
+      const { results } = await env.DB.prepare(
+        "SELECT * FROM orders ORDER BY ts DESC LIMIT 50"
+      ).all();
+      return tools.respond({ ok: true, data: results });
+    },
+  },
+  "/v1/customers": {
+    GET: listCustomers,
+    POST: createCustomer,
+  },
+  "/v1/customers/:id": {
+    GET: getCustomer,
+    PATCH: updateCustomer,
+    PUT: updateCustomer,
+    DELETE: deleteCustomer,
+  },
+  "/v1/subscriptions": {
+    GET: listSubscriptions,
+    POST: createSubscription,
+  },
+  "/v1/subscriptions/:id": {
+    GET: getSubscription,
+    PATCH: updateSubscription,
+    PUT: updateSubscription,
+    DELETE: deleteSubscription,
+  },
+  "/v1/customer_subscriptions": {
+    GET: listCustomerSubscriptions,
+    POST: createCustomerSubscription,
+  },
+  "/v1/customer_subscriptions/:id": {
+    GET: getCustomerSubscription,
+    PATCH: updateCustomerSubscription,
+    PUT: updateCustomerSubscription,
+    DELETE: deleteCustomerSubscription,
+  },
+  "/v1/risk/config": {
+    GET: listRiskConfigs,
+    POST: createRiskConfig,
+  },
+  "/v1/risk/config/:id": {
+    GET: getRiskConfig,
+    PATCH: updateRiskConfig,
+    PUT: updateRiskConfig,
+    DELETE: deleteRiskConfig,
+  },
+  "/v1/risk/check": {
+    POST: async ({ req, env, tools }) => {
+      const order = await req.json();
+      const limits = await getActiveRiskLimits(env);
+      if (!limits) {
+        return tools.respond({ ok: true, message: "No risk limits configured" });
+      }
+      if (typeof order.notional === "number" && limits.max_notional !== undefined && order.notional > limits.max_notional) {
+        return tools.respond({ ok: false, error: "NOTIONAL_EXCEEDS_LIMIT" });
+      }
+      return tools.respond({ ok: true });
+    },
+  },
+  "/v1/risk/killswitch": {
+    POST: async ({ env, tools }) => {
+      await env.DB.prepare("UPDATE risk_configs SET is_published = 0, updated_at = CURRENT_TIMESTAMP").run();
+      return tools.respond({ ok: true, message: "Kill switch engaged" });
+    },
+  },
+});
 
 export default {
   async fetch(req: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {

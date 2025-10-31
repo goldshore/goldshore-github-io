@@ -314,7 +314,10 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
   applyRateLimitHeaders(headers, rateLimit, limit);
 
   if (url.pathname.startsWith("/v1/sessions/")) {
-    const sessionId = decodeURIComponent(url.pathname.replace("/v1/sessions/", ""));
+    const sessionId = decodeURIComponent(url.pathname.replace("/v1/sessions/", "")).trim();
+    if (!sessionId) {
+      return jsonResponse({ error: "Missing session ID" }, origin, { status: 400, headers });
+    }
     const sessionResponse = await handleSessionRequest(request, env, origin, sessionId);
     const sessionHeaders = new Headers(sessionResponse.headers);
     applyRateLimitHeaders(sessionHeaders, rateLimit, limit);

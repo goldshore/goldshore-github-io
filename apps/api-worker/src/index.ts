@@ -439,5 +439,13 @@ export class SessionDO {
       default:
         return new Response("Method Not Allowed", { status: 405 });
     }
+
+    const response = await handleWebhook(request, env, ctx);
+    for (const [key, value] of Object.entries(headers)) {
+      if (!response.headers.has(key)) {
+        response.headers.set(key, value);
+      }
+    }
+    return response;
   }
 }

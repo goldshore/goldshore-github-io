@@ -108,7 +108,13 @@ upsert_record() {
     while read -r conflict_id conflict_type; do
       [[ -z "$conflict_id" ]] && continue
       echo "Removing conflicting ${conflict_type} record for ${name}" >&2
-      curl -sS -X DELETE "${API}/zones/${zone_id}/dns_records/${conflict_id}" "${AUTH_HEADER[@]}" >/dev/null
+      local delete_response
+      delete_response=$(curl -sS -X DELETE "${API}/zones/${zone_id}/dns_records/${conflict_id}" "${AUTH_HEADER[@]}")
+      if [[ $(echo "$delete_response" | jq -r '.success') != "true" ]]; then
+        echo "Failed to remove conflicting ${conflict_type} record for ${name}" >&2
+        echo "$delete_response" >&2
+        return 1
+      fi
     done <<< "$conflicts"
   fi
 
@@ -122,10 +128,22 @@ upsert_record() {
   )
 
   if [[ -n "$record_id" ]]; then
-    curl -sS -X PUT "${API}/zones/${zone_id}/dns_records/${record_id}" "${AUTH_HEADER[@]}" --data "$payload" >/dev/null
+    local update_response
+    update_response=$(curl -sS -X PUT "${API}/zones/${zone_id}/dns_records/${record_id}" "${AUTH_HEADER[@]}" --data "$payload")
+    if [[ $(echo "$update_response" | jq -r '.success') != "true" ]]; then
+      echo "Failed to update ${type} record for ${name}" >&2
+      echo "$update_response" >&2
+      return 1
+    fi
     echo "Updated ${type} record for ${name}" >&2
   else
-    curl -sS -X POST "${API}/zones/${zone_id}/dns_records" "${AUTH_HEADER[@]}" --data "$payload" >/dev/null
+    local create_response
+    create_response=$(curl -sS -X POST "${API}/zones/${zone_id}/dns_records" "${AUTH_HEADER[@]}" --data "$payload")
+    if [[ $(echo "$create_response" | jq -r '.success') != "true" ]]; then
+      echo "Failed to create ${type} record for ${name}" >&2
+      echo "$create_response" >&2
+      return 1
+    fi
     echo "Created ${type} record for ${name}" >&2
   fi
 }

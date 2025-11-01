@@ -5,18 +5,106 @@ type Env = {
   PRODUCTION_ASSETS?: string;
   PREVIEW_ASSETS?: string;
   DEV_ASSETS?: string;
+  PRODUCTION_ADMIN_ASSETS?: string;
+  PREVIEW_ADMIN_ASSETS?: string;
+  DEV_ADMIN_ASSETS?: string;
+  PRODUCTION_API_ORIGIN?: string;
+  PREVIEW_API_ORIGIN?: string;
+  DEV_API_ORIGIN?: string;
 };
 
-const pickOrigin = (host: string, env: Env): string => {
-  if (host.startsWith('preview.')) {
-    return env.PREVIEW_ASSETS ?? 'https://goldshore-org-preview.pages.dev';
+type Stage = 'production' | 'preview' | 'dev';
+type TargetKind = 'site' | 'admin' | 'api';
+
+type Target = {
+  kind: TargetKind;
+  stage: Stage;
+  origin: string;
+  stripApiPrefix: boolean;
+};
+
+const DEFAULT_ORIGINS: Record<TargetKind, Record<Stage, string>> = {
+  site: {
+    production: 'https://goldshore-org.pages.dev',
+    preview: 'https://goldshore-org-preview.pages.dev',
+    dev: 'https://goldshore-org-dev.pages.dev',
+  },
+  admin: {
+    production: 'https://goldshore-admin.pages.dev',
+    preview: 'https://goldshore-admin.pages.dev',
+    dev: 'https://goldshore-admin.pages.dev',
+  },
+  api: {
+    production: 'https://api.goldshore.org',
+    preview: 'https://api.goldshore.org',
+    dev: 'https://api.goldshore.org',
+  },
+};
+
+const stageFromHost = (host: string): Stage => {
+  if (host.startsWith('preview.')) return 'preview';
+  if (host.startsWith('dev.')) return 'dev';
+  return 'production';
+};
+
+const getEnvOrigin = (env: Env, kind: TargetKind, stage: Stage): string => {
+  const keys: Record<TargetKind, Record<Stage, keyof Env>> = {
+    site: {
+      production: 'PRODUCTION_ASSETS',
+      preview: 'PREVIEW_ASSETS',
+      dev: 'DEV_ASSETS',
+    },
+    admin: {
+      production: 'PRODUCTION_ADMIN_ASSETS',
+      preview: 'PREVIEW_ADMIN_ASSETS',
+      dev: 'DEV_ADMIN_ASSETS',
+    },
+    api: {
+      production: 'PRODUCTION_API_ORIGIN',
+      preview: 'PREVIEW_API_ORIGIN',
+      dev: 'DEV_API_ORIGIN',
+    },
+  } as const;
+
+  const key = keys[kind][stage];
+  const value = env[key];
+  if (value && value.trim().length > 0) return value;
+  return DEFAULT_ORIGINS[kind][stage];
+};
+
+const resolveTarget = (url: URL, env: Env): Target => {
+  const host = url.hostname.toLowerCase();
+  const [subdomain] = host.split('.');
+  const stage = stageFromHost(host);
+
+  const isApiSubdomain = subdomain === 'api';
+  const isApiPath = !isApiSubdomain && (url.pathname === '/api' || url.pathname.startsWith('/api/'));
+  if (isApiSubdomain || isApiPath) {
+    return {
+      kind: 'api',
+      stage,
+      origin: getEnvOrigin(env, 'api', stage),
+      stripApiPrefix: isApiPath,
+    };
   }
 
-  if (host.startsWith('dev.')) {
-    return env.DEV_ASSETS ?? 'https://goldshore-org-dev.pages.dev';
+  const isAdminSubdomain = subdomain === 'admin';
+  const isAdminPath = !isAdminSubdomain && url.pathname.startsWith('/admin');
+  if (isAdminSubdomain || isAdminPath) {
+    return {
+      kind: 'admin',
+      stage,
+      origin: getEnvOrigin(env, 'admin', stage),
+      stripApiPrefix: false,
+    };
   }
 
-  return env.PRODUCTION_ASSETS ?? 'https://goldshore-org.pages.dev';
+  return {
+    kind: 'site',
+    stage,
+    origin: getEnvOrigin(env, 'site', stage),
+    stripApiPrefix: false,
+  };
 };
 
 const buildCorsHeaders = (origin: string): Headers => {
@@ -28,23 +116,34 @@ const buildCorsHeaders = (origin: string): Headers => {
   return headers;
 };
 
-const cachePolicy = (pathname: string): string =>
-  /\.(?:js|css|png|jpg|jpeg|webp|avif|svg|woff2?)$/i.test(pathname)
+const cachePolicy = (pathname: string, kind: TargetKind): string => {
+  if (kind === 'api') {
+    return 'private, no-store, max-age=0';
+  }
+
+  return /\.(?:js|css|png|jpg|jpeg|webp|avif|svg|woff2?)$/i.test(pathname)
     ? 'public, max-age=31536000, immutable'
     : 'public, s-maxage=600, stale-while-revalidate=86400';
+};
 
 export default {
   async fetch(request, env): Promise<Response> {
     const url = new URL(request.url);
+    const target = resolveTarget(url, env);
 
-    if (request.method === 'OPTIONS') {
-      const cors = buildCorsHeaders(`${url.protocol}//${url.host}`);
+    const corsOrigin = request.headers.get('origin') ?? `${url.protocol}//${url.host}`;
+    const corsHeaders = target.kind === 'api' ? null : buildCorsHeaders(corsOrigin);
+
+    if (request.method === 'OPTIONS' && corsHeaders) {
+      const cors = new Headers(corsHeaders);
       cors.set('content-length', '0');
       return new Response(null, { status: 204, headers: cors });
     }
 
-    const origin = pickOrigin(url.hostname, env);
-    const upstream = new URL(request.url.replace(url.origin, origin));
+    const upstream = new URL(request.url.replace(url.origin, target.origin));
+    if (target.stripApiPrefix) {
+      upstream.pathname = upstream.pathname.replace(/^\/api/, '') || '/';
+    }
 
     const headers = new Headers(request.headers);
     headers.delete('host');
@@ -57,12 +156,14 @@ export default {
     };
 
     const response = await fetch(upstream.toString(), init);
-    const cors = buildCorsHeaders(`${url.protocol}//${url.host}`);
 
     const outgoing = new Headers(response.headers);
     outgoing.set('x-served-by', env.APP_NAME);
-    outgoing.set('cache-control', cachePolicy(url.pathname));
-    cors.forEach((value, key) => outgoing.set(key, value));
+    outgoing.set('cache-control', cachePolicy(url.pathname, target.kind));
+
+    if (corsHeaders) {
+      corsHeaders.forEach((value, key) => outgoing.set(key, value));
+    }
 
     return new Response(response.body, {
       status: response.status,

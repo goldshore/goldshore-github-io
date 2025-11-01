@@ -1,8 +1,18 @@
+let isSetupComplete = false;
+let isInitScheduled = false;
+
 const setupHeaderMenu = () => {
+  if (isSetupComplete) {
+    return;
+  }
+
+  isSetupComplete = true;
+
   const toggleButton = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
   const mobileMenu = document.querySelector<HTMLElement>('[data-mobile-menu]');
 
   if (!toggleButton || !mobileMenu) {
+    isSetupComplete = false;
     return;
   }
 
@@ -140,16 +150,24 @@ const setupHeaderMenu = () => {
   setButtonState();
 };
 
-const init = () => {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupHeaderMenu, { once: true });
-  } else {
+export const initHeaderMenu = () => {
+  if (isInitScheduled || typeof window === 'undefined') {
+    return;
+  }
+
+  isInitScheduled = true;
+
+  const runSetup = () => {
     setupHeaderMenu();
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runSetup, { once: true });
+  } else {
+    runSetup();
   }
 };
 
 if (typeof window !== 'undefined') {
-  init();
+  initHeaderMenu();
 }
-
-export {};

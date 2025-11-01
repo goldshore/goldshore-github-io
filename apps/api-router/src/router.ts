@@ -8,6 +8,7 @@ type Env = {
   ADMIN_ASSETS?: string;
   PREVIEW_ADMIN_ASSETS?: string;
   DEV_ADMIN_ASSETS?: string;
+  GPT_ALLOWED_ORIGINS?: string;
 };
 
 const pickOrigin = (host: string, env: Env): string => {
@@ -34,12 +35,32 @@ const pickOrigin = (host: string, env: Env): string => {
   return env.PRODUCTION_ASSETS ?? 'https://goldshore-org.pages.dev';
 };
 
-const buildCorsHeaders = (origin: string): Headers => {
+const parseAllowedOrigins = (raw?: string): string[] => {
+  if (!raw) {
+    return [];
+  }
+
+  return raw
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+};
+
+const resolveCorsOrigin = (requestOrigin: string | null, fallbackOrigin: string, allowedOrigins: string[]): string => {
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+
+  return fallbackOrigin;
+};
+
+const buildCorsHeaders = (requestOrigin: string | null, fallbackOrigin: string, allowedOrigins: string[]): Headers => {
   const headers = new Headers();
-  headers.set('access-control-allow-origin', origin);
+  headers.set('access-control-allow-origin', resolveCorsOrigin(requestOrigin, fallbackOrigin, allowedOrigins));
   headers.set('access-control-allow-methods', 'GET,HEAD,POST,OPTIONS');
   headers.set('access-control-allow-headers', 'accept,content-type');
   headers.set('access-control-max-age', '86400');
+  headers.set('vary', 'Origin');
   return headers;
 };
 
@@ -52,8 +73,12 @@ export default {
   async fetch(request, env): Promise<Response> {
     const url = new URL(request.url);
 
+    const allowedOrigins = parseAllowedOrigins(env.GPT_ALLOWED_ORIGINS);
+    const requestOrigin = request.headers.get('Origin');
+    const fallbackOrigin = `${url.protocol}//${url.host}`;
+
     if (request.method === 'OPTIONS') {
-      const cors = buildCorsHeaders(`${url.protocol}//${url.host}`);
+      const cors = buildCorsHeaders(requestOrigin, fallbackOrigin, allowedOrigins);
       cors.set('content-length', '0');
       return new Response(null, { status: 204, headers: cors });
     }
@@ -72,12 +97,43 @@ export default {
     };
 
     const response = await fetch(upstream.toString(), init);
-    const cors = buildCorsHeaders(`${url.protocol}//${url.host}`);
+    const cors = buildCorsHeaders(requestOrigin, fallbackOrigin, allowedOrigins);
 
     const outgoing = new Headers(response.headers);
     outgoing.set('x-served-by', env.APP_NAME);
     outgoing.set('cache-control', cachePolicy(url.pathname));
-    cors.forEach((value, key) => outgoing.set(key, value));
+    cors.forEach((value, key) => {
+      if (key.toLowerCase() === 'vary') {
+        const existing = outgoing.get('vary');
+        const existingValues = existing
+          ? existing
+              .split(',')
+              .map((entry) => entry.trim())
+              .filter(Boolean)
+          : [];
+        const existingSet = new Set(existingValues.map((entry) => entry.toLowerCase()));
+
+        value
+          .split(',')
+          .map((entry) => entry.trim())
+          .filter(Boolean)
+          .forEach((entry) => {
+            const lower = entry.toLowerCase();
+            if (!existingSet.has(lower)) {
+              existingValues.push(entry);
+              existingSet.add(lower);
+            }
+          });
+
+        if (existingValues.length > 0) {
+          outgoing.set('vary', existingValues.join(', '));
+        }
+
+        return;
+      }
+
+      outgoing.set(key, value);
+    });
 
     return new Response(response.body, {
       status: response.status,

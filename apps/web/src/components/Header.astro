@@ -1,8 +1,6 @@
 ---
 import "./Header.css";
 
-const headerMenuScript = await import("./header-menu.ts?url");
-
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
@@ -158,4 +156,8 @@ const navLinks = [
   </div>
 </header>
 
-<script type="module" src={headerMenuScript.default}></script>
+<script type="module">
+  import { initHeaderMenu } from "./header-menu.ts";
+
+  initHeaderMenu();
+</script>

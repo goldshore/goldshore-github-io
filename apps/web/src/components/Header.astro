@@ -8,6 +8,8 @@ const navLinks = [
   { href: "/services", label: "Services" },
   { href: "/contact", label: "Contact" },
 ];
+
+const headerMenuModuleUrl = Astro.resolve("./header-menu.ts");
 ---
 
 <style>
@@ -157,7 +159,7 @@ const navLinks = [
 </header>
 
 <script type="module">
-  import { initHeaderMenu } from "./header-menu.ts";
+  const { initHeaderMenu } = await import("{headerMenuModuleUrl}");
 
   initHeaderMenu();
 </script>

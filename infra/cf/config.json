@@ -63,6 +63,14 @@
       "preview_branches": [
         "admin-preview"
       ],
+      "source": {
+        "type": "github",
+        "config": {
+          "owner": "goldshore",
+          "repo_name": "goldshore",
+          "production_branch": "main"
+        }
+      },
       "deployment_configs": {
         "production": {
           "compatibility_date": "2024-02-19",

@@ -32,13 +32,20 @@ max_wait_ms = 2000
 dead_letter_queue = "goldshore-dlq"
 
 [vars]
+GOLDSHORE_ENV = "production"
+GOLDSHORE_ORIGIN = "https://goldshore.org"
+GOLDSHORE_CORS = "https://goldshore.org,https://www.goldshore.org,https://admin.goldshore.org,https://preview.goldshore.org,http://localhost:5173,http://127.0.0.1:5173"
+JWT_AUDIENCE = "goldshore-api"
+JWT_ISSUER = "https://auth.goldshore.org"
+RATE_LIMIT_MAX = "120"
+RATE_LIMIT_WINDOW = "60"
+
+[env.development.vars]
 GOLDSHORE_ENV = "development"
 GOLDSHORE_ORIGIN = "http://localhost:8787"
 GOLDSHORE_CORS = "http://localhost:8787,http://localhost:3000"
 JWT_AUDIENCE = "goldshore-api-dev"
 JWT_ISSUER = "https://auth-dev.goldshore.org"
-RATE_LIMIT_MAX = "120"
-RATE_LIMIT_WINDOW = "60"
 
 [observability]
 enabled = true

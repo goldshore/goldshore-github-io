@@ -128,72 +128,216 @@ upsert_record() {
     curl -sS -X POST "${API}/zones/${zone_id}/dns_records" "${AUTH_HEADER[@]}" --data "$payload" >/dev/null
     echo "Created ${type} record for ${name}" >&2
   fi
+}
 
-main() {
-  local zone_id=$1
+resolve_zone_id() {
+  local zone_name="$1"
 
-  local ipv4_target=${IPv4_TARGET:-192.0.2.1}
-  local ipv6_target=${IPv6_TARGET:-}
-  local apex_cname_target=${APEX_CNAME_TARGET:-}
-  local preview_cname_target=${PREVIEW_CNAME_TARGET:-"goldshore-org-preview.pages.dev"}
-  local dev_cname_target=${DEV_CNAME_TARGET:-"goldshore-org-dev.pages.dev"}
-  local www_cname_target=${WWW_CNAME_TARGET:-$ZONE_NAME}
-  local default_proxied=${DEFAULT_PROXIED:-true}
-
-  local -a records=()
-
-  if [[ -n "$apex_cname_target" ]]; then
-    records+=("$ZONE_NAME|CNAME|$apex_cname_target|$default_proxied")
-  else
-    records+=("$ZONE_NAME|A|$ipv4_target|$default_proxied")
-
-    if [[ -n "$ipv6_target" ]]; then
-      records+=("$ZONE_NAME|AAAA|$ipv6_target|$default_proxied")
-    fi
+  if [[ -n "${CF_ZONE_ID:-}" ]]; then
+    echo "$CF_ZONE_ID"
+    return 0
   fi
 
-  if [[ -n "$www_cname_target" ]]; then
-    records+=("www.$ZONE_NAME|CNAME|$www_cname_target|$default_proxied")
+  local response
+  response=$(curl -sS -X GET "${API}/zones?name=${zone_name}&account.id=${CF_ACCOUNT_ID}" "${AUTH_HEADER[@]}")
+
+  if [[ $(echo "$response" | jq -r '.success') != "true" ]]; then
+    echo "Failed to resolve zone id for ${zone_name}" >&2
+    echo "$response" >&2
+    return 1
   fi
 
-  if [[ -n "$preview_cname_target" ]]; then
-    records+=("preview.$ZONE_NAME|CNAME|$preview_cname_target|$default_proxied")
+  local zone_id
+  zone_id=$(echo "$response" | jq -r '.result[0].id // empty')
+
+  if [[ -z "$zone_id" ]]; then
+    echo "Zone ${zone_name} not found in account ${CF_ACCOUNT_ID}" >&2
+    return 1
   fi
 
-  if [[ -n "$dev_cname_target" ]]; then
-    records+=("dev.$ZONE_NAME|CNAME|$dev_cname_target|$default_proxied")
+  echo "$zone_id"
+}
+
+normalise_boolean() {
+  local value="$1"
+  case "${value,,}" in
+    true|false)
+      echo "${value,,}"
+      ;;
+    1|yes)
+      echo "true"
+      ;;
+    0|no)
+      echo "false"
+      ;;
+    *)
+      echo "invalid"
+      ;;
+  esac
+}
+
+sync_zone() {
+  local zone_json="$1"
+  local zone_name
+  zone_name=$(echo "$zone_json" | jq -r '.zone')
+
+  local zone_id
+  zone_id=$(resolve_zone_id "$zone_name") || return 1
+
+  echo "Synchronising records for ${zone_name} (${zone_id})" >&2
+
+  local default_proxied
+  default_proxied=$(normalise_boolean "${DEFAULT_PROXIED:-true}")
+  if [[ "$default_proxied" == "invalid" ]]; then
+    echo "DEFAULT_PROXIED must be true/false/1/0/yes/no" >&2
+    return 1
   fi
 
   declare -A host_record_types=()
-  local record
-  for record in "${records[@]}"; do
-    IFS='|' read -r name type content proxied <<<"$record"
 
-    if [[ -z "$name" || -z "$type" || -z "$content" ]]; then
-      echo "Skipping malformed record definition: $record" >&2
+  while IFS= read -r record; do
+    local name type content proxied
+    name=$(echo "$record" | jq -r '.name')
+    type=$(echo "$record" | jq -r '.type')
+    content=$(echo "$record" | jq -r '.content')
+    proxied=$(echo "$record" | jq -r '.proxied // empty')
+
+    local skip_record=false
+
+    if [[ "$name" == "$zone_name" ]]; then
+      if [[ "$type" == "CNAME" && ${APEX_CNAME_TARGET+x} ]]; then
+        if [[ -n "${APEX_CNAME_TARGET}" ]]; then
+          content="$APEX_CNAME_TARGET"
+        else
+          echo "Skipping CNAME record for ${name} because APEX_CNAME_TARGET is empty" >&2
+          skip_record=true
+        fi
+      elif [[ "$type" == "A" && ${IPv4_TARGET+x} ]]; then
+        if [[ -n "${IPv4_TARGET}" ]]; then
+          content="$IPv4_TARGET"
+        else
+          echo "Skipping A record for ${name} because IPv4_TARGET is empty" >&2
+          skip_record=true
+        fi
+      elif [[ "$type" == "AAAA" && ${IPv6_TARGET+x} ]]; then
+        if [[ -n "${IPv6_TARGET}" ]]; then
+          content="$IPv6_TARGET"
+        else
+          echo "Skipping AAAA record for ${name} because IPv6_TARGET is empty" >&2
+          skip_record=true
+        fi
+      fi
+    elif [[ "$name" == "www.$zone_name" && ${WWW_CNAME_TARGET+x} ]]; then
+      if [[ -n "${WWW_CNAME_TARGET}" ]]; then
+        content="$WWW_CNAME_TARGET"
+      else
+        echo "Skipping CNAME record for ${name} because WWW_CNAME_TARGET is empty" >&2
+        skip_record=true
+      fi
+    elif [[ "$name" == "preview.$zone_name" && ${PREVIEW_CNAME_TARGET+x} ]]; then
+      if [[ -n "${PREVIEW_CNAME_TARGET}" ]]; then
+        content="$PREVIEW_CNAME_TARGET"
+      else
+        echo "Skipping CNAME record for ${name} because PREVIEW_CNAME_TARGET is empty" >&2
+        skip_record=true
+      fi
+    elif [[ "$name" == "dev.$zone_name" && ${DEV_CNAME_TARGET+x} ]]; then
+      if [[ -n "${DEV_CNAME_TARGET}" ]]; then
+        content="$DEV_CNAME_TARGET"
+      else
+        echo "Skipping CNAME record for ${name} because DEV_CNAME_TARGET is empty" >&2
+        skip_record=true
+      fi
+    elif [[ "$name" == "api.$zone_name" ]]; then
+      if [[ "$type" == "A" && ${IPv4_TARGET+x} ]]; then
+        if [[ -n "${IPv4_TARGET}" ]]; then
+          content="$IPv4_TARGET"
+        else
+          echo "Skipping A record for ${name} because IPv4_TARGET is empty" >&2
+          skip_record=true
+        fi
+      elif [[ "$type" == "AAAA" && ${IPv6_TARGET+x} ]]; then
+        if [[ -n "${IPv6_TARGET}" ]]; then
+          content="$IPv6_TARGET"
+        else
+          echo "Skipping AAAA record for ${name} because IPv6_TARGET is empty" >&2
+          skip_record=true
+        fi
+      fi
+    fi
+
+    if [[ "$skip_record" == true ]]; then
       continue
+    fi
+
+    if [[ -z "$content" ]]; then
+      echo "Skipping ${type} record for ${name} due to empty content" >&2
+      continue
+    fi
+
+    if [[ -z "$proxied" ]]; then
+      proxied="$default_proxied"
+    else
+      proxied=$(normalise_boolean "$proxied")
+      if [[ "$proxied" == "invalid" ]]; then
+        echo "Invalid proxied value for ${name}" >&2
+        return 1
+      fi
     fi
 
     case "$type" in
       CNAME)
         if [[ "${host_record_types[$name]:-}" == "address" ]]; then
-          echo "Configuration error: $name cannot have both address and CNAME records" >&2
-          exit 1
+          echo "Configuration error: ${name} cannot have both address and CNAME records" >&2
+          return 1
         fi
         host_record_types[$name]="cname"
         ;;
       A|AAAA)
         if [[ "${host_record_types[$name]:-}" == "cname" ]]; then
-          echo "Configuration error: $name cannot have both address and CNAME records" >&2
-          exit 1
+          echo "Configuration error: ${name} cannot have both address and CNAME records" >&2
+          return 1
         fi
         host_record_types[$name]="address"
         ;;
     esac
 
-    upsert_record "$zone_id" "$name" "$type" "$content" "${proxied:-$default_proxied}"
+    upsert_record "$zone_id" "$name" "$type" "$content" "$proxied"
+  done < <(echo "$zone_json" | jq -c '.records[]')
+
+  echo "Zone ${zone_name} synchronised." >&2
+}
+
+main() {
+  local filter_zone="${ZONE:-${ZONE_NAME:-}}"
+  local -a zone_entries=()
+
+  if [[ -n "$filter_zone" ]]; then
+    mapfile -t zone_entries < <(echo "$CONFIG" | jq -c --arg zone "$filter_zone" '.[] | select(.zone == $zone)')
+    if (( ${#zone_entries[@]} == 0 )); then
+      echo "Zone ${filter_zone} not found in configuration" >&2
+      exit 1
+    fi
+  else
+    mapfile -t zone_entries < <(echo "$CONFIG" | jq -c '.[]')
+  fi
+
+  if (( ${#zone_entries[@]} == 0 )); then
+    echo "No zones matched the provided configuration." >&2
+    exit 0
+  fi
+
+  if [[ -n "${CF_ZONE_ID:-}" && ${#zone_entries[@]} -gt 1 ]]; then
+    echo "CF_ZONE_ID is set but multiple zones are selected; please unset CF_ZONE_ID or filter to a single zone." >&2
+    exit 1
+  fi
+
+  local zone_json
+  for zone_json in "${zone_entries[@]}"; do
+    sync_zone "$zone_json"
   done
 
-done
+  echo "DNS synchronisation complete."
+}
 
-echo "DNS synchronisation complete."
+main "$@"

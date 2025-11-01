@@ -248,7 +248,12 @@ async function checkCloudflare() {
     }
     if (check.type === "worker_health") {
       try {
-        const { response, url } = await fetchWorkerRoute(check.script, check.path);
+        const { response, url } = await fetchWorkerRoute(
+          check.script,
+          check.path,
+          undefined,
+          check.domain_override
+        );
         const bodyText = await response.text();
         if (!response.ok) {
           await openWorkerHealthIncident(

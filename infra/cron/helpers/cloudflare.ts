@@ -67,7 +67,11 @@ function pickPrimaryRoute(routes: WorkerRoute[]): WorkerRoute {
   return scored[0]!.route;
 }
 
-function buildRouteURL(pattern: string, routePath: string): string {
+function buildRouteURL(
+  pattern: string,
+  routePath: string,
+  domainOverride?: string
+): { url: string; host: string } {
   const ensureScheme = (input: string) => (input.includes("://") ? input : `https://${input}`);
   const sanitizeHostname = (hostname: string) => {
     const replaced = hostname.replace(/\*+/g, "wildcard");
@@ -97,15 +101,31 @@ function buildRouteURL(pattern: string, routePath: string): string {
     path = `${path}/`;
   }
 
-  const base = new URL(`${withScheme.slice(0, schemeEnd)}${safeHost}${path}`);
+  const baseHost = (() => {
+    if (!domainOverride) {
+      return {
+        origin: `${withScheme.slice(0, schemeEnd)}${safeHost}`,
+        host: safeHost
+      };
+    }
+    const overrideWithScheme = ensureScheme(domainOverride);
+    const overrideURL = new URL(overrideWithScheme);
+    return {
+      origin: `${overrideURL.protocol}//${overrideURL.host}`,
+      host: overrideURL.host
+    };
+  })();
+
+  const base = new URL(`${baseHost.origin}${path}`);
   const sanitizedPath = routePath.startsWith("/") ? routePath.slice(1) : routePath;
-  return new URL(sanitizedPath, base).toString();
+  return { url: new URL(sanitizedPath, base).toString(), host: baseHost.host };
 }
 
 export async function fetchWorkerRoute(
   script: string,
   routePath: string,
-  init?: RequestInitWithHeaders
+  init?: RequestInitWithHeaders,
+  domainOverride?: string
 ): Promise<{ url: string; response: Response }> {
   const acc = getAccount();
   const routes = await cfFetch<WorkerRoute[]>(`/accounts/${acc}/workers/scripts/${script}/routes`);
@@ -113,12 +133,17 @@ export async function fetchWorkerRoute(
     throw new Error(`No routes configured for Worker ${script}`);
   }
   const route = pickPrimaryRoute(routes);
-  const url = buildRouteURL(route.pattern, routePath);
+  const { url, host } = buildRouteURL(route.pattern, routePath, domainOverride);
   const { headers: initHeaders, ...rest } = init ?? {};
   const headers: Record<string, string> = {
-    "user-agent": "goldshore-agent/worker-health-check",
-    ...(initHeaders ?? {})
+    "user-agent": "goldshore-agent/worker-health-check"
   };
+  if (initHeaders) {
+    Object.assign(headers, initHeaders);
+  }
+  if (domainOverride) {
+    headers.host = host;
+  }
   const response = await fetch(url, { ...rest, headers });
   return { url, response };
 }

@@ -1,4 +1,4 @@
-name = "goldshore"
+name = "goldshore-api"
 main = "apps/api-worker/dist/src/index.js"
 compatibility_date = "2024-11-20"
 workers_dev = false

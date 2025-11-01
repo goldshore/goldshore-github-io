@@ -28,7 +28,11 @@ interface RouteContext {
   tools: RouteTools;
 }
 
-type RouteHandler = (ctx: RouteContext) => Promise<Response | JsonValue | Record<string, any>> | Response | JsonValue | Record<string, any>;
+type RouteHandler = (
+  context: RouteContext
+) => Promise<Response | JsonValue | Record<string, any>> | Response | JsonValue | Record<string, any>;
+
+type Router = Record<string, Partial<Record<string, RouteHandler>>>;
 
 const cors = (req: Request, origins: string) => {
   const o = new URL(req.url).origin;
@@ -55,168 +59,7 @@ const jsonResponse = (
   return new Response(JSON.stringify(body), { status, headers: merged });
 };
 
-type RouteContext = {
-  corsHeaders: HeadersInit;
-  jsonHeaders: HeadersInit;
-  headers: HeadersInit;
-};
-
-type RouteParams = Record<string, string>;
-
-type RouteHandlerResult = Response | JsonValue | Record<string, any>;
-
-type RouteHandler = (
-  req: Request,
-  env: Env,
-  ctx: RouteContext,
-  params: RouteParams
-) => Promise<RouteHandlerResult> | RouteHandlerResult;
-
-type Router = Record<string, Partial<Record<string, RouteHandler>>>;
-
-const buildRouter = (ctx: RouteContext): Router => ({
-  "/v1/health": {
-    GET: (_req: Request, _env: Env, ctx: RouteContext) => jsonResponse({ ok: true, ts: Date.now() }, 200, ctx.jsonHeaders),
-  },
-  "/v1/whoami": {
-    GET: (req: Request, _env: Env, ctx: RouteContext) => {
-      const email = req.headers.get("cf-access-authenticated-user-email");
-      const ok = !!email;
-      return jsonResponse(ok ? { ok, email } : { ok: false, error: "UNAUTHENTICATED" }, ok ? 200 : 401, ctx.jsonHeaders);
-    },
-  },
-  "/v1/lead": {
-    POST: async (req: Request, env: Env, ctx: RouteContext) => {
-      const headers = { ...ctx.jsonHeaders };
-      const ct = req.headers.get("content-type") || "";
-      const body = ct.includes("application/json")
-        ? await req.json()
-        : Object.fromEntries((await req.formData()).entries());
-      const email = (body.email || "").toString().trim();
-      const emailRegex =
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-      if (!email) return jsonResponse({ ok: false, error: "EMAIL_REQUIRED" }, 400, headers);
-      if (!emailRegex.test(email)) return jsonResponse({ ok: false, error: "INVALID_EMAIL" }, 400, headers);
-      await env.DB.prepare(
-        "CREATE TABLE IF NOT EXISTS leads (email TEXT PRIMARY KEY, ts TEXT DEFAULT CURRENT_TIMESTAMP)"
-      ).run();
-      await env.DB.prepare("INSERT OR IGNORE INTO leads (email) VALUES (?)").bind(email).run();
-      return jsonResponse({ ok: true }, 200, headers);
-    },
-  },
-  "/v1/orders": {
-    GET: async (req: Request, env: Env, ctx: RouteContext) => {
-      await env.DB.prepare(
-        "CREATE TABLE IF NOT EXISTS orders (id TEXT PRIMARY KEY, symbol TEXT, qty REAL, side TEXT, ts TEXT DEFAULT CURRENT_TIMESTAMP)"
-      ).run();
-      const { results } = await env.DB.prepare("SELECT * FROM orders ORDER BY ts DESC LIMIT 50").all();
-      return jsonResponse({ ok: true, data: results }, 200, ctx.jsonHeaders);
-    },
-  },
-  "/v1/customers": {
-    POST: async (req: Request, env: Env, ctx: RouteContext) => {
-      const { name, email } = await req.json();
-      const customer = await createCustomer(env.DB, name, email);
-      return jsonResponse({ ok: true, data: customer }, 201, ctx.jsonHeaders);
-    },
-    GET: async (_req: Request, env: Env, ctx: RouteContext) => {
-      const customers = await listCustomers(env.DB);
-      return jsonResponse({ ok: true, data: customers }, 200, ctx.jsonHeaders);
-    },
-  },
-  "/v1/customers/:id": {
-    GET: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
-      const customer = await getCustomer(env.DB, params.id);
-      return jsonResponse({ ok: true, data: customer }, 200, ctx.jsonHeaders);
-    },
-    PUT: async (req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
-      const { name, email } = await req.json();
-      await updateCustomer(env.DB, params.id, name, email);
-      return jsonResponse({ ok: true }, 200, ctx.jsonHeaders);
-    },
-    DELETE: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
-      await deleteCustomer(env.DB, params.id);
-      return jsonResponse({ ok: true }, 200, ctx.jsonHeaders);
-    },
-  },
-  "/v1/subscriptions": {
-    POST: async (req: Request, env: Env, ctx: RouteContext) => {
-      const { name, price, billing_cycle } = await req.json();
-      const subscription = await createSubscription(env.DB, name, price, billing_cycle);
-      return jsonResponse({ ok: true, data: subscription }, 201, ctx.jsonHeaders);
-    },
-    GET: async (_req: Request, env: Env, ctx: RouteContext) => {
-      const subscriptions = await listSubscriptions(env.DB);
-      return jsonResponse({ ok: true, data: subscriptions }, 200, ctx.jsonHeaders);
-    },
-  },
-  "/v1/subscriptions/:id": {
-    GET: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
-      const subscription = await getSubscription(env.DB, params.id);
-      return jsonResponse({ ok: true, data: subscription }, 200, ctx.jsonHeaders);
-    },
-    PUT: async (req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
-      const { name, price, billing_cycle } = await req.json();
-      await updateSubscription(env.DB, params.id, name, price, billing_cycle);
-      return jsonResponse({ ok: true }, 200, ctx.jsonHeaders);
-    },
-    DELETE: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
-      await deleteSubscription(env.DB, params.id);
-      return jsonResponse({ ok: true }, 200, ctx.jsonHeaders);
-    },
-  },
-  "/v1/risk/config": {
-    POST: async (req: Request, env: Env, ctx: RouteContext) => {
-      const { name, is_published, limits } = await req.json();
-      const config = await setRiskConfig(env.DB, name, is_published, limits);
-      return jsonResponse({ ok: true, data: config }, 201, ctx.jsonHeaders);
-    },
-    GET: async (_req: Request, env: Env, ctx: RouteContext) => {
-      const config = await getRiskConfig(env.DB);
-      return jsonResponse({ ok: true, data: config }, 200, ctx.jsonHeaders);
-    },
-  },
-  "/v1/risk/check": {
-    POST: async (req: Request, env: Env, ctx: RouteContext) => {
-      const order = await req.json();
-      const result = await checkRisk(env.DB, order);
-      return jsonResponse(result, 200, ctx.jsonHeaders);
-    },
-  },
-  "/v1/risk/killswitch": {
-    POST: async (_req: Request, env: Env, ctx: RouteContext) => {
-      const result = await killSwitch(env.DB);
-      return jsonResponse(result, 200, ctx.jsonHeaders);
-    },
-  },
-  "/v1/customer_subscriptions": {
-    POST: async (req: Request, env: Env, ctx: RouteContext) => {
-      const { customer_id, subscription_id } = await req.json();
-      const customerSubscription = await createCustomerSubscription(env.DB, customer_id, subscription_id);
-      return jsonResponse({ ok: true, data: customerSubscription }, 201, ctx.jsonHeaders);
-    },
-    GET: async (req: Request, env: Env, ctx: RouteContext) => {
-      const url = new URL(req.url);
-      const customer_id = url.searchParams.get("customer_id");
-      const customerSubscriptions = await listCustomerSubscriptions(env.DB, customer_id);
-      return jsonResponse({ ok: true, data: customerSubscriptions }, 200, ctx.jsonHeaders);
-    },
-  },
-  "/v1/customer_subscriptions/:id": {
-    GET: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
-      const customerSubscription = await getCustomerSubscription(env.DB, params.id);
-      return jsonResponse({ ok: true, data: customerSubscription }, 200, ctx.jsonHeaders);
-    },
-    PATCH: async (req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
-      const { status } = await req.json();
-      await updateCustomerSubscription(env.DB, params.id, status);
-      const customerSubscription = await getCustomerSubscription(env.DB, params.id);
-      return jsonResponse({ ok: true, data: customerSubscription }, 200, ctx.jsonHeaders);
-    },
-    DELETE: async (_req: Request, env: Env, ctx: RouteContext, params: { id: string }) => {
-      await deleteCustomerSubscription(env.DB, params.id);
-      return new Response(null, { status: 204, headers: ctx.corsHeaders });
-const router: Record<string, Partial<Record<string, RouteHandler>>> = {
+const router: Router = {
   "/v1/health": {
     GET: async ({ tools }) => tools.respond({ ok: true, ts: Date.now() }),
   },
@@ -313,17 +156,16 @@ const router: Record<string, Partial<Record<string, RouteHandler>>> = {
   },
   "/v1/risk/killswitch": {
     POST: async ({ env, tools }) => {
-      await env.DB.prepare("UPDATE risk_configs SET is_published = 0, updated_at = CURRENT_TIMESTAMP").run();
+      await env.DB.prepare("UPDATE risk_configs SET is_published = 0").run();
       return tools.respond({ ok: true, message: "Kill switch engaged" });
     },
   },
-});
+};
 
 export default {
   async fetch(req: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
     const corsHeaders = cors(req, env.CORS_ORIGINS);
     const jsonHeaders = { ...JSON_CONTENT_HEADERS, ...corsHeaders };
-    const defaultHeaders = { ...jsonHeaders };
 
     const tools: RouteTools = {
       corsHeaders,
@@ -332,34 +174,19 @@ export default {
     };
 
     if (req.method === "OPTIONS") {
-      return new Response(null, { headers: defaultHeaders });
+      return new Response(null, { headers: corsHeaders });
     }
-
-    const routeContext: RouteContext = { corsHeaders, jsonHeaders, headers };
-    const router = buildRouter(routeContext);
 
     const url = new URL(req.url);
     const path = url.pathname;
     const method = req.method.toUpperCase();
 
     for (const route in router) {
-      const pattern = new RegExp(`^${route.replace(/:\w+/g, "(?<param>[^/]+)")}$`);
+      const pattern = new RegExp(`^${route.replace(/:\w+/g, "([^/]+)")}$`);
       const match = path.match(pattern);
-
-      if (match) {
-        const params = {};
-        const paramNames = (route.match(/:\w+/g) || []).map(name => name.substring(1));
-        paramNames.forEach((name, index) => {
-          params[name] = match[index + 1];
-        });
-
-        if (router[route][method]) {
-          const result = await router[route][method](req, env, routeContext, params);
-          if (result instanceof Response) {
-            return result;
-          }
-          return jsonResponse(result ?? { ok: true }, 200, routeContext.jsonHeaders);
-      if (!match) continue;
+      if (!match) {
+        continue;
+      }
 
       const params: RouteParams = {};
       const paramNames = route.match(/:(\w+)/g) || [];
@@ -380,7 +207,8 @@ export default {
       if (result instanceof Response) {
         return result;
       }
-      return tools.respond(result as JsonValue | Record<string, any>);
+
+      return tools.respond((result ?? { ok: true }) as JsonValue | Record<string, any>);
     }
 
     return tools.respond({ ok: false, error: "NOT_FOUND" }, 404);
@@ -396,7 +224,7 @@ export default {
 async function listCustomers({ env, tools }: RouteContext) {
   await ensureTable(env, "customers");
   const { results } = await env.DB.prepare(
-    "SELECT * FROM customers ORDER BY created_at DESC"
+    "SELECT * FROM customers ORDER BY id DESC"
   ).all();
   return tools.respond({ ok: true, data: results });
 }
@@ -409,11 +237,10 @@ async function createCustomer({ req, env, tools }: RouteContext) {
   if (!name || !email) {
     return tools.respond({ ok: false, error: "NAME_AND_EMAIL_REQUIRED" }, 400);
   }
-  const id = body?.id ? body.id.toString() : crypto.randomUUID();
-  await env.DB.prepare(
-    "INSERT INTO customers (id, name, email) VALUES (?, ?, ?)"
-  ).bind(id, name, email).run();
-  const record = await env.DB.prepare("SELECT * FROM customers WHERE id = ?").bind(id).first();
+  const { results } = await env.DB.prepare(
+    "INSERT INTO customers (name, email) VALUES (?, ?) RETURNING *"
+  ).bind(name, email).all();
+  const record = results?.[0] ?? null;
   return tools.respond({ ok: true, data: record }, 201);
 }
 
@@ -445,7 +272,6 @@ async function updateCustomer({ req, env, params, tools }: RouteContext) {
   if (!fields.length) {
     return tools.respond({ ok: false, error: "NO_FIELDS" }, 400);
   }
-  fields.push("updated_at = CURRENT_TIMESTAMP");
   values.push(params.id);
   await env.DB.prepare(`UPDATE customers SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
   const record = await env.DB.prepare("SELECT * FROM customers WHERE id = ?").bind(params.id).first();
@@ -468,7 +294,7 @@ async function deleteCustomer({ env, params, tools }: RouteContext) {
 async function listSubscriptions({ env, tools }: RouteContext) {
   await ensureTable(env, "subscriptions");
   const { results } = await env.DB.prepare(
-    "SELECT * FROM subscriptions ORDER BY created_at DESC"
+    "SELECT * FROM subscriptions ORDER BY id DESC"
   ).all();
   return tools.respond({ ok: true, data: results });
 }
@@ -483,12 +309,10 @@ async function createSubscription({ req, env, tools }: RouteContext) {
   }
   const price = Number(priceRaw);
   const billingCycle = body?.billing_cycle?.toString().trim() || null;
-  const features = body?.features !== undefined ? JSON.stringify(body.features) : null;
-  const id = body?.id ? body.id.toString() : crypto.randomUUID();
-  await env.DB.prepare(
-    "INSERT INTO subscriptions (id, name, price, billing_cycle, features) VALUES (?, ?, ?, ?, ?)"
-  ).bind(id, name, price, billingCycle, features).run();
-  const record = await env.DB.prepare("SELECT * FROM subscriptions WHERE id = ?").bind(id).first();
+  const { results } = await env.DB.prepare(
+    "INSERT INTO subscriptions (name, price, billing_cycle) VALUES (?, ?, ?) RETURNING *"
+  ).bind(name, price, billingCycle).all();
+  const record = results?.[0] ?? null;
   return tools.respond({ ok: true, data: record }, 201);
 }
 
@@ -524,14 +348,9 @@ async function updateSubscription({ req, env, params, tools }: RouteContext) {
     fields.push("billing_cycle = ?");
     values.push(body.billing_cycle?.toString().trim() || null);
   }
-  if (body.features !== undefined) {
-    fields.push("features = ?");
-    values.push(body.features === null ? null : JSON.stringify(body.features));
-  }
   if (!fields.length) {
     return tools.respond({ ok: false, error: "NO_FIELDS" }, 400);
   }
-  fields.push("updated_at = CURRENT_TIMESTAMP");
   values.push(params.id);
   await env.DB.prepare(`UPDATE subscriptions SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
   const record = await env.DB.prepare("SELECT * FROM subscriptions WHERE id = ?").bind(params.id).first();
@@ -560,13 +379,15 @@ async function listCustomerSubscriptions({ req, env, tools }: RouteContext) {
   const values: any[] = [];
   if (customerId) {
     where.push("customer_id = ?");
-    values.push(customerId);
+    const parsed = Number(customerId);
+    values.push(Number.isNaN(parsed) ? customerId : parsed);
   }
   if (subscriptionId) {
     where.push("subscription_id = ?");
-    values.push(subscriptionId);
+    const parsed = Number(subscriptionId);
+    values.push(Number.isNaN(parsed) ? subscriptionId : parsed);
   }
-  const sql = `SELECT * FROM customer_subscriptions${where.length ? ` WHERE ${where.join(" AND ")}` : ""} ORDER BY created_at DESC`;
+  const sql = `SELECT * FROM customer_subscriptions${where.length ? ` WHERE ${where.join(" AND ")}` : ""} ORDER BY id DESC`;
   const { results } = await env.DB.prepare(sql).bind(...values).all();
   return tools.respond({ ok: true, data: results });
 }
@@ -580,18 +401,20 @@ async function createCustomerSubscription({ req, env, tools }: RouteContext) {
     return tools.respond({ ok: false, error: "CUSTOMER_AND_SUBSCRIPTION_REQUIRED" }, 400);
   }
   const status = body?.status?.toString().trim() || "active";
-  const startedAt = body?.started_at?.toString().trim() || null;
-  const endedAt = body?.ended_at?.toString().trim() || null;
-  const id = body?.id ? body.id.toString() : crypto.randomUUID();
-  const customerExists = await env.DB.prepare("SELECT 1 FROM customers WHERE id = ?").bind(customerId).first();
-  const subscriptionExists = await env.DB.prepare("SELECT 1 FROM subscriptions WHERE id = ?").bind(subscriptionId).first();
+  const customerRef = Number(customerId);
+  const subscriptionRef = Number(subscriptionId);
+  if (Number.isNaN(customerRef) || Number.isNaN(subscriptionRef)) {
+    return tools.respond({ ok: false, error: "INVALID_RELATION" }, 400);
+  }
+  const customerExists = await env.DB.prepare("SELECT 1 FROM customers WHERE id = ?").bind(customerRef).first();
+  const subscriptionExists = await env.DB.prepare("SELECT 1 FROM subscriptions WHERE id = ?").bind(subscriptionRef).first();
   if (!customerExists || !subscriptionExists) {
     return tools.respond({ ok: false, error: "INVALID_RELATION" }, 400);
   }
-  await env.DB.prepare(
-    "INSERT INTO customer_subscriptions (id, customer_id, subscription_id, status, started_at, ended_at) VALUES (?, ?, ?, ?, ?, ?)"
-  ).bind(id, customerId, subscriptionId, status, startedAt, endedAt).run();
-  const record = await env.DB.prepare("SELECT * FROM customer_subscriptions WHERE id = ?").bind(id).first();
+  const { results } = await env.DB.prepare(
+    "INSERT INTO customer_subscriptions (customer_id, subscription_id, status) VALUES (?, ?, ?) RETURNING *"
+  ).bind(customerRef, subscriptionRef, status).all();
+  const record = results?.[0] ?? null;
   return tools.respond({ ok: true, data: record }, 201);
 }
 
@@ -614,28 +437,27 @@ async function updateCustomerSubscription({ req, env, params, tools }: RouteCont
   const values: any[] = [];
   if (body.customer_id !== undefined) {
     fields.push("customer_id = ?");
-    values.push(body.customer_id?.toString().trim() || null);
+    const parsed = Number(body.customer_id);
+    if (Number.isNaN(parsed)) {
+      return tools.respond({ ok: false, error: "INVALID_RELATION" }, 400);
+    }
+    values.push(parsed);
   }
   if (body.subscription_id !== undefined) {
     fields.push("subscription_id = ?");
-    values.push(body.subscription_id?.toString().trim() || null);
+    const parsed = Number(body.subscription_id);
+    if (Number.isNaN(parsed)) {
+      return tools.respond({ ok: false, error: "INVALID_RELATION" }, 400);
+    }
+    values.push(parsed);
   }
   if (body.status !== undefined) {
     fields.push("status = ?");
     values.push(body.status?.toString().trim() || null);
   }
-  if (body.started_at !== undefined) {
-    fields.push("started_at = ?");
-    values.push(body.started_at?.toString().trim() || null);
-  }
-  if (body.ended_at !== undefined) {
-    fields.push("ended_at = ?");
-    values.push(body.ended_at?.toString().trim() || null);
-  }
   if (!fields.length) {
     return tools.respond({ ok: false, error: "NO_FIELDS" }, 400);
   }
-  fields.push("updated_at = CURRENT_TIMESTAMP");
   values.push(params.id);
   await env.DB.prepare(`UPDATE customer_subscriptions SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
   const record = await env.DB.prepare("SELECT * FROM customer_subscriptions WHERE id = ?").bind(params.id).first();
@@ -658,9 +480,10 @@ async function deleteCustomerSubscription({ env, params, tools }: RouteContext) 
 async function listRiskConfigs({ env, tools }: RouteContext) {
   await ensureTable(env, "risk_configs");
   const { results } = await env.DB.prepare(
-    "SELECT * FROM risk_configs ORDER BY created_at DESC"
+    "SELECT * FROM risk_configs ORDER BY id DESC LIMIT 1"
   ).all();
-  return tools.respond({ ok: true, data: results.map(mapRiskRow) });
+  const record = results?.[0] ?? null;
+  return tools.respond({ ok: true, data: mapRiskRow(record) });
 }
 
 async function createRiskConfig({ req, env, tools }: RouteContext) {
@@ -669,13 +492,10 @@ async function createRiskConfig({ req, env, tools }: RouteContext) {
   const name = body?.name?.toString().trim() || null;
   const limits = body?.limits ?? {};
   const isPublished = toBoolean(body?.is_published);
-  const id = body?.id ? body.id.toString() : crypto.randomUUID();
-  await env.DB.prepare(
-    "INSERT INTO risk_configs (id, name, limits, is_published, published_at) VALUES (?, ?, ?, ?, ?)"
-  ).bind(id, name, JSON.stringify(limits ?? {}), isPublished ? 1 : 0, isPublished ? new Date().toISOString() : null).run();
-  const record = await env.DB.prepare(
-    "SELECT * FROM risk_configs WHERE id = ?"
-  ).bind(id).first();
+  const { results } = await env.DB.prepare(
+    "INSERT INTO risk_configs (name, limits, is_published) VALUES (?, ?, ?) RETURNING *"
+  ).bind(name, JSON.stringify(limits ?? {}), isPublished ? 1 : 0).all();
+  const record = results?.[0] ?? null;
   return tools.respond({ ok: true, data: mapRiskRow(record) }, 201);
 }
 
@@ -708,13 +528,10 @@ async function updateRiskConfig({ req, env, params, tools }: RouteContext) {
     const flag = toBoolean(body.is_published);
     fields.push("is_published = ?");
     values.push(flag ? 1 : 0);
-    fields.push("published_at = ?");
-    values.push(flag ? new Date().toISOString() : null);
   }
   if (!fields.length) {
     return tools.respond({ ok: false, error: "NO_FIELDS" }, 400);
   }
-  fields.push("updated_at = CURRENT_TIMESTAMP");
   values.push(params.id);
   await env.DB.prepare(`UPDATE risk_configs SET ${fields.join(", ")} WHERE id = ?`).bind(...values).run();
   const record = await env.DB.prepare("SELECT * FROM risk_configs WHERE id = ?").bind(params.id).first();
@@ -737,7 +554,7 @@ async function deleteRiskConfig({ env, params, tools }: RouteContext) {
 async function getActiveRiskLimits(env: Env) {
   await ensureTable(env, "risk_configs");
   const record = await env.DB.prepare(
-    "SELECT * FROM risk_configs WHERE is_published = 1 ORDER BY published_at DESC LIMIT 1"
+    "SELECT * FROM risk_configs WHERE is_published = 1 ORDER BY id DESC LIMIT 1"
   ).first();
   return record ? parseLimits(record.limits) : null;
 }
@@ -779,11 +596,9 @@ async function ensureOrdersTable(env: Env) {
 async function ensureCustomersTable(env: Env) {
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS customers (
-      id TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT,
-      email TEXT UNIQUE,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      email TEXT
     )`
   ).run();
 }
@@ -791,13 +606,10 @@ async function ensureCustomersTable(env: Env) {
 async function ensureSubscriptionsTable(env: Env) {
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS subscriptions (
-      id TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT,
       price REAL,
-      billing_cycle TEXT,
-      features TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      billing_cycle TEXT
     )`
   ).run();
 }
@@ -807,16 +619,12 @@ async function ensureCustomerSubscriptionsTable(env: Env) {
   await ensureSubscriptionsTable(env);
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS customer_subscriptions (
-      id TEXT PRIMARY KEY,
-      customer_id TEXT NOT NULL,
-      subscription_id TEXT NOT NULL,
-      status TEXT DEFAULT 'active',
-      started_at TEXT,
-      ended_at TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
-      FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE CASCADE
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER,
+      subscription_id INTEGER,
+      status TEXT,
+      FOREIGN KEY (customer_id) REFERENCES customers(id),
+      FOREIGN KEY (subscription_id) REFERENCES subscriptions(id)
     )`
   ).run();
 }
@@ -824,13 +632,10 @@ async function ensureCustomerSubscriptionsTable(env: Env) {
 async function ensureRiskConfigsTable(env: Env) {
   await env.DB.prepare(
     `CREATE TABLE IF NOT EXISTS risk_configs (
-      id TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT,
       limits TEXT,
-      is_published INTEGER DEFAULT 0,
-      published_at TEXT,
-      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      is_published INTEGER
     )`
   ).run();
 }
@@ -875,7 +680,7 @@ function mapRiskRow(row: any) {
   if (!row) return row;
   return {
     ...row,
-    is_published: Boolean(row.is_published),
+    is_published: Number(row.is_published ?? 0),
     limits: parseLimits(row.limits),
   };
 }

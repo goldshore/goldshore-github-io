@@ -13,9 +13,9 @@ Before running the plan inside Codex, make sure the following secrets are config
 | Secret | Description |
 | --- | --- |
 | `CF_API_TOKEN` | Cloudflare API token with DNS, Pages, Workers, KV, and Access permissions. |
-| `CF_ACCOUNT_ID` | Cloudflare account identifier (`f77de112d2019e5456a3198a8bb50bd2`). |
-| `CF_ACCESS_CLIENT_ID` | Service token client ID for API health/auth checks (`9ca952086adc30cf53634d78d099ce58.access`). |
-| `CF_ACCESS_CLIENT_SECRET` | Service token secret (`22c9db6564ef64c061806a72517bd990c3b1dc7654d8c94f81a40d8173296a7c`). |
+| `CF_ACCOUNT_ID` | Cloudflare account identifier (e.g., `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`). |
+| `CF_ACCESS_CLIENT_ID` | Service token client ID for API health/auth checks (e.g., `<client-id>.access`). |
+| `CF_ACCESS_CLIENT_SECRET` | Service token secret value. Store this in secret storage and reference it at runtime. |
 
 ## Execution steps
 1. Confirm the secrets above are present (see `docs/codex-access-checklist.md` for validation helpers).

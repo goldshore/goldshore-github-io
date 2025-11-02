@@ -19,7 +19,10 @@ fi
 API="https://api.cloudflare.com/client/v4"
 AUTH_HEADER=("-H" "Authorization: Bearer ${CF_API_TOKEN}" "-H" "Content-Type: application/json")
 
-CONFIG=$(cat <<'JSON'
+API_WORKER_HOSTNAME=${API_WORKER_HOSTNAME:-goldshore-api.rmarston.workers.dev}
+API_CNAME_TARGET=${API_CNAME_TARGET:-$API_WORKER_HOSTNAME}
+
+CONFIG=$(cat <<JSON
 [
   {
     "zone": "goldshore.org",
@@ -30,8 +33,7 @@ CONFIG=$(cat <<'JSON'
       {"type": "CNAME", "name": "dev.goldshore.org", "content": "goldshore-org-dev.pages.dev", "proxied": true},
       {"type": "CNAME", "name": "admin.goldshore.org", "content": "goldshore-admin.pages.dev", "proxied": true},
       {"type": "CNAME", "name": "web.goldshore.org", "content": "goldshore-org.pages.dev", "proxied": true},
-      {"type": "A", "name": "api.goldshore.org", "content": "192.0.2.1", "proxied": true},
-      {"type": "AAAA", "name": "api.goldshore.org", "content": "100::", "proxied": true}
+      {"type": "CNAME", "name": "api.goldshore.org", "content": "$API_CNAME_TARGET", "proxied": true}
     ]
   },
   {
@@ -40,8 +42,7 @@ CONFIG=$(cat <<'JSON'
       {"type": "CNAME", "name": "goldshore.foundation", "content": "goldshore-org.pages.dev", "proxied": true},
       {"type": "CNAME", "name": "www.goldshore.foundation", "content": "goldshore.foundation", "proxied": true},
       {"type": "CNAME", "name": "admin.goldshore.foundation", "content": "goldshore-admin.pages.dev", "proxied": true},
-      {"type": "A", "name": "api.goldshore.foundation", "content": "192.0.2.1", "proxied": true},
-      {"type": "AAAA", "name": "api.goldshore.foundation", "content": "100::", "proxied": true}
+      {"type": "CNAME", "name": "api.goldshore.foundation", "content": "$API_CNAME_TARGET", "proxied": true}
     ]
   },
   {
@@ -50,8 +51,7 @@ CONFIG=$(cat <<'JSON'
       {"type": "CNAME", "name": "goldshorefoundation.org", "content": "goldshore-org.pages.dev", "proxied": true},
       {"type": "CNAME", "name": "www.goldshorefoundation.org", "content": "goldshorefoundation.org", "proxied": true},
       {"type": "CNAME", "name": "admin.goldshorefoundation.org", "content": "goldshore-admin.pages.dev", "proxied": true},
-      {"type": "A", "name": "api.goldshorefoundation.org", "content": "192.0.2.1", "proxied": true},
-      {"type": "AAAA", "name": "api.goldshorefoundation.org", "content": "100::", "proxied": true}
+      {"type": "CNAME", "name": "api.goldshorefoundation.org", "content": "$API_CNAME_TARGET", "proxied": true}
     ]
   },
   {
@@ -60,8 +60,7 @@ CONFIG=$(cat <<'JSON'
       {"type": "CNAME", "name": "fortune-fund.com", "content": "goldshore-org.pages.dev", "proxied": true},
       {"type": "CNAME", "name": "www.fortune-fund.com", "content": "fortune-fund.com", "proxied": true},
       {"type": "CNAME", "name": "admin.fortune-fund.com", "content": "goldshore-admin.pages.dev", "proxied": true},
-      {"type": "A", "name": "api.fortune-fund.com", "content": "192.0.2.1", "proxied": true},
-      {"type": "AAAA", "name": "api.fortune-fund.com", "content": "100::", "proxied": true}
+      {"type": "CNAME", "name": "api.fortune-fund.com", "content": "$API_CNAME_TARGET", "proxied": true}
     ]
   },
   {
@@ -70,8 +69,7 @@ CONFIG=$(cat <<'JSON'
       {"type": "CNAME", "name": "fortune-fund.games", "content": "goldshore-org.pages.dev", "proxied": true},
       {"type": "CNAME", "name": "www.fortune-fund.games", "content": "fortune-fund.games", "proxied": true},
       {"type": "CNAME", "name": "admin.fortune-fund.games", "content": "goldshore-admin.pages.dev", "proxied": true},
-      {"type": "A", "name": "api.fortune-fund.games", "content": "192.0.2.1", "proxied": true},
-      {"type": "AAAA", "name": "api.fortune-fund.games", "content": "100::", "proxied": true}
+      {"type": "CNAME", "name": "api.fortune-fund.games", "content": "$API_CNAME_TARGET", "proxied": true}
     ]
   }
 ]

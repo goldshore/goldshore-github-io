@@ -59,7 +59,11 @@ function resolveAllowedOrigin(requestOrigin, allowedOrigins) {
   }
 
   for (const allowed of allowedOrigins) {
-    if (allowed === "*" || allowed === normalizedOrigin) {
+    if (allowed === "*") {
+      return "*";
+    }
+
+    if (allowed === normalizedOrigin) {
       return normalizedOrigin;
     }
   }
@@ -70,7 +74,9 @@ function resolveAllowedOrigin(requestOrigin, allowedOrigins) {
 function buildCorsHeaders(origin) {
   const headers = new Headers(BASE_CORS_HEADERS);
 
-  if (origin) {
+  if (origin === "*") {
+    headers.set("Access-Control-Allow-Origin", "*");
+  } else if (origin) {
     headers.set("Access-Control-Allow-Origin", origin);
     headers.set("Vary", "Origin");
   } else {

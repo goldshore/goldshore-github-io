@@ -20,7 +20,7 @@ type Target = {
   kind: TargetKind;
   stage: Stage;
   origin: string;
-  stripApiPrefix: boolean;
+  stripPathPrefix: string | null;
 };
 
 const DEFAULT_ORIGINS: Record<TargetKind, Record<Stage, string>> = {
@@ -84,7 +84,7 @@ const resolveTarget = (url: URL, env: Env): Target => {
       kind: 'api',
       stage,
       origin: getEnvOrigin(env, 'api', stage),
-      stripApiPrefix: isApiPath,
+      stripPathPrefix: isApiPath ? '/api' : null,
     };
   }
 
@@ -95,7 +95,7 @@ const resolveTarget = (url: URL, env: Env): Target => {
       kind: 'admin',
       stage,
       origin: getEnvOrigin(env, 'admin', stage),
-      stripApiPrefix: false,
+      stripPathPrefix: isAdminPath ? '/admin' : null,
     };
   }
 
@@ -103,7 +103,7 @@ const resolveTarget = (url: URL, env: Env): Target => {
     kind: 'site',
     stage,
     origin: getEnvOrigin(env, 'site', stage),
-    stripApiPrefix: false,
+    stripPathPrefix: null,
   };
 };
 
@@ -141,8 +141,13 @@ export default {
     }
 
     const upstream = new URL(request.url.replace(url.origin, target.origin));
-    if (target.stripApiPrefix) {
-      upstream.pathname = upstream.pathname.replace(/^\/api/, '') || '/';
+    if (target.stripPathPrefix) {
+      const prefix = target.stripPathPrefix;
+      if (upstream.pathname === prefix) {
+        upstream.pathname = '/';
+      } else if (upstream.pathname.startsWith(`${prefix}/`)) {
+        upstream.pathname = upstream.pathname.slice(prefix.length) || '/';
+      }
     }
 
     const headers = new Headers(request.headers);

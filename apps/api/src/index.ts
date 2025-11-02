@@ -28,9 +28,9 @@ interface RouteContext {
   tools: RouteTools;
 }
 
-type RouteHandler = (
-  context: RouteContext
-) => Promise<Response | JsonValue | Record<string, any>> | Response | JsonValue | Record<string, any>;
+type HandlerResult = Response | JsonValue | Record<string, any>;
+
+type RouteHandler = (context: RouteContext) => Promise<HandlerResult> | HandlerResult;
 
 type Router = Record<string, Partial<Record<string, RouteHandler>>>;
 
@@ -59,7 +59,7 @@ const jsonResponse = (
   return new Response(JSON.stringify(body), { status, headers: merged });
 };
 
-const router: Router = {
+const createRouter = (): Router => ({
   "/v1/health": {
     GET: async ({ tools }) => tools.respond({ ok: true, ts: Date.now() }),
   },
@@ -160,7 +160,9 @@ const router: Router = {
       return tools.respond({ ok: true, message: "Kill switch engaged" });
     },
   },
-};
+});
+
+const router = createRouter();
 
 export default {
   async fetch(req: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {

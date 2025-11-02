@@ -7,6 +7,8 @@ on:
 
 jobs:
   build-test:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +24,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: build-test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

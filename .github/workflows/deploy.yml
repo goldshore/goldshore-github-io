@@ -32,7 +32,7 @@ jobs:
           node-version: 20
 
       - name: Install workspace dependencies
-        run: npm install
+        run: npm install --include-workspace-root --workspaces
 
       - name: Install Wrangler CLI
         run: npm install --global wrangler@3

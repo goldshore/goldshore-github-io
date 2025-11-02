@@ -216,6 +216,14 @@
       "endpoint_template": "/client/v4/zones/${ZONE_ID}/workers/routes/${item.id}"
     },
     {
+      "id": "workers_routes_post_cleanup",
+      "op": "GET",
+      "endpoint": "/client/v4/zones/${ZONE_ID}/workers/routes",
+      "save_as": {
+        "ROUTES": ".result"
+      }
+    },
+    {
       "id": "api_route_upserts",
       "op": "BATCH",
       "calls": [

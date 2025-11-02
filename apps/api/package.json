@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "wrangler deploy --dry-run",
+    "build": "npm run -w @goldshore/api-worker build",
     "test": "vitest run"
   },
   "dependencies": {},

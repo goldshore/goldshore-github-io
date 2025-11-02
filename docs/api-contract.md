@@ -1,6 +1,6 @@
 # Goldshore API Contract
 
-This document summarizes the HTTP endpoints exposed by the Cloudflare Worker found in `apps/api/src/index.ts`. All responses are JSON and include CORS headers derived from the `CORS_ORIGINS` binding.
+This document summarizes the HTTP endpoints exposed by the Cloudflare Worker shipped as the `goldshore-api` service. The active deployment resides in `apps/api-worker/src/index.ts`, while the legacy SQL-backed prototype remains available under `apps/api` for reference. All responses are JSON and include CORS headers derived from the `CORS_ORIGINS` binding.
 
 ## Authentication
 
@@ -81,7 +81,7 @@ Summarizes the latest risk configuration.
 
 ## Manual Verification
 
-Run `./tests/manual-verification.sh` from `apps/api` (or provide a base URL) to exercise the CRUD endpoints end-to-end. Requires a running worker instance, `curl`, and `jq`.
+Run `npm run dev:api` from the repository root (or `npm run -w @goldshore/api-worker dev`) to start a local instance, then execute `./tests/manual-verification.sh` from `apps/api/tests` with the appropriate base URL. Requires a running worker instance, `curl`, and `jq`.
 This document describes the REST endpoints that are now available from the Cloudflare Worker that powers the Goldshore API. All responses are JSON and include CORS headers derived from the configured `CORS_ORIGINS` binding.
 
 ## Authentication

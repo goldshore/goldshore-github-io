@@ -61,6 +61,13 @@
       "remediation": "wrangler queues create goldshore-events && wrangler queues create goldshore-dlq --dlq"
     },
     {
+      "id": "api_worker_only",
+      "type": "file.json.assert",
+      "path": "infra/cf/config.json",
+      "assert": "workers.length == 1 && workers[0].name == 'goldshore-api'",
+      "remediation": "Remove legacy router/admin Workers; only goldshore-api should remain."
+    },
+    {
       "id": "do_migrations_safe",
       "type": "file.json.assert",
       "path": "infra/cf/config.json",
@@ -74,7 +81,7 @@
       "method": "GET",
       "expect": 401,
       "timeout_ms": 5000,
-      "remediation": "Ensure CODEX_JWT_REQUIRED=true and router enforces Bearer JWT."
+      "remediation": "Ensure CODEX_JWT_REQUIRED=true and the goldshore-api Worker enforces Bearer JWT."
     },
     {
       "id": "cors_single_origin",

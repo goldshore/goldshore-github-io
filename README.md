@@ -186,12 +186,12 @@ Shared Worker bindings, queue definitions, and D1 connections now live in [`infr
 Initial D1 schema migrations sit under [`infra/cf/sql`](infra/cf/sql) so every deployment converges on the same trading, CRM, and sentiment tables.
 
 ## Frontend (goldshore.org)
-This repository powers the GoldShore marketing site, Cloudflare Worker router, and maintenance scripts. The project ships as a static Astro site served behind a Cloudflare Worker that protects the production domain while keeping preview deployments inexpensive.
+This repository powers the GoldShore marketing site and maintenance scripts. The Astro site now serves directly from Cloudflare Pages; the legacy routing Worker has been decommissioned.
 
 ## Project layout
 
 - `apps/web` – Astro front-end for the marketing site and supporting pages.
-- `apps/api-router` – Cloudflare Worker that routes traffic to the appropriate Pages origin and stamps cache/Access headers.
+- `apps/api-router` – **Deprecated.** Former Cloudflare Worker router retained only for reference; do not deploy new changes here.
 - `packages/` – Shared tooling (image processing, AI maintenance helpers, etc.).
 - `infra/` – Shell scripts for DNS automation and Access provisioning.
 - `docs/` – Deployment playbooks and additional reference material.

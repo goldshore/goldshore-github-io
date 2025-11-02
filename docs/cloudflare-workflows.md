@@ -14,7 +14,7 @@ Cloudflare Workflows let you orchestrate multi-step automations on Cloudflare's 
 The example below shows how we could model a "Post-deploy warmup" workflow:
 
 1. **Trigger** – `HTTP` trigger invoked by GitHub Actions after a deploy completes.
-2. **Step: Call Worker** – Invoke the `api-router` Worker to pre-warm cache for `/`, `/store`, `/repo`, and `/admin`.
+2. **Step: Call Pages origin** – Hit the `goldshore-web` Pages deployment directly to pre-warm cache for `/`, `/store`, `/repo`, and `/admin`. The legacy `api-router` Worker is deprecated and should not be invoked.
 3. **Step: Queue purge** – Hit the Cloudflare Cache Purge API for stale asset paths.
 4. **Step: Notification** – Send a message to Slack or email stakeholders if any step reports errors.
 
@@ -27,7 +27,7 @@ This design keeps infrastructure tasks in Cloudflare while GitHub Actions focuse
    - Choose the HTTP trigger and note the generated URL. GitHub Actions can call this endpoint with a bearer token stored in repository secrets.
 
 2. **Add steps**
-   - **Invoke Worker** – Use the "Call Worker" step, selecting the `goldshore-org` service and its production environment. Define a JSON payload listing URLs to warm:
+  - **Warm Pages** – Use a "Fetch" step that targets the `goldshore-web` Pages domain (for example `https://goldshore.org`) and loop over the paths to warm. The retired `api-router` Worker should not be part of new workflows.
      ```json
      {
        "paths": ["/", "/store", "/repo", "/admin"]

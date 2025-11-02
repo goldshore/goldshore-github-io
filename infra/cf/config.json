@@ -16,20 +16,14 @@
   "environments": {
     "production": {
       "pages_project": "goldshore-web",
-      "worker": "goldshore-router",
-      "route": "goldshore.org/*",
-      "notes": "Primary public site served by the Worker routing to the Pages project."
+      "notes": "Primary public site served directly from the Pages project."
     },
     "preview": {
       "pages_project": "goldshore-web",
-      "worker": "goldshore-router",
-      "route": "preview.goldshore.org/*",
       "notes": "Stakeholder previews mapped to preview Pages deployments."
     },
     "development": {
       "pages_project": "goldshore-web",
-      "worker": "goldshore-router",
-      "route": "dev.goldshore.org/*",
       "notes": "Internal developer sandbox."
     }
   },
@@ -40,6 +34,24 @@
       "preview_branches": [
         "preview",
         "develop"
+      ],
+      "custom_domains": [
+        {
+          "hostname": "goldshore.org",
+          "environment": "production"
+        },
+        {
+          "hostname": "www.goldshore.org",
+          "environment": "production"
+        },
+        {
+          "hostname": "preview.goldshore.org",
+          "environment": "preview"
+        },
+        {
+          "hostname": "dev.goldshore.org",
+          "environment": "development"
+        }
       ],
       "deployment_configs": {
         "production": {
@@ -62,6 +74,20 @@
       "production_branch": "main",
       "preview_branches": [
         "admin-preview"
+      ],
+      "custom_domains": [
+        {
+          "hostname": "admin.goldshore.org",
+          "environment": "production"
+        },
+        {
+          "hostname": "admin-preview.goldshore.org",
+          "environment": "preview"
+        },
+        {
+          "hostname": "admin-dev.goldshore.org",
+          "environment": "development"
+        }
       ],
       "source": {
         "type": "github",
@@ -89,49 +115,6 @@
     }
   ],
   "workers": [
-    {
-      "name": "goldshore-router",
-      "main_entrypoint": "apps/api-router/dist/worker.js",
-      "compatibility_date": "2024-02-19",
-      "routes": [
-        "goldshore.org/*",
-        "www.goldshore.org/*",
-        "preview.goldshore.org/*",
-        "dev.goldshore.org/*"
-      ],
-      "bindings": {
-        "KV": [],
-        "D1": [],
-        "R2": [],
-        "vars": {
-          "APP_NAME": "Goldshore Router",
-          "PRODUCTION_ASSETS": "https://goldshore-web.pages.dev",
-          "PREVIEW_ASSETS": "https://goldshore-web-preview.pages.dev",
-          "DEV_ASSETS": "https://goldshore-web-dev.pages.dev"
-        }
-      }
-    },
-    {
-      "name": "goldshore-admin",
-      "main_entrypoint": "apps/api-router/dist/worker.js",
-      "compatibility_date": "2024-02-19",
-      "routes": [
-        "admin.goldshore.org/*",
-        "admin-preview.goldshore.org/*"
-      ],
-      "bindings": {
-        "KV": [],
-        "D1": [],
-        "R2": [],
-        "vars": {
-          "APP_NAME": "Goldshore Admin Router",
-          "PRODUCTION_ASSETS": "https://goldshore-admin.pages.dev",
-          "PREVIEW_ASSETS": "https://goldshore-admin-preview.pages.dev",
-          "DEV_ASSETS": "https://goldshore-admin-preview.pages.dev",
-          "ACCESS_AUD": "goldshore-admin"
-        }
-      }
-    },
     {
       "name": "goldshore-api",
       "main_entrypoint": "packages/api/dist/index.js",

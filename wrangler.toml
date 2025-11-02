@@ -9,7 +9,7 @@ account_id = "f77de112d2019e5456a3198a8bb50bd2"
 PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
 PREVIEW_ASSETS = "https://goldshore-org-preview.pages.dev"
 DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
-GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https://preview.goldshore.org, https://dev.goldshore.org"
+GPT_ALLOWED_ORIGINS = "https://goldshore.org,https://www.goldshore.org,https://preview.goldshore.org,https://dev.goldshore.org"
 
 # Secrets such as FORMSPREE_ENDPOINT and TURNSTILE_SECRET are provided via
 # `wrangler secret put …` or `.dev.vars` in local development.
@@ -112,6 +112,10 @@ priority = 50
 ASSETS_ORIGIN = "https://goldshore-org.pages.dev"
 
 [env.preview]
+# Mirror any marketing hostnames added above so preview deployments have
+# explicit routes for their `preview.<domain>` hostnames. Avoid wildcard
+# routes here as well to keep service-specific subdomains pointed at their
+# dedicated infrastructure.
 routes = [
   { pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "preview.gearswipe.com/*", zone_name = "gearswipe.com" },
@@ -123,6 +127,10 @@ routes = [
 ASSETS_ORIGIN = "https://goldshore-org-preview.pages.dev"
 
 [env.dev]
+# Development routes should receive the matching `dev.<domain>` hostnames
+# for any marketing site onboarded above. Continue to avoid wildcard
+# patterns so environment-specific services stay mapped to their own
+# infrastructure.
 routes = [
   { pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" },
   { pattern = "dev.gearswipe.com/*", zone_name = "gearswipe.com" },

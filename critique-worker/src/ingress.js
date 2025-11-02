@@ -77,27 +77,47 @@ function parseTargetFromText(text) {
 }
 
 async function verifyPostmarkSignature(signature, rawBody, secret) {
-  if (!secret) return true;
+  if (!secret || !signature) return false;
+
   const encoder = new TextEncoder();
-  const keyData = encoder.encode(secret);
   const key = await crypto.subtle.importKey(
     'raw',
-    keyData,
+    encoder.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
   );
 
-  const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
-  const expected = bufferToBase64(signatureBuffer);
-  return expected === signature;
+  const expectedSignature = new Uint8Array(
+    await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody))
+  );
+
+  let providedBytes;
+  try {
+    providedBytes = base64ToUint8Array(signature);
+  } catch (err) {
+    console.error('Invalid Base64 signature provided.');
+    return false;
+  }
+
+  if (providedBytes.length !== expectedSignature.length) {
+    return false;
+  }
+
+  let diff = 0;
+  for (let i = 0; i < providedBytes.length; i++) {
+    diff |= providedBytes[i] ^ expectedSignature[i];
+  }
+
+  return diff === 0;
 }
 
-function bufferToBase64(buffer) {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(bytes[i]);
+function base64ToUint8Array(b64) {
+  const binary = atob(b64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i);
   }
-  return btoa(binary);
+  return bytes;
 }

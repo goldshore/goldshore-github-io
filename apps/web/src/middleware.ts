@@ -2,7 +2,8 @@ import { defineMiddleware } from "astro:middleware";
 
 function randomBase64(bytesLength: number) {
   const bytes = new Uint8Array(bytesLength);
-  const webCrypto = globalThis.crypto;
+  const webCrypto =
+    typeof globalThis === "object" ? globalThis.crypto : undefined;
   if (!webCrypto || typeof webCrypto.getRandomValues !== "function") {
     throw new Error(
       "Secure random number generation is unavailable in this environment."

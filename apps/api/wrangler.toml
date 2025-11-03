@@ -12,11 +12,11 @@ CORS_ORIGINS = "https://goldshore.org,https://admin.goldshore.org"
 [[d1_databases]]
 binding = "DB"
 database_name = "goldshore_db"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "${GOLDSHORE_D1_DATABASE_ID}"
 
 [[kv_namespaces]]
 binding = "AGENT_PROMPT_KV"
-id = "$AGENT_PROMPT_KV_ID"
+id = "${AGENT_PROMPT_KV_ID}"
 
 [[queues.producers]]
 binding = "JOBS_QUEUE"

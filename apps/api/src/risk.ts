@@ -28,7 +28,19 @@ export async function checkRisk(db: D1Database, order: any) {
 
 export async function killSwitch(db: D1Database) {
   await ensureRiskConfigsTable(db);
-  await db.prepare("UPDATE risk_configs SET is_published = 0, updated_at = CURRENT_TIMESTAMP").run();
+  const existing = (await db.prepare("SELECT COUNT(1) as count FROM risk_configs").first()) as
+    | { count: number }
+    | null;
+  if (!existing || !existing.count) {
+    await db.prepare(
+      "INSERT INTO risk_configs (id, name, limits, is_published, published_at) VALUES (?, ?, ?, 0, NULL)"
+    )
+      .bind(globalThis.crypto.randomUUID(), "Kill switch initialization", JSON.stringify({ killswitch: true }))
+      .run();
+  }
+  await db.prepare(
+    "UPDATE risk_configs SET is_published = 0, limits = json_set(COALESCE(NULLIF(limits, ''), '{}'), '$.killswitch', 1), updated_at = CURRENT_TIMESTAMP"
+  ).run();
   return { ok: true, message: "Kill switch engaged." };
 }
 

@@ -153,7 +153,23 @@ const router: Record<string, Partial<Record<string, RouteHandler>>> = {
   "/v1/risk/killswitch": {
     POST: async ({ env, tools }) => {
       await ensureTable(env, "risk_configs");
-      await env.DB.prepare("UPDATE risk_configs SET is_published = 0, updated_at = CURRENT_TIMESTAMP").run();
+      const existing = (await env.DB.prepare("SELECT COUNT(1) as count FROM risk_configs").first()) as
+        | { count: number }
+        | null;
+      if (!existing || !existing.count) {
+        await env.DB.prepare(
+          "INSERT INTO risk_configs (id, name, limits, is_published, published_at) VALUES (?, ?, ?, 0, NULL)"
+        )
+          .bind(
+            globalThis.crypto.randomUUID(),
+            "Kill switch initialization",
+            JSON.stringify({ killswitch: true })
+          )
+          .run();
+      }
+      await env.DB.prepare(
+        "UPDATE risk_configs SET is_published = 0, limits = json_set(COALESCE(NULLIF(limits, ''), '{}'), '$.killswitch', 1), updated_at = CURRENT_TIMESTAMP"
+      ).run();
       return tools.respond({ ok: true, message: "Kill switch engaged" });
     },
   },

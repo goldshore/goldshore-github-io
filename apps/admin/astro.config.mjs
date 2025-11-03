@@ -23,11 +23,11 @@ export default defineConfig({
       hooks: {
         'astro:config:setup': ({ injectScript }) => {
           injectScript('page', `
-            import { locals } from 'astro:middleware';
-            if (locals.nonce) {
+            const nonce = document.documentElement.dataset.cspNonce;
+            if (nonce) {
               const scripts = document.querySelectorAll('script');
               scripts.forEach(script => {
-                script.setAttribute('nonce', locals.nonce);
+                script.setAttribute('nonce', nonce);
               });
             }
           `);

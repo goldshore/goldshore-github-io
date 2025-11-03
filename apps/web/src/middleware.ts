@@ -2,7 +2,14 @@ import { defineMiddleware } from "astro:middleware";
 
 function randomBase64(bytesLength: number) {
   const bytes = new Uint8Array(bytesLength);
-  crypto.getRandomValues(bytes);
+  const webCrypto = globalThis.crypto;
+  if (!webCrypto || typeof webCrypto.getRandomValues !== "function") {
+    throw new Error(
+      "Secure random number generation is unavailable in this environment."
+    );
+  }
+
+  webCrypto.getRandomValues(bytes);
   let binary = "";
   for (const byte of bytes) {
     binary += String.fromCharCode(byte);

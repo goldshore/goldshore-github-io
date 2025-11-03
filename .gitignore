@@ -22,3 +22,4 @@ vendor/
 .pnpm-store/
 .wrangler/
 .turbo/
+apps/*/.wrangler.resolved.toml

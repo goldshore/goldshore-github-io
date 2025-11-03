@@ -1,3 +1,6 @@
+# This file is a template. Use scripts/resolve-wrangler-config.mjs to render a
+# deployable config that resolves environment-specific bindings before invoking
+# Wrangler.
 name = "goldshore-api"
 main = "src/index.ts"
 compatibility_date = "2025-11-03"

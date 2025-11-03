@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "wrangler deploy --dry-run",
+    "build": "node ./scripts/resolve-wrangler-config.mjs && wrangler deploy --dry-run --config .wrangler.resolved.toml",
     "test": "vitest run"
   },
   "dependencies": {},

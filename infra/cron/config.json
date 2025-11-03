@@ -18,17 +18,22 @@
     "zone_id_env": "CF_ZONE_ID",
     "checks": [
       { "type": "pages_build_status", "project": "goldshore-web" },
-      { "type": "pages_build_status", "project": "goldshore-admin" },
+      { "type": "pages_build_status", "project": "goldshore-monorepo" },
       {
         "type": "pages_domain_recovery",
         "targets": [
           {
             "project": "goldshore-web",
             "host": "https://goldshore.org",
-            "domains": ["goldshore.org"]
+            "domains": ["goldshore.org", "www.goldshore.org"]
           },
           {
-            "project": "goldshore-admin",
+            "project": "goldshore-web",
+            "host": "https://www.goldshore.org",
+            "domains": ["www.goldshore.org"]
+          },
+          {
+            "project": "goldshore-monorepo",
             "host": "https://admin.goldshore.org",
             "domains": ["admin.goldshore.org"]
           }

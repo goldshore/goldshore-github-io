@@ -9,6 +9,7 @@ vendor/
 # Generated package outputs
 packages/*/dist/
 apps/api-worker/dist/
+apps/api/dist/
 node_modules/
 **/node_modules/
 pnpm-lock.yaml

@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "npm run -w @goldshore/api-worker build",
+    "build": "esbuild src/index.ts --bundle --format=esm --platform=neutral --target=es2022 --outdir=dist --sourcemap && npm run -w @goldshore/api-worker build",
     "test": "vitest run"
   },
   "dependencies": {},

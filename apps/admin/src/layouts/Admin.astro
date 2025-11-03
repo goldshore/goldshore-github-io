@@ -2,8 +2,10 @@
 import "@goldshore/theme/tokens.css";
 import logoUrl from "@goldshore/assets/logo-wordmark-on-light.svg?url";
 const items = ["Dashboard","Customers","Subscriptions","Workflows","Trading","Orders","Risk","Reports","Settings"];
+const nonce = Astro.locals?.nonce ?? "";
 ---
-<html><body class="bg-[var(--bg)] text-[var(--text)]">
+<html data-csp-nonce={nonce}>
+  <body class="bg-[var(--bg)] text-[var(--text)]">
   <aside class="fixed left-0 top-0 h-full w-56 border-r p-4">
     <img src={logoUrl} height="24" alt="GoldShore" />
     <ul class="mt-4 space-y-2">
@@ -11,4 +13,5 @@ const items = ["Dashboard","Customers","Subscriptions","Workflows","Trading","Or
     </ul>
   </aside>
   <main class="ml-56 p-6"><slot /></main>
-</body></html>
+  </body>
+</html>

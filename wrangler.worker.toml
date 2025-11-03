@@ -1,6 +1,6 @@
 name = "goldshore"
 main = "apps/api-router/src/router.ts"
-compatibility_date = "2025-10-05"
+compatibility_date = "2025-11-03"
 workers_dev = false
 account_id = "f77de112d2019e5456a3198a8bb50bd2"
 

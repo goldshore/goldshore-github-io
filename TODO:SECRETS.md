@@ -10,5 +10,5 @@ The following secrets need to be configured for the application to run correctly
 - `CF_ACCESS_AUD` / `CF_ACCESS_ISS` / `CF_ACCESS_JWKS_URL` (optional): Lock API access behind Cloudflare Zero Trust when required.
 - `FORMSPREE_ENDPOINT`: Submission URL for the contact form backend.
 - `TURNSTILE_SECRET`: Server-side secret for Cloudflare Turnstile verification.
-- `CF_API_TOKEN`: Cloudflare API token for deploying workers.
-- `CF_ACCOUNT_ID`: Cloudflare account ID.
+- `CF_API_TOKEN`: Cloudflare API token used across Workers and Pages deployments.
+- `CF_ACCOUNT_ID`: Cloudflare account ID referenced by all deployment workflows.

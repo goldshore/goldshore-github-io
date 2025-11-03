@@ -166,15 +166,6 @@ jobs:
             rm -f "${rendered}"
           done
 
-          WORKER_FILE="infra/policies/cloudflare/workers.goldshore-api.json"
-          if [[ -f "${WORKER_FILE}" ]]; then
-            rendered=$(render_template "${WORKER_FILE}")
-            script=$(jq -r '.script' "${rendered}")
-            payload=$(jq -c 'del(.script)' "${rendered}")
-            echo "Syncing Worker ${script}"
-            curl -sS -X PUT "${API}/workers/services/${script}/environments/production" "${AUTH[@]}" --data "${payload}" >/dev/null
-            rm -f "${rendered}"
-          fi
           for WORKER_FILE in \
             infra/policies/cloudflare/workers.goldshore-api.json \
             infra/policies/cloudflare/workers.goldshore-admin.json; do
@@ -182,11 +173,12 @@ jobs:
               continue
             fi
 
-            script=$(jq -r '.script' "${WORKER_FILE}")
-            payload=$(jq -c 'del(.script)' "${WORKER_FILE}")
+            rendered=$(render_template "${WORKER_FILE}")
+            script=$(jq -r '.script' "${rendered}")
+            payload=$(jq -c 'del(.script)' "${rendered}")
 
-            if jq -e '.logpush?.destinations? | type == "array"' "${WORKER_FILE}" >/dev/null; then
-              mapfile -t destinations < <(jq -r '.logpush.destinations[]' "${WORKER_FILE}")
+            if jq -e '.logpush?.destinations? | type == "array"' "${rendered}" >/dev/null; then
+              mapfile -t destinations < <(jq -r '.logpush.destinations[]' "${rendered}")
               base_payload=$(echo "${payload}" | jq -c 'if .logpush then .logpush |= del(.destinations) else . end')
 
               for destination in "${destinations[@]}"; do
@@ -198,6 +190,8 @@ jobs:
               echo "Syncing Worker ${script}"
               curl -sS -X PUT "${API}/workers/services/${script}/environments/production" "${AUTH[@]}" --data "${payload}" >/dev/null
             fi
+
+            rm -f "${rendered}"
           done
 
           echo "DNS policy is declarative only; reference infra/scripts/enforce-dns.sh for enforcement."

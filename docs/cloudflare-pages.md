@@ -56,8 +56,8 @@ the Pages deployment.
 
 ## Deployment automation
 
-The GitHub workflow should use `cloudflare/pages-action@v1` with the `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`
-secrets. Run the following steps during CI:
+The GitHub workflow should use `cloudflare/pages-action@v1` with the `CF_ACCOUNT_ID` and `CF_API_TOKEN` secrets. Run the
+following steps during CI:
 
 ```bash
 npm ci

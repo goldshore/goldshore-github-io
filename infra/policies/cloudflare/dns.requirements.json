@@ -2,6 +2,8 @@
   "zone": "goldshore.org",
   "last_reviewed": "2024-03-30",
   "description": "Declarative DNS inventory for Goldshore managed via Cloudflare. All records are expected to be proxied (orange cloud).",
+  "last_reviewed": "2024-02-20",
+  "description": "Declarative DNS inventory for Goldshore managed through the upsert script and Cloudflare API.",
   "records": [
     {
       "type": "CNAME",
@@ -11,6 +13,11 @@
       "ttl": 3600,
       "required": true,
       "note": "Root domain served from the Pages production deployment."
+      "content": "goldshore-org.pages.dev",
+      "proxied": true,
+      "ttl": 3600,
+      "required": true,
+      "note": "Root domain served from the Pages production deployment via the Worker."
     },
     {
       "type": "CNAME",

@@ -151,20 +151,54 @@
             "id": "${KV_CACHE_ID}"
           }
         ],
+        "D1": [
+          {
+            "binding": "DB",
+            "database": "goldshore_db"
+          },
+          {
+            "binding": "D1_CORE",
+            "database": "goldshore-core"
+          }
+        ],
+        "R2": [
+          {
+            "binding": "SNAP_R2",
+            "bucket": "goldshore-bucket"
+          },
+          {
+            "binding": "R2_PUBLIC",
+            "bucket": "goldshore-public"
+          }
+        ],
         "durable_objects": [
           {
             "name": "DO_SESSIONS",
             "class_name": "SessionDO"
+          },
+          {
+            "name": "DO_RATE_LIMITER",
+            "class_name": "RateLimiterDO"
           }
         ],
         "queues": {
           "producers": [
+            {
+              "binding": "JOBS_QUEUE",
+              "queue": "jobs"
+            },
             {
               "binding": "Q_EVENTS",
               "queue": "goldshore-events"
             }
           ],
           "consumers": [
+            {
+              "queue": "jobs",
+              "max_batch_size": 10,
+              "max_batch_timeout": 5,
+              "max_retries": 3
+            },
             {
               "queue": "goldshore-events",
               "max_batch_size": 50,
@@ -181,6 +215,24 @@
           "JWT_ISSUER": "https://auth.goldshore.org",
           "RATE_LIMIT_MAX": "120",
           "RATE_LIMIT_WINDOW": "60"
+          "FF_ENABLE_TRADING": "true",
+          "FF_ENABLE_SENTIMENT": "true",
+          "ACCESS_AUD": "goldshore-admin",
+          "CODEX_JWT_REQUIRED": "true",
+          "CODEX_JWT_ALG": "HS256",
+          "CODEX_JWT_ISS": "goldshore-api",
+          "CODEX_JWT_AUD": "goldshore-codex",
+          "CODEX_JWT_SECRET_KID": "kid-1",
+          "CODEX_JWT_HS256_KEY": "${{ secrets.CODEX_JWT_HS256_KEY }}",
+          "OPENAI_TPM_LIMIT": "180000",
+          "OPENAI_RPM_LIMIT": "3500",
+          "OPENAI_DPM_LIMIT": "9000000",
+          "RATE_LIMIT_WINDOW_MS": "60000",
+          "RATE_LIMIT_BUCKET_SIZE": "3400",
+          "RATE_LIMIT_TOKEN_BUDGET": "170000",
+          "GITHUB_APP_ID": "",
+          "GITHUB_CLIENT_ID": "",
+          "GITHUB_CLIENT_SECRET": ""
         }
       }
     }

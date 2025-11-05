@@ -2,6 +2,8 @@
   "script": "goldshore-api",
   "description": "Cloudflare Worker powering Goldshore's authenticated API and event queue integrations.",
   "compatibility_date": "2024-11-20",
+  "description": "Primary API Worker powering authenticated trading and CRM endpoints.",
+  "compatibility_date": "2025-10-20",
   "environments": {
     "production": {
       "routes": [

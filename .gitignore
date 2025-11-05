@@ -19,3 +19,4 @@ apps/web/dist/
 .pnpm-store/
 .wrangler/
 .turbo/
+coverage/

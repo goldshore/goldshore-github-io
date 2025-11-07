@@ -12,8 +12,9 @@ const nav = [
   {label:"Docs", href:"https://api.goldshore.org/v1/docs"},
   {label:"Admin", href:"https://admin.goldshore.org"},
 ];
+const nonce = Astro.locals?.nonce ?? "";
 ---
-<html lang="en">
+<html lang="en" data-csp-nonce={nonce}>
   <head>
     <meta charset="utf-8" />
     <link rel="icon" type="image/svg+xml" href={faviconUrl} />

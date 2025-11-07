@@ -107,7 +107,7 @@ jobs:
       - name: Apply Pages and Worker configuration
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID || vars.CF_ACCOUNT_ID }}
           CF_WEB_ANALYTICS_TOKEN: ${{ secrets.CF_WEB_ANALYTICS_TOKEN || vars.CF_WEB_ANALYTICS_TOKEN }}
           AGENT_PROMPT_KV_ID: ${{ secrets.AGENT_PROMPT_KV_ID || vars.AGENT_PROMPT_KV_ID }}
           KV_SESSIONS_PROD: ${{ secrets.KV_SESSIONS_PROD || vars.KV_SESSIONS_PROD }}
@@ -130,7 +130,7 @@ jobs:
 
             while IFS= read -r placeholder; do
               local var_name=${placeholder#\${}
-              var_name=${var_name%}}
+              var_name=${var_name%\}}
               if [[ "${var_name}" == "DATE" ]]; then
                 continue
               fi
@@ -173,11 +173,12 @@ jobs:
               continue
             fi
 
-            script=$(jq -r '.script' "${WORKER_FILE}")
-            payload=$(jq -c 'del(.script)' "${WORKER_FILE}")
+            rendered=$(render_template "${WORKER_FILE}")
+            script=$(jq -r '.script' "${rendered}")
+            payload=$(jq -c 'del(.script)' "${rendered}")
 
-            if jq -e '.logpush?.destinations? | type == "array"' "${WORKER_FILE}" >/dev/null; then
-              mapfile -t destinations < <(jq -r '.logpush.destinations[]' "${WORKER_FILE}")
+            if jq -e '.logpush?.destinations? | type == "array"' "${rendered}" >/dev/null; then
+              mapfile -t destinations < <(jq -r '.logpush.destinations[]' "${rendered}")
               base_payload=$(echo "${payload}" | jq -c 'if .logpush then .logpush |= del(.destinations) else . end')
 
               for destination in "${destinations[@]}"; do
@@ -189,6 +190,8 @@ jobs:
               echo "Syncing Worker ${script}"
               curl -sS -X PUT "${API}/workers/services/${script}/environments/production" "${AUTH[@]}" --data "${payload}" >/dev/null
             fi
+
+            rm -f "${rendered}"
           done
 
           echo "DNS policy is declarative only; reference infra/scripts/enforce-dns.sh for enforcement."

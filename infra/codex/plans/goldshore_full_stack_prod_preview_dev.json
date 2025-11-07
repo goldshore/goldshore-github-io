@@ -1,0 +1,977 @@
+{
+  "version": "3.9",
+  "name": "GoldShore Full Stack: Prod + Preview + Dev (DNS, Pages, Access, API, Resources, Health, Snapshot)",
+  "description": "Idempotent setup for goldshore-web (public), goldshore-monorepo (admin via Access), goldshore-api (Workers) across production/preview/dev, with per-env resources and a stored manifest.",
+  "secrets_expected": [
+    "CF_API_TOKEN",
+    "CF_ACCOUNT_ID",
+    "CF_ACCESS_CLIENT_ID",
+    "CF_ACCESS_CLIENT_SECRET"
+  ],
+  "vars": {
+    "ROOT_DOMAIN": "goldshore.org",
+    "WEB_PROJECT": "goldshore-web",
+    "ADMIN_PROJECT": "goldshore-monorepo",
+    "API_WORKER": "goldshore-api",
+    "WORKERS_SUBDOMAIN": "goldshore",
+    "HOME_IP_CIDR": "108.54.251.213/32",
+    "WARP_IP_CIDR": "",
+    "WEB_PROD": "goldshore.org",
+    "WEB_WWW_PROD": "www.goldshore.org",
+    "WEB_PREVIEW": "preview.goldshore.org",
+    "WEB_DEV": "dev.goldshore.org",
+    "ADMIN_PROD": "admin.goldshore.org",
+    "ADMIN_PREVIEW": "admin-preview.goldshore.org",
+    "ADMIN_DEV": "admin-dev.goldshore.org",
+    "API_PROD": "api.goldshore.org",
+    "API_PREVIEW": "api-preview.goldshore.org",
+    "API_DEV": "api-dev.goldshore.org",
+    "D1_PROD": "goldshore_db_prod",
+    "D1_PREVIEW": "goldshore_db_preview",
+    "D1_DEV": "goldshore_db_dev",
+    "KV_CONFIG_PROD": "KV_CONFIG_PROD",
+    "KV_CONFIG_PREVIEW": "KV_CONFIG_PREVIEW",
+    "KV_CONFIG_DEV": "KV_CONFIG_DEV",
+    "KV_CACHE_PROD": "KV_CACHE_PROD",
+    "KV_CACHE_PREVIEW": "KV_CACHE_PREVIEW",
+    "KV_CACHE_DEV": "KV_CACHE_DEV",
+    "KV_SESSION_PROD": "SESSION_PROD",
+    "KV_SESSION_PREVIEW": "SESSION_PREVIEW",
+    "KV_SESSION_DEV": "SESSION_DEV",
+    "R2_PROD": "goldshore-bucket-prod",
+    "R2_PREVIEW": "goldshore-bucket-preview",
+    "R2_DEV": "goldshore-bucket-dev",
+    "QUEUE_PROD": "jobs-prod",
+    "QUEUE_PREVIEW": "jobs-preview",
+    "QUEUE_DEV": "jobs-dev",
+    "ALLOWED_EMAILS": [
+      "marstonr6@gmail.com",
+      "ops@goldshore.org"
+    ],
+    "ALLOWED_DOMAINS": [
+      "goldshore.org"
+    ],
+    "CORS_ORIGINS": [
+      "https://goldshore.org",
+      "https://admin.goldshore.org",
+      "https://preview.goldshore.org",
+      "https://admin-preview.goldshore.org",
+      "https://dev.goldshore.org",
+      "https://admin-dev.goldshore.org"
+    ]
+  },
+  "default_headers": {
+    "Authorization": "Bearer ${CF_API_TOKEN}",
+    "Content-Type": "application/json"
+  },
+  "steps": [
+    {
+      "id": "zone",
+      "op": "GET",
+      "endpoint": "/client/v4/zones",
+      "params": {
+        "name": "${ROOT_DOMAIN}"
+      },
+      "save_as": {
+        "ZONE_ID": ".result[0].id"
+      }
+    },
+    {
+      "id": "dns_upsert",
+      "op": "UPSERT_DNS",
+      "records": [
+        {
+          "type": "CNAME",
+          "name": "${WEB_PROD}",
+          "content": "${WEB_PROJECT}.pages.dev",
+          "proxied": true,
+          "ttl": 1
+        },
+        {
+          "type": "CNAME",
+          "name": "${WEB_WWW_PROD}",
+          "content": "${WEB_PROJECT}.pages.dev",
+          "proxied": true,
+          "ttl": 1
+        },
+        {
+          "type": "CNAME",
+          "name": "${WEB_PREVIEW}",
+          "content": "${WEB_PROJECT}.pages.dev",
+          "proxied": true,
+          "ttl": 1
+        },
+        {
+          "type": "CNAME",
+          "name": "${WEB_DEV}",
+          "content": "${WEB_PROJECT}.pages.dev",
+          "proxied": true,
+          "ttl": 1
+        },
+        {
+          "type": "CNAME",
+          "name": "${ADMIN_PROD}",
+          "content": "${ADMIN_PROJECT}.pages.dev",
+          "proxied": true,
+          "ttl": 1
+        },
+        {
+          "type": "CNAME",
+          "name": "${ADMIN_PREVIEW}",
+          "content": "${ADMIN_PROJECT}.pages.dev",
+          "proxied": true,
+          "ttl": 1
+        },
+        {
+          "type": "CNAME",
+          "name": "${ADMIN_DEV}",
+          "content": "${ADMIN_PROJECT}.pages.dev",
+          "proxied": true,
+          "ttl": 1
+        },
+        {
+          "type": "CNAME",
+          "name": "${API_PROD}",
+          "content": "${API_WORKER}.${WORKERS_SUBDOMAIN}.workers.dev",
+          "proxied": true,
+          "ttl": 1
+        },
+        {
+          "type": "CNAME",
+          "name": "${API_PREVIEW}",
+          "content": "${API_WORKER}.${WORKERS_SUBDOMAIN}.workers.dev",
+          "proxied": true,
+          "ttl": 1
+        },
+        {
+          "type": "CNAME",
+          "name": "${API_DEV}",
+          "content": "${API_WORKER}.${WORKERS_SUBDOMAIN}.workers.dev",
+          "proxied": true,
+          "ttl": 1
+        }
+      ]
+    },
+    {
+      "id": "pages_list",
+      "op": "GET",
+      "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects",
+      "save_as": {
+        "PAGES": ".result"
+      }
+    },
+    {
+      "id": "attach_web_domains",
+      "op": "BATCH",
+      "calls": [
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${WEB_PROJECT}/domains/${WEB_PROD}"
+        },
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${WEB_PROJECT}/domains/${WEB_WWW_PROD}"
+        },
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${WEB_PROJECT}/domains/${WEB_PREVIEW}"
+        },
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${WEB_PROJECT}/domains/${WEB_DEV}"
+        }
+      ]
+    },
+    {
+      "id": "attach_admin_domains",
+      "op": "BATCH",
+      "calls": [
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${ADMIN_PROJECT}/domains/${ADMIN_PROD}"
+        },
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${ADMIN_PROJECT}/domains/${ADMIN_PREVIEW}"
+        },
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/pages/projects/${ADMIN_PROJECT}/domains/${ADMIN_DEV}"
+        }
+      ]
+    },
+    {
+      "id": "workers_routes",
+      "op": "GET",
+      "endpoint": "/client/v4/zones/${ZONE_ID}/workers/routes",
+      "save_as": {
+        "ROUTES": ".result"
+      }
+    },
+    {
+      "id": "api_route_cleanup",
+      "op": "DELETE_EACH",
+      "items_from": "ROUTES",
+      "when": "((.pattern|tostring|test(\"^api(\\-\\.)?(((preview|dev)\\.)?goldshore\\.org)$\") or (.pattern|tostring|contains(\"api.goldshore.org\") or contains(\"api-preview.goldshore.org\") or contains(\"api-dev.goldshore.org\")))) and ((.service // .script) != \"${API_WORKER}\"))",
+      "endpoint_template": "/client/v4/zones/${ZONE_ID}/workers/routes/${item.id}"
+    },
+    {
+      "id": "api_route_upserts",
+      "op": "BATCH",
+      "calls": [
+        {
+          "op": "UPSERT",
+          "match_from": "ROUTES",
+          "match_when": "(.pattern==\"api.goldshore.org/*\")",
+          "create": {
+            "endpoint": "/client/v4/zones/${ZONE_ID}/workers/routes",
+            "method": "POST",
+            "json": {
+              "pattern": "api.goldshore.org/*",
+              "script": "${API_WORKER}"
+            }
+          },
+          "update": {
+            "endpoint_template": "/client/v4/zones/${ZONE_ID}/workers/routes/${item.id}",
+            "method": "PUT",
+            "json": {
+              "pattern": "api.goldshore.org/*",
+              "script": "${API_WORKER}"
+            }
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "ROUTES",
+          "match_when": "(.pattern==\"api-preview.goldshore.org/*\")",
+          "create": {
+            "endpoint": "/client/v4/zones/${ZONE_ID}/workers/routes",
+            "method": "POST",
+            "json": {
+              "pattern": "api-preview.goldshore.org/*",
+              "script": "${API_WORKER}"
+            }
+          },
+          "update": {
+            "endpoint_template": "/client/v4/zones/${ZONE_ID}/workers/routes/${item.id}",
+            "method": "PUT",
+            "json": {
+              "pattern": "api-preview.goldshore.org/*",
+              "script": "${API_WORKER}"
+            }
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "ROUTES",
+          "match_when": "(.pattern==\"api-dev.goldshore.org/*\")",
+          "create": {
+            "endpoint": "/client/v4/zones/${ZONE_ID}/workers/routes",
+            "method": "POST",
+            "json": {
+              "pattern": "api-dev.goldshore.org/*",
+              "script": "${API_WORKER}"
+            }
+          },
+          "update": {
+            "endpoint_template": "/client/v4/zones/${ZONE_ID}/workers/routes/${item.id}",
+            "method": "PUT",
+            "json": {
+              "pattern": "api-dev.goldshore.org/*",
+              "script": "${API_WORKER}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_apps",
+      "op": "GET",
+      "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps",
+      "save_as": {
+        "ACCESS_APPS": ".result"
+      }
+    },
+    {
+      "id": "access_admin_upsert",
+      "op": "BATCH",
+      "calls": [
+        {
+          "op": "UPSERT",
+          "match_from": "ACCESS_APPS",
+          "match_when": "(.domain==\"${ADMIN_PROD}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps",
+            "method": "POST",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore Admin (Prod)",
+              "domain": "${ADMIN_PROD}",
+              "session_duration": "24h",
+              "app_launcher_visible": true
+            }
+          },
+          "update": {
+            "endpoint_template": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${item.uid}",
+            "method": "PUT",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore Admin (Prod)",
+              "domain": "${ADMIN_PROD}",
+              "session_duration": "24h",
+              "app_launcher_visible": true
+            }
+          },
+          "save_as": {
+            "ADMIN_APP_UID_PROD": "(.id // .uid)"
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "ACCESS_APPS",
+          "match_when": "(.domain==\"${ADMIN_PREVIEW}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps",
+            "method": "POST",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore Admin (Preview)",
+              "domain": "${ADMIN_PREVIEW}",
+              "session_duration": "24h",
+              "app_launcher_visible": false
+            }
+          },
+          "update": {
+            "endpoint_template": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${item.uid}",
+            "method": "PUT",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore Admin (Preview)",
+              "domain": "${ADMIN_PREVIEW}",
+              "session_duration": "24h",
+              "app_launcher_visible": false
+            }
+          },
+          "save_as": {
+            "ADMIN_APP_UID_PREVIEW": "(.id // .uid)"
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "ACCESS_APPS",
+          "match_when": "(.domain==\"${ADMIN_DEV}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps",
+            "method": "POST",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore Admin (Dev)",
+              "domain": "${ADMIN_DEV}",
+              "session_duration": "24h",
+              "app_launcher_visible": false
+            }
+          },
+          "update": {
+            "endpoint_template": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${item.uid}",
+            "method": "PUT",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore Admin (Dev)",
+              "domain": "${ADMIN_DEV}",
+              "session_duration": "24h",
+              "app_launcher_visible": false
+            }
+          },
+          "save_as": {
+            "ADMIN_APP_UID_DEV": "(.id // .uid)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_admin_policies",
+      "op": "BATCH",
+      "calls": [
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${ADMIN_APP_UID_PROD}/policies",
+          "json": [
+            {
+              "name": "Allow GoldShore (Prod)",
+              "precedence": 1,
+              "decision": "allow",
+              "include": {
+                "emails": ${ALLOWED_EMAILS},
+                "email_domains": ${ALLOWED_DOMAINS}
+              },
+              "require": {
+                "ip_ranges": [
+                  "${HOME_IP_CIDR}"
+                ]
+              }
+            },
+            {
+              "name": "Deny All",
+              "precedence": 999,
+              "decision": "deny",
+              "include": {
+                "everyone": true
+              }
+            }
+          ]
+        },
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${ADMIN_APP_UID_PREVIEW}/policies",
+          "json": [
+            {
+              "name": "Allow GoldShore (Preview)",
+              "precedence": 1,
+              "decision": "allow",
+              "include": {
+                "emails": ${ALLOWED_EMAILS},
+                "email_domains": ${ALLOWED_DOMAINS}
+              }
+            },
+            {
+              "name": "Deny All",
+              "precedence": 999,
+              "decision": "deny",
+              "include": {
+                "everyone": true
+              }
+            }
+          ]
+        },
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${ADMIN_APP_UID_DEV}/policies",
+          "json": [
+            {
+              "name": "Allow GoldShore (Dev)",
+              "precedence": 1,
+              "decision": "allow",
+              "include": {
+                "emails": ${ALLOWED_EMAILS},
+                "email_domains": ${ALLOWED_DOMAINS}
+              }
+            },
+            {
+              "name": "Deny All",
+              "precedence": 999,
+              "decision": "deny",
+              "include": {
+                "everyone": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "access_api_upsert",
+      "op": "BATCH",
+      "calls": [
+        {
+          "op": "UPSERT",
+          "match_from": "ACCESS_APPS",
+          "match_when": "(.domain==\"${API_PROD}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps",
+            "method": "POST",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore API (Prod)",
+              "domain": "${API_PROD}",
+              "session_duration": "12h",
+              "app_launcher_visible": false
+            }
+          },
+          "update": {
+            "endpoint_template": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${item.uid}",
+            "method": "PUT",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore API (Prod)",
+              "domain": "${API_PROD}",
+              "session_duration": "12h",
+              "app_launcher_visible": false
+            }
+          },
+          "save_as": {
+            "API_APP_UID_PROD": "(.id // .uid)"
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "ACCESS_APPS",
+          "match_when": "(.domain==\"${API_PREVIEW}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps",
+            "method": "POST",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore API (Preview)",
+              "domain": "${API_PREVIEW}",
+              "session_duration": "12h",
+              "app_launcher_visible": false
+            }
+          },
+          "update": {
+            "endpoint_template": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${item.uid}",
+            "method": "PUT",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore API (Preview)",
+              "domain": "${API_PREVIEW}",
+              "session_duration": "12h",
+              "app_launcher_visible": false
+            }
+          },
+          "save_as": {
+            "API_APP_UID_PREVIEW": "(.id // .uid)"
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "ACCESS_APPS",
+          "match_when": "(.domain==\"${API_DEV}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps",
+            "method": "POST",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore API (Dev)",
+              "domain": "${API_DEV}",
+              "session_duration": "12h",
+              "app_launcher_visible": false
+            }
+          },
+          "update": {
+            "endpoint_template": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${item.uid}",
+            "method": "PUT",
+            "json": {
+              "type": "self_hosted",
+              "name": "GoldShore API (Dev)",
+              "domain": "${API_DEV}",
+              "session_duration": "12h",
+              "app_launcher_visible": false
+            }
+          },
+          "save_as": {
+            "API_APP_UID_DEV": "(.id // .uid)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "access_api_policies",
+      "op": "BATCH",
+      "calls": [
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${API_APP_UID_PROD}/policies",
+          "json": [
+            {
+              "name": "Service Token + Home + CF egress",
+              "precedence": 1,
+              "decision": "allow",
+              "include": {
+                "service_tokens": [
+                  {
+                    "id": "${CF_ACCESS_CLIENT_ID}"
+                  }
+                ]
+              },
+              "require": {
+                "ip": [
+                  {
+                    "ip": "${HOME_IP_CIDR}"
+                  },
+                  {
+                    "ip": "173.245.48.0/20"
+                  },
+                  {
+                    "ip": "103.21.244.0/22"
+                  },
+                  {
+                    "ip": "103.22.200.0/22"
+                  },
+                  {
+                    "ip": "103.31.4.0/22"
+                  },
+                  {
+                    "ip": "141.101.64.0/18"
+                  },
+                  {
+                    "ip": "108.162.192.0/18"
+                  },
+                  {
+                    "ip": "190.93.240.0/20"
+                  },
+                  {
+                    "ip": "188.114.96.0/20"
+                  },
+                  {
+                    "ip": "197.234.240.0/22"
+                  },
+                  {
+                    "ip": "198.41.128.0/17"
+                  },
+                  {
+                    "ip": "162.158.0.0/15"
+                  },
+                  {
+                    "ip": "104.16.0.0/13"
+                  },
+                  {
+                    "ip": "104.24.0.0/14"
+                  },
+                  {
+                    "ip": "172.64.0.0/13"
+                  },
+                  {
+                    "ip": "131.0.72.0/22"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Deny All",
+              "precedence": 999,
+              "decision": "deny",
+              "include": {
+                "everyone": true
+              }
+            }
+          ]
+        },
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${API_APP_UID_PREVIEW}/policies",
+          "json": [
+            {
+              "name": "Service Token only (Preview)",
+              "precedence": 1,
+              "decision": "allow",
+              "include": {
+                "service_tokens": [
+                  {
+                    "id": "${CF_ACCESS_CLIENT_ID}"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Deny All",
+              "precedence": 999,
+              "decision": "deny",
+              "include": {
+                "everyone": true
+              }
+            }
+          ]
+        },
+        {
+          "op": "PUT",
+          "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/access/apps/${API_APP_UID_DEV}/policies",
+          "json": [
+            {
+              "name": "Service Token only (Dev)",
+              "precedence": 1,
+              "decision": "allow",
+              "include": {
+                "service_tokens": [
+                  {
+                    "id": "${CF_ACCESS_CLIENT_ID}"
+                  }
+                ]
+              }
+            },
+            {
+              "name": "Deny All",
+              "precedence": 999,
+              "decision": "deny",
+              "include": {
+                "everyone": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "kv_list",
+      "op": "GET",
+      "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+      "save_as": {
+        "KV_ALL": ".result"
+      }
+    },
+    {
+      "id": "kv_create_all",
+      "op": "BATCH",
+      "calls": [
+        {
+          "op": "UPSERT",
+          "match_from": "KV_ALL",
+          "match_when": "(.title==\"${KV_CONFIG_PROD}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+            "method": "POST",
+            "json": {
+              "title": "${KV_CONFIG_PROD}"
+            }
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "KV_ALL",
+          "match_when": "(.title==\"${KV_CONFIG_PREVIEW}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+            "method": "POST",
+            "json": {
+              "title": "${KV_CONFIG_PREVIEW}"
+            }
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "KV_ALL",
+          "match_when": "(.title==\"${KV_CONFIG_DEV}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+            "method": "POST",
+            "json": {
+              "title": "${KV_CONFIG_DEV}"
+            }
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "KV_ALL",
+          "match_when": "(.title==\"${KV_CACHE_PROD}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+            "method": "POST",
+            "json": {
+              "title": "${KV_CACHE_PROD}"
+            }
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "KV_ALL",
+          "match_when": "(.title==\"${KV_CACHE_PREVIEW}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+            "method": "POST",
+            "json": {
+              "title": "${KV_CACHE_PREVIEW}"
+            }
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "KV_ALL",
+          "match_when": "(.title==\"${KV_CACHE_DEV}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+            "method": "POST",
+            "json": {
+              "title": "${KV_CACHE_DEV}"
+            }
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "KV_ALL",
+          "match_when": "(.title==\"${KV_SESSION_PROD}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+            "method": "POST",
+            "json": {
+              "title": "${KV_SESSION_PROD}"
+            }
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "KV_ALL",
+          "match_when": "(.title==\"${KV_SESSION_PREVIEW}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+            "method": "POST",
+            "json": {
+              "title": "${KV_SESSION_PREVIEW}"
+            }
+          }
+        },
+        {
+          "op": "UPSERT",
+          "match_from": "KV_ALL",
+          "match_when": "(.title==\"${KV_SESSION_DEV}\")",
+          "create": {
+            "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+            "method": "POST",
+            "json": {
+              "title": "${KV_SESSION_DEV}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "note_api_envs",
+      "op": "ECHO",
+      "message": "Ensure wrangler environments map bindings per env: KV_CONFIG_*, KV_CACHE_*, SESSION_*, D1=${D1_*}, R2=${R2_*}, QUEUE=${QUEUE_*}, DO migrations v1; set CORS_ORIGINS=${CORS_ORIGINS}."
+    },
+    {
+      "id": "check_web_prod",
+      "op": "HTTP_CHECK",
+      "url": "https://${WEB_PROD}",
+      "expect_status": [
+        200,
+        301,
+        302
+      ]
+    },
+    {
+      "id": "check_admin_prod",
+      "op": "HTTP_CHECK",
+      "url": "https://${ADMIN_PROD}",
+      "expect_status": [
+        200,
+        302,
+        403
+      ]
+    },
+    {
+      "id": "check_api_prod",
+      "op": "HTTP_CHECK",
+      "url": "https://${API_PROD}/health",
+      "headers": {
+        "CF-Access-Client-Id": "${CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${CF_ACCESS_CLIENT_SECRET}"
+      },
+      "expect_status": [
+        200,
+        401,
+        403
+      ]
+    },
+    {
+      "id": "check_web_preview",
+      "op": "HTTP_CHECK",
+      "url": "https://${WEB_PREVIEW}",
+      "expect_status": [
+        200,
+        301,
+        302
+      ]
+    },
+    {
+      "id": "check_admin_preview",
+      "op": "HTTP_CHECK",
+      "url": "https://${ADMIN_PREVIEW}",
+      "expect_status": [
+        200,
+        302,
+        403
+      ]
+    },
+    {
+      "id": "check_api_preview",
+      "op": "HTTP_CHECK",
+      "url": "https://${API_PREVIEW}/health",
+      "headers": {
+        "CF-Access-Client-Id": "${CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${CF_ACCESS_CLIENT_SECRET}"
+      },
+      "expect_status": [
+        200,
+        401,
+        403
+      ]
+    },
+    {
+      "id": "check_web_dev",
+      "op": "HTTP_CHECK",
+      "url": "https://${WEB_DEV}",
+      "expect_status": [
+        200,
+        301,
+        302
+      ]
+    },
+    {
+      "id": "check_admin_dev",
+      "op": "HTTP_CHECK",
+      "url": "https://${ADMIN_DEV}",
+      "expect_status": [
+        200,
+        302,
+        403
+      ]
+    },
+    {
+      "id": "check_api_dev",
+      "op": "HTTP_CHECK",
+      "url": "https://${API_DEV}/health",
+      "headers": {
+        "CF-Access-Client-Id": "${CF_ACCESS_CLIENT_ID}",
+        "CF-Access-Client-Secret": "${CF_ACCESS_CLIENT_SECRET}"
+      },
+      "expect_status": [
+        200,
+        401,
+        403
+      ]
+    },
+    {
+      "id": "manifest_build",
+      "op": "COMPUTE",
+      "expression": "{\n        now: (now|tojson),\n        domains: {\n          web: { prod: env.WEB_PROD, preview: env.WEB_PREVIEW, dev: env.WEB_DEV, www: env.WEB_WWW_PROD },\n          admin: { prod: env.ADMIN_PROD, preview: env.ADMIN_PREVIEW, dev: env.ADMIN_DEV },\n          api: { prod: env.API_PROD, preview: env.API_PREVIEW, dev: env.API_DEV }\n        },\n        pages: { web: env.WEB_PROJECT, admin: env.ADMIN_PROJECT },\n        worker: env.API_WORKER,\n        resources: {\n          d1: { prod: env.D1_PROD, preview: env.D1_PREVIEW, dev: env.D1_DEV },\n          kv: { config: [env.KV_CONFIG_PROD,env.KV_CONFIG_PREVIEW,env.KV_CONFIG_DEV],\n                cache:  [env.KV_CACHE_PROD,env.KV_CACHE_PREVIEW,env.KV_CACHE_DEV],\n                session:[env.KV_SESSION_PROD,env.KV_SESSION_PREVIEW,env.KV_SESSION_DEV] },\n          r2: { prod: env.R2_PROD, preview: env.R2_PREVIEW, dev: env.R2_DEV },\n          queues: { prod: env.QUEUE_PROD, preview: env.QUEUE_PREVIEW, dev: env.QUEUE_DEV }\n        },\n        access: {\n          emails: env.ALLOWED_EMAILS,\n          domains: env.ALLOWED_DOMAINS\n        },\n        cors: env.CORS_ORIGINS\n      }",
+      "save_as": {
+        "MANIFEST_JSON": "."
+      }
+    },
+    {
+      "id": "kv_manifest_lookup",
+      "op": "GET",
+      "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+      "save_as": {
+        "KV_ALL2": ".result"
+      }
+    },
+    {
+      "id": "kv_manifest_upsert",
+      "op": "UPSERT",
+      "match_from": "KV_ALL2",
+      "match_when": "(.title==\"GOLDSHORE_MANIFEST\")",
+      "create": {
+        "endpoint": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces",
+        "method": "POST",
+        "json": {
+          "title": "GOLDSHORE_MANIFEST"
+        }
+      },
+      "save_as": {
+        "MANIFEST_NS_ID": "(.id // .result.id)"
+      }
+    },
+    {
+      "id": "kv_manifest_put",
+      "op": "PUT",
+      "endpoint_template": "/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${MANIFEST_NS_ID}/values/${key}",
+      "params": {
+        "key": "infra/latest"
+      },
+      "raw_body_from": "MANIFEST_JSON",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    }
+  ]
+}

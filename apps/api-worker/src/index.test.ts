@@ -1,8 +1,25 @@
+/// <reference types="@cloudflare/workers-types" />
+
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { createHmac } from "node:crypto";
 
 import worker, { type Env } from "./index";
 import * as webhookModule from "./webhook";
+
+const encoder = new TextEncoder();
+
+async function hmacSha256Hex(secret: string, payload: string) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
+  return Array.from(new Uint8Array(signature))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -26,7 +43,7 @@ describe("routeRequest", () => {
     } as unknown as Env;
 
     const payload = JSON.stringify({ ref: "refs/heads/main" });
-    const signature = createHmac("sha256", secret).update(payload).digest("hex");
+    const signature = await hmacSha256Hex(secret, payload);
     const request = new Request("https://example.com/github/webhook", {
       method: "POST",
       headers: {

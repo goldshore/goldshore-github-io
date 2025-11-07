@@ -103,7 +103,7 @@ function decodeJwtPayload(segment: string): JwtClaims {
   return JSON.parse(json) as JwtClaims;
 }
 
-async function verifyJwt(token: string, env: Env): Promise<JwtClaims> {
+export async function verifyJwt(token: string, env: Env): Promise<JwtClaims> {
   const parts = token.split(".");
   if (parts.length !== 3) {
     throw new Error("Malformed JWT");
@@ -167,7 +167,7 @@ interface RateLimitResult {
   reset: number;
 }
 
-async function enforceRateLimit(identifier: string, env: Env): Promise<RateLimitResult> {
+export async function enforceRateLimit(identifier: string, env: Env): Promise<RateLimitResult> {
   const limit = Number(env.RATE_LIMIT_MAX ?? DEFAULT_RATE_LIMIT) || DEFAULT_RATE_LIMIT;
   const windowSeconds = Number(env.RATE_LIMIT_WINDOW ?? DEFAULT_RATE_LIMIT_WINDOW) || DEFAULT_RATE_LIMIT_WINDOW;
   const now = Date.now();
@@ -189,7 +189,7 @@ async function enforceRateLimit(identifier: string, env: Env): Promise<RateLimit
   return { allowed: true, remaining: Math.max(limit - updatedCount, 0), reset: resetAt };
 }
 
-function applyRateLimitHeaders(headers: Headers, result: RateLimitResult, limit: number): void {
+export function applyRateLimitHeaders(headers: Headers, result: RateLimitResult, limit: number): void {
   headers.set("X-RateLimit-Limit", String(limit));
   headers.set("X-RateLimit-Remaining", String(result.remaining));
   headers.set("X-RateLimit-Reset", String(Math.floor(result.reset / 1000)));

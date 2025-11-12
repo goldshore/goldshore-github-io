@@ -1,6 +1,6 @@
 {
   "files": [],
-  "references": [{ "path": "./apps/goldshore-api" }],
+  "references": [{ "path": "./apps/api-worker" }],
   "compilerOptions": {
     "composite": true,
     "skipLibCheck": true

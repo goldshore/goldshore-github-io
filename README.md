@@ -12,24 +12,17 @@ This repository is a monorepo containing the applications and packages that powe
 
 The repository is organized into the following workspaces:
 
--   `apps/goldshore-web`: The main marketing website, built with Astro.
--   `apps/goldshore-admin`: The admin dashboard, also built with Astro and protected by Cloudflare Access.
--   `apps/goldshore-api`: The Cloudflare Worker that serves as the API for the platform.
--   `apps/goldshore-agent`: A Cloudflare Worker for background jobs and queues.
--   `packages/ui`: Shared UI components and design tokens.
--   `packages/config`: Shared configuration files (tsconfig, eslint).
--   `packages/utils`: Shared utility functions.
--   `packages/auth`: Helpers for Cloudflare Access authentication.
--   `infra/cloudflare`: Cloudflare-related infrastructure configurations (wrangler.toml, bindings).
--   `infra/github`: GitHub Actions workflows.
-
+-   `apps/web`: The main marketing website, built with Astro.
+-   `apps/admin`: The admin dashboard, also built with Astro and protected by Cloudflare Access.
+-   `apps/api-worker`: The Cloudflare Worker that serves as the API for the platform.
+-   `packages/*`: Shared packages and libraries used across the different applications.
 
 ## Getting Started
 
 ### Prerequisites
 
 -   [Node.js](https://nodejs.org/) (version >=22.0.0)
--   [pnpm](https://pnpm.io/)
+-   [npm](https://www.npmjs.com/) (version >=10.0.0)
 -   [Wrangler](https://developers.cloudflare.com/workers/wrangler/get-started/) (Cloudflare CLI)
 
 ### Installation
@@ -40,7 +33,7 @@ The repository is organized into the following workspaces:
     ```
 2.  Install the dependencies from the root of the repository:
     ```bash
-    pnpm install
+    npm install
     ```
 
 ### Development
@@ -48,20 +41,10 @@ The repository is organized into the following workspaces:
 To start the development servers for all the applications in parallel, run the following command from the root of the repository:
 
 ```bash
-pnpm run dev
+npm run dev
 ```
 
-This will start the Astro development server for the `web` and `admin` apps, and the Wrangler development server for the `api` and `agent` workers.
-
-## Workspace Scripts
-
-Each workspace has a consistent set of scripts:
-
-- `pnpm dev`: Starts the development server.
-- `pnpm build`: Builds the application for production.
-- `pnpm preview`: Previews the production build locally.
-- `pnpm deploy`: Deploys the application to Cloudflare.
-
+This will start the Astro development server for the `web` and `admin` apps, and the Wrangler development server for the `api-worker`.
 
 ## Building and Deployment
 
@@ -70,24 +53,27 @@ Each workspace has a consistent set of scripts:
 To build all the applications for production, run the following command from the root of the repository:
 
 ```bash
-pnpm run build
+npm run build
 ```
 
-This will create optimized builds for the `web` and `admin` apps in their respective `dist` directories, and build the `api` and `agent` workers.
+This will create optimized builds for the `web` and `admin` apps in their respective `dist` directories, and build the `api-worker`.
 
 ### Deployment
 
-Deployment is handled automatically by the CI/CD pipeline, which is configured in `infra/github/actions`. When changes are pushed to the `main` branch, the following actions are performed:
+Deployment is handled automatically by the CI/CD pipeline, which is configured in `.github/workflows/ci.yml`. When changes are pushed to the `main` branch, the following actions are performed:
 
 1.  The applications are built and tested.
-2.  The `goldshore-api` and `goldshore-agent` workers are deployed to Cloudflare Workers.
-3.  The `goldshore-web` and `goldshore-admin` applications are deployed to Cloudflare Pages.
+2.  The `api-worker` is deployed to Cloudflare Workers.
+3.  The `web` and `admin` applications are deployed to Cloudflare Pages.
 
-For manual deployments, you can use the `wrangler` CLI. Refer to the `wrangler.toml` files within each app for configuration details.
+For manual deployments, you can use the `wrangler` CLI. Refer to the `wrangler.toml` and `wrangler.worker.toml` files for configuration details.
 
 ## Cloudflare Configuration
 
-Each application that deploys to Cloudflare has its own `wrangler.toml` file. This file contains the configuration for the application, including routes, bindings, and environment variables.
+The Cloudflare configuration is split into two files:
+
+-   `wrangler.toml`: Configures the Cloudflare Pages deployment for the `web` application.
+-   `wrangler.worker.toml`: Configures the Cloudflare Worker deployment for the `api-worker` application.
 
 ### Secrets and Environment Variables
 

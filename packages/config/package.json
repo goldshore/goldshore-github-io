@@ -1,0 +1,10 @@
+{
+  "name": "@goldshore/config",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.ts",
+  "files": [
+    "eslint-preset.js",
+    "tsconfig.base.json"
+  ]
+}

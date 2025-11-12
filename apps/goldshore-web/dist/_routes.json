@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "include": [
+    "/*"
+  ],
+  "exclude": [
+    "/_astro/*",
+    "/favicon.svg",
+    "/images/*",
+    "/logo-wordmark-on-light.svg",
+    "/logo.svg",
+    "/robots.txt",
+    "/site.webmanifest",
+    "/sitemap.xml"
+  ]
+}

@@ -1,9 +1,0 @@
-{
-  "name": "@goldshore/assets",
-  "version": "0.1.0",
-  "type": "module",
-  "exports": {
-    "./logo-wordmark-on-light.svg": "./goldshore/logo-wordmark-on-light.svg",
-    "./favicon.svg": "./goldshore/favicon.svg"
-  }
-}

@@ -2,7 +2,7 @@
   "name": "goldshore",
   "private": true,
   "version": "0.1.0",
-  "packageManager": "npm@11.4.2",
+  "packageManager": "pnpm@9.1.0",
   "workspaces": [
     "apps/*",
     "packages/*"

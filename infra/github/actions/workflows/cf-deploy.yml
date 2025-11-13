@@ -1,0 +1,47 @@
+name: Deploy goldshore-api
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "infra/**", "src/**", "wrangler.*", "package.json", ".github/**" ]
+  workflow_dispatch: {}
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i -g wrangler
+      - name: Preflight checks
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CODEX_JWT_HS256_KEY: ${{ secrets.CODEX_JWT_HS256_KEY }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          GITHUB_PRIVATE_KEY: ${{ secrets.GITHUB_PRIVATE_KEY }}
+          GITHUB_WEBHOOK_SECRET: ${{ secrets.GITHUB_WEBHOOK_SECRET }}
+        run: bash .github/scripts/codex_preflight.sh
+
+  deploy:
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm i -g wrangler
+      - name: Sync CF secrets & vars (idempotent)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CODEX_JWT_HS256_KEY: ${{ secrets.CODEX_JWT_HS256_KEY }}
+          GITHUB_CLIENT_SECRET: ${{ secrets.GITHUB_CLIENT_SECRET }}
+          GITHUB_PRIVATE_KEY: ${{ secrets.GITHUB_PRIVATE_KEY }}
+          GITHUB_WEBHOOK_SECRET: ${{ secrets.GITHUB_WEBHOOK_SECRET }}
+        run: |
+          echo "${CODEX_JWT_HS256_KEY}" | wrangler secret put CODEX_JWT_HS256_KEY --quiet || true
+          echo "${GITHUB_CLIENT_SECRET}" | wrangler secret put GITHUB_CLIENT_SECRET --quiet || true
+          echo "${GITHUB_PRIVATE_KEY}" | wrangler secret put GITHUB_PRIVATE_KEY --quiet || true
+          echo "${GITHUB_WEBHOOK_SECRET}" | wrangler secret put GITHUB_WEBHOOK_SECRET --quiet || true
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: wrangler deploy --minify

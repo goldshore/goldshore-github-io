@@ -1,0 +1,35 @@
+---
+import BaseLayout from "../../layouts/Base.astro";
+
+const meta = {
+  title: "Gold Shore Admin",
+  description: "Operational dashboard shell for authenticated Gold Shore staff via Cloudflare Access.",
+  canonical: "https://goldshore.org/admin",
+  noIndex: true
+};
+---
+<BaseLayout {...meta}>
+  <h1 class="section-title">Admin control room</h1>
+  <p class="section-subtitle">
+    This area is protected by Cloudflare Access. Use it to review launch runbooks, monitor reputation alerts, and trigger cache
+    purges across environments.
+  </p>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Launch runbooks</h2>
+      <p>Check status of upcoming drops, approvals, and asset readiness.</p>
+      <a href="https://notion.so" rel="noopener" target="_blank">Open runbooks →</a>
+    </section>
+    <section class="card">
+      <h2>Reputation console</h2>
+      <p>View incidents synced from Workers KV and trigger response playbooks.</p>
+      <button class="btn ghost" type="button">Open console</button>
+    </section>
+    <section class="card">
+      <h2>Cache &amp; deploy</h2>
+      <p>Run cache purges or promote previews to production with one click.</p>
+      <button class="btn" type="button">Launch Wrangler</button>
+    </section>
+  </div>
+</BaseLayout>

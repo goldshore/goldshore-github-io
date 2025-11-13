@@ -1,0 +1,67 @@
+name: Validate Codex access
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify GitHub App installation
+        env:
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${GITHUB_APP_ID:-}" ]]; then
+            echo "::error::GITHUB_APP_ID secret is not configured."
+            exit 1
+          fi
+
+          installation_app_id=$(gh api "/repos/${GITHUB_REPOSITORY}/installation" --jq '.app_id')
+          if [[ -z "${installation_app_id}" ]]; then
+            echo "::error::Unable to resolve GitHub App installation for ${GITHUB_REPOSITORY}."
+            exit 1
+          fi
+
+          if [[ "${installation_app_id}" != "${GITHUB_APP_ID}" ]]; then
+            echo "::error::GitHub App installation mismatch (expected ${GITHUB_APP_ID}, got ${installation_app_id})."
+            exit 1
+          fi
+
+          echo "✅ GitHub App installation matches App ID ${GITHUB_APP_ID}."
+
+      - name: Verify Cloudflare API token
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${CF_API_TOKEN:-}" ]]; then
+            echo "::error::CF_API_TOKEN secret is not configured."
+            exit 1
+          fi
+
+          status=$(curl -fsS -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            https://api.cloudflare.com/client/v4/user/tokens/verify | jq -r '.result.status // empty')
+
+          if [[ -z "${status}" ]]; then
+            echo "::error::Failed to parse Cloudflare token verification response."
+            exit 1
+          fi
+
+          if [[ "${status}" != "active" ]]; then
+            echo "::error::Cloudflare API token verification failed (status: ${status})."
+            exit 1
+          fi
+
+          echo "✅ Cloudflare API token is active."

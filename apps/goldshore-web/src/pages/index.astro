@@ -1,0 +1,30 @@
+---
+import Base from "../layouts/Base.astro";
+---
+<Base>
+  <main class="mx-auto max-w-6xl p-6">
+    <section class="py-12">
+      <h1 class="font-display text-4xl">GoldShore — trading infrastructure & insights</h1>
+      <div class="mt-4 flex gap-3">
+        <a href="/dash" class="px-4 py-2 rounded bg-[var(--brand)] text-[var(--brand-contrast)]">Launch Dashboard</a>
+        <a href="https://api.goldshore.org/v1/docs" class="px-4 py-2 rounded border border-[var(--border)]">View API Docs</a>
+      </div>
+    </section>
+    <section id="products" class="grid md:grid-cols-3 gap-4 py-8">
+      <a class="p-4 border rounded" href="https://api.goldshore.org/v1/health">Trading API</a>
+      <a class="p-4 border rounded" href="https://api.goldshore.org/v1/risk/limits">Options & Risk</a>
+      <a class="p-4 border rounded" href="https://admin.goldshore.org">Admin & CRM</a>
+    </section>
+    <section id="pricing" class="grid md:grid-cols-3 gap-4 py-8">
+      <a class="p-4 border rounded" href="/signup?plan=free">Free</a>
+      <a class="p-4 border rounded" href="/signup?plan=pro">Pro</a>
+      <a class="p-4 border rounded" href="/signup?plan=enterprise">Enterprise</a>
+    </section>
+    <section id="contact" class="py-8">
+      <form method="post" action="https://api.goldshore.org/v1/lead" class="flex gap-2">
+        <input name="email" type="email" required placeholder="you@company.com" class="border p-2 rounded flex-1" />
+        <button class="px-4 py-2 rounded bg-[var(--brand)] text-[var(--brand-contrast)]" type="submit">Request Access</button>
+      </form>
+    </section>
+  </main>
+</Base>

@@ -1,0 +1,211 @@
+name: Apply policies
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/cron/**'
+      - 'infra/cf/**'
+      - 'infra/policies/**'
+      - '.github/workflows/apply-policies.yml'
+
+jobs:
+  validate:
+    name: Validate policy definitions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Validate JSON syntax
+        run: |
+          set -euo pipefail
+          jq empty infra/cron/config.json
+          jq empty infra/cf/config.json
+          jq empty infra/policies/github/branch_protection.main.json
+          jq empty infra/policies/github/ruleset.protected-branches.json
+          jq empty infra/policies/github/environment.production.json
+          jq empty infra/policies/github/repository.settings.json
+          jq empty infra/policies/cloudflare/pages.goldshore-web.json
+          jq empty infra/policies/cloudflare/pages.goldshore-admin.json
+          jq empty infra/policies/cloudflare/workers.goldshore-api.json
+          jq empty infra/policies/cloudflare/dns.requirements.json
+          jq empty infra/policies/email/dmarc_spf.json
+
+  github:
+    name: Apply GitHub policies
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+      security-events: none
+    env:
+      GH_TOKEN: ${{ secrets.POLICY_APPLY_TOKEN }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Apply protections
+        run: |
+          set -euo pipefail
+          if [[ -z "${GH_TOKEN:-}" ]]; then
+            echo "::warning::POLICY_APPLY_TOKEN is not configured; skipping GitHub policy application."
+            exit 0
+          fi
+
+          gh --version
+
+          echo "Updating branch protection for main"
+          gh api \
+            --method PUT \
+            "repos/${GITHUB_REPOSITORY}/branches/main/protection" \
+            --input infra/policies/github/branch_protection.main.json
+
+          echo "Upserting protected branch ruleset"
+          RULESET_ID=$(gh api "repos/${GITHUB_REPOSITORY}/rulesets" --jq '.[] | select(.name=="Protected branches") | .id' || true)
+          if [[ -n "${RULESET_ID}" ]]; then
+            gh api \
+              --method PATCH \
+              "repos/${GITHUB_REPOSITORY}/rulesets/${RULESET_ID}" \
+              --input infra/policies/github/ruleset.protected-branches.json
+          else
+            gh api \
+              --method POST \
+              "repos/${GITHUB_REPOSITORY}/rulesets" \
+              --input infra/policies/github/ruleset.protected-branches.json
+          fi
+
+          echo "Configuring production deployment environment"
+          gh api \
+            --method PUT \
+            "repos/${GITHUB_REPOSITORY}/environments/production" \
+            --input infra/policies/github/environment.production.json
+
+          echo "Ensuring repository settings"
+          gh api \
+            --method PATCH \
+            "repos/${GITHUB_REPOSITORY}" \
+            --input infra/policies/github/repository.settings.json
+
+  cloudflare:
+    name: Apply Cloudflare desired state
+    needs: validate
+    runs-on: ubuntu-latest
+    # Required secrets/variables:
+    #   - secrets.CF_API_TOKEN: API token with Pages, Workers, and Logpush permissions.
+    #   - secrets.CF_ACCOUNT_ID or vars.CF_ACCOUNT_ID: Cloudflare account identifier.
+    #   - secrets.CF_WEB_ANALYTICS_TOKEN or vars.CF_WEB_ANALYTICS_TOKEN: Analytics token for the goldshore-web Pages project.
+    #   - secrets.AGENT_PROMPT_KV_ID or vars.AGENT_PROMPT_KV_ID: KV namespace ID for the API worker prompt store binding.
+    #   - secrets.KV_SESSIONS_PROD / _PREVIEW / _DEV or matching vars: KV namespace IDs for the API gateway environments.
+    #   - secrets.KV_CACHE_PROD or vars.KV_CACHE_PROD: KV namespace ID for the API gateway cache binding.
+    #   - secrets.LOGPUSH_ADMIN_TOKEN or vars.LOGPUSH_ADMIN_TOKEN: Logpush ownership challenge token for the admin gateway worker.
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Apply Pages and Worker configuration
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID || vars.CF_ACCOUNT_ID }}
+          CF_WEB_ANALYTICS_TOKEN: ${{ secrets.CF_WEB_ANALYTICS_TOKEN || vars.CF_WEB_ANALYTICS_TOKEN }}
+          AGENT_PROMPT_KV_ID: ${{ secrets.AGENT_PROMPT_KV_ID || vars.AGENT_PROMPT_KV_ID }}
+          KV_SESSIONS_PROD: ${{ secrets.KV_SESSIONS_PROD || vars.KV_SESSIONS_PROD }}
+          KV_CACHE_PROD: ${{ secrets.KV_CACHE_PROD || vars.KV_CACHE_PROD }}
+          KV_SESSIONS_PREVIEW: ${{ secrets.KV_SESSIONS_PREVIEW || vars.KV_SESSIONS_PREVIEW }}
+          KV_SESSIONS_DEV: ${{ secrets.KV_SESSIONS_DEV || vars.KV_SESSIONS_DEV }}
+          LOGPUSH_ADMIN_TOKEN: ${{ secrets.LOGPUSH_ADMIN_TOKEN || vars.LOGPUSH_ADMIN_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${CF_API_TOKEN:-}" || -z "${CF_ACCOUNT_ID:-}" ]]; then
+            echo "::warning::Cloudflare credentials not configured; skipping apply."
+            exit 0
+          fi
+
+          SUBSTITUTIONS='${CF_WEB_ANALYTICS_TOKEN} ${AGENT_PROMPT_KV_ID} ${KV_SESSIONS_PROD} ${KV_CACHE_PROD} ${KV_SESSIONS_PREVIEW} ${KV_SESSIONS_DEV} ${LOGPUSH_ADMIN_TOKEN}'
+
+          render_template() {
+            local source_file="$1"
+            local tmp_file
+
+            while IFS= read -r placeholder; do
+              local var_name=${placeholder#\${}
+              var_name=${var_name%\}}
+              if [[ "${var_name}" == "DATE" ]]; then
+                continue
+              fi
+
+              if [[ -z "${!var_name:-}" ]]; then
+                echo "::error file=${source_file}::Missing value for ${var_name}."
+                exit 1
+              fi
+            done < <(grep -o '\${[A-Z0-9_]\+}' "${source_file}" || true)
+
+            tmp_file=$(mktemp)
+            envsubst "${SUBSTITUTIONS}" <"${source_file}" >"${tmp_file}"
+
+            for var_name in CF_WEB_ANALYTICS_TOKEN AGENT_PROMPT_KV_ID KV_SESSIONS_PROD KV_CACHE_PROD KV_SESSIONS_PREVIEW KV_SESSIONS_DEV LOGPUSH_ADMIN_TOKEN; do
+              if grep -q "\${${var_name}}" "${tmp_file}"; then
+                echo "::error file=${source_file}::Failed to render placeholder for ${var_name}."
+                exit 1
+              fi
+            done
+
+            echo "${tmp_file}"
+          }
+
+          API="https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}"
+          AUTH=(-H "Authorization: Bearer ${CF_API_TOKEN}" -H "Content-Type: application/json")
+
+          for file in infra/policies/cloudflare/pages.*.json; do
+            rendered=$(render_template "${file}")
+            project=$(jq -r '.project' "${rendered}")
+            payload=$(jq -c 'del(.project)' "${rendered}")
+            echo "Syncing Pages project ${project}"
+            curl -sS -X PATCH "${API}/pages/projects/${project}" "${AUTH[@]}" --data "${payload}" >/dev/null
+            rm -f "${rendered}"
+          done
+
+          for WORKER_FILE in \
+            infra/policies/cloudflare/workers.goldshore-api.json \
+            infra/policies/cloudflare/workers.goldshore-admin.json; do
+            if [[ ! -f "${WORKER_FILE}" ]]; then
+              continue
+            fi
+
+            rendered=$(render_template "${WORKER_FILE}")
+            script=$(jq -r '.script' "${rendered}")
+            payload=$(jq -c 'del(.script)' "${rendered}")
+
+            if jq -e '.logpush?.destinations? | type == "array"' "${rendered}" >/dev/null; then
+              mapfile -t destinations < <(jq -r '.logpush.destinations[]' "${rendered}")
+              base_payload=$(echo "${payload}" | jq -c 'if .logpush then .logpush |= del(.destinations) else . end')
+
+              for destination in "${destinations[@]}"; do
+                payload_with_destination=$(echo "${base_payload}" | jq -c --arg destination "${destination}" 'if .logpush then .logpush.destination = $destination else . end')
+                echo "Syncing Worker ${script} (logpush destination ${destination})"
+                curl -sS -X PUT "${API}/workers/services/${script}/environments/production" "${AUTH[@]}" --data "${payload_with_destination}" >/dev/null
+              done
+            else
+              echo "Syncing Worker ${script}"
+              curl -sS -X PUT "${API}/workers/services/${script}/environments/production" "${AUTH[@]}" --data "${payload}" >/dev/null
+            fi
+
+            rm -f "${rendered}"
+          done
+
+          echo "DNS policy is declarative only; reference infra/scripts/enforce-dns.sh for enforcement."
+
+  notify:
+    name: Summary
+    needs:
+      - github
+      - cloudflare
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - run: |
+          if [[ "${{ needs.github.result }}" == "success" && "${{ needs.cloudflare.result }}" == "success" ]]; then
+            echo "All policy jobs completed"
+          else
+            echo "One or more policy jobs were skipped or failed" >&2

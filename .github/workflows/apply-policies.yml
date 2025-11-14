@@ -15,6 +15,8 @@ jobs:
   validate:
     name: Validate policy definitions
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -93,6 +95,8 @@ jobs:
     name: Apply Cloudflare desired state
     needs: validate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     # Required secrets/variables:
     #   - secrets.CF_API_TOKEN: API token with Pages, Workers, and Logpush permissions.
     #   - secrets.CF_ACCOUNT_ID or vars.CF_ACCOUNT_ID: Cloudflare account identifier.
@@ -199,6 +203,7 @@ jobs:
       - github
       - cloudflare
     runs-on: ubuntu-latest
+    permissions: {}
     if: always()
     steps:
       - run: |

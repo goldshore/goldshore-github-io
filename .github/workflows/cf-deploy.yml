@@ -5,9 +5,14 @@ on:
     paths: [ "infra/**", "src/**", "wrangler.*", "package.json", ".github/**" ]
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 jobs:
   preflight:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - run: npm i -g wrangler
@@ -24,6 +29,8 @@ jobs:
   deploy:
     needs: preflight
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - run: npm i -g wrangler

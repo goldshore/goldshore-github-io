@@ -5,10 +5,15 @@ on:
   schedule:
     - cron: "0 13 * * *"
 
+permissions:
+  contents: read
+
 jobs:
   enforce-budget:
     if: ${{ secrets.CODEX_BUDGET_USD != '' && secrets.CODEX_USAGE_USD != '' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -1,0 +1,11 @@
+{
+  "name": "@goldshore/sentry",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p dist && printf 'Sentry helpers placeholder\n' > dist/README.md",
+    "dev": "echo 'sentry helpers do not have a dev server'",
+    "lint": "echo 'lint not yet configured for @goldshore/sentry'",
+    "typecheck": "echo 'typecheck not yet configured for @goldshore/sentry'"
+  }
+}

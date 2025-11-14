@@ -1,37 +1,27 @@
 dist/
 node_modules/
+**/node_modules/
 .dev.vars
+.dev.vars.local
 .env
 .env.*
 astro.config.ts.timestamp
 .astro/
-node_modules/
-package-lock.json
-pnpm-lock.yaml
-apps/web/node_modules/
-apps/web/.astro/
-# Build artifacts
-_site/
-apps/web/dist/
-apps/web/.astro/
-
-# Node modules
-node_modules/
+apps/*/.astro/
+apps/*/dist/
 apps/*/node_modules/
+packages/*/dist/
 packages/*/node_modules/
-
-# Lock files
 package-lock.json
 apps/*/package-lock.json
 packages/*/package-lock.json
-
-# Local configs
-.dev.vars
-.dev.vars.local
-
-# Legacy
+pnpm-lock.yaml
+_site/
 .sass-cache/
 .jekyll-cache/
 .jekyll-metadata
 .bundle/
 vendor/
+.pnpm-store/
+.wrangler/
+.turbo/

@@ -1,0 +1,270 @@
+---
+import "./Header.css";
+
+const navLinks = [
+  { href: "/", label: "Home" },
+  { href: "/about", label: "About" },
+  { href: "/team", label: "Team" },
+  { href: "/services", label: "Services" },
+  { href: "/contact", label: "Contact" },
+];
+---
+
+<style>
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand img {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, .15));
+}
+
+.title {
+  font: 800 18px/1.1 "Inter", system-ui, sans-serif;
+  letter-spacing: .12em;
+}
+
+.nav {
+  display: flex;
+  gap: 20px;
+}
+
+.nav a {
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+
+.hamburger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .1);
+  position: relative;
+}
+
+.hamburger span {
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  height: 2px;
+  background: #fff;
+  border-radius: 2px;
+}
+
+.hamburger span:nth-child(1) { top: 12px; }
+.hamburger span:nth-child(2) { top: 19px; }
+.hamburger span:nth-child(3) { top: 26px; }
+
+.mobile-menu {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  left: 0;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(255, 255, 255, .08);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+}
+
+.mobile-menu nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-menu.is-open {
+  display: flex;
+}
+
+@media (max-width: 900px) {
+  .nav {
+    display: none;
+  }
+
+  .hamburger {
+    display: block;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .brand {
+    margin-inline: auto;
+  }
+
+  .mobile-menu {
+    display: none;
+  }
+}
+</style>
+const headerScript = await import("../scripts/headerMenu.ts?url");
+---
+
+<header class="container header" role="banner">
+  <a class="brand" href="/" aria-label="Gold Shore home">
+    <img src="/logo.svg" alt="" role="presentation" />
+    <span class="title">GOLD&nbsp;SHORE</span>
+  </a>
+  <nav class="nav" aria-label="Primary">
+    {navLinks.map(({ href, label }) => (
+      <a href={href}>{label}</a>
+    ))}
+  </nav>
+  <button
+    class="hamburger"
+    type="button"
+    aria-label="Open navigation menu"
+    aria-expanded="false"
+    aria-controls="mobile-primary-navigation"
+    data-menu-toggle
+  >
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+  <div
+    class="mobile-menu"
+    id="mobile-primary-navigation"
+    data-mobile-menu
+    hidden
+    aria-hidden="true"
+  >
+    <nav aria-label="Mobile primary">
+      {navLinks.map(({ href, label }) => (
+        <a href={href}>{label}</a>
+      ))}
+    </nav>
+  </div>
+</header>
+
+<script is:inline>
+  const toggleButton = document.querySelector('[data-menu-toggle]');
+  const mobileMenu = document.querySelector('[data-mobile-menu]');
+
+  if (toggleButton && mobileMenu) {
+    let isOpen = false;
+
+    const getFocusableItems = () =>
+      mobileMenu.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])');
+
+    const setButtonState = () => {
+      toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      toggleButton.setAttribute(
+        'aria-label',
+        isOpen ? 'Close navigation menu' : 'Open navigation menu'
+      );
+    };
+
+    const openMenu = () => {
+      if (isOpen) return;
+      isOpen = true;
+      mobileMenu.hidden = false;
+      mobileMenu.classList.add('is-open');
+      const [firstFocusable] = getFocusableItems();
+      if (firstFocusable) {
+        firstFocusable.focus();
+      }
+      setButtonState();
+      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('click', handleDocumentClick);
+    };
+
+    const closeMenu = () => {
+      if (!isOpen) return;
+      isOpen = false;
+      mobileMenu.classList.remove('is-open');
+      mobileMenu.hidden = true;
+      setButtonState();
+      toggleButton.focus();
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleDocumentClick);
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeMenu();
+        return;
+      }
+
+      if (event.key === 'Tab' && isOpen) {
+        const focusable = Array.from(getFocusableItems());
+        if (!focusable.length) {
+          event.preventDefault();
+          return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        }
+      }
+    };
+
+    const handleDocumentClick = (event) => {
+      if (
+        isOpen &&
+        !mobileMenu.contains(event.target) &&
+        event.target !== toggleButton &&
+        !toggleButton.contains(event.target)
+      ) {
+        closeMenu();
+      }
+    };
+
+    toggleButton.addEventListener('click', () => {
+      if (isOpen) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    const mediaQuery = window.matchMedia('(min-width: 901px)');
+    const handleMediaChange = (event) => {
+      if (event.matches) {
+        closeMenu();
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleMediaChange);
+
+    window.addEventListener('unload', () => {
+      mediaQuery.removeEventListener('change', handleMediaChange);
+    });
+
+    // Keep menu hidden on load until explicitly opened.
+    mobileMenu.hidden = true;
+  }
+</script>
+<script type="module" src={headerScript.default}></script>
+
+<script type="module" src={Astro.resolve("./header-menu.ts")}></script>

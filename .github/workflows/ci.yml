@@ -1,4 +1,6 @@
 name: CI
+permissions:
+  contents: read
 on:
   push: { branches: [ main ] }
   pull_request: { branches: [ main ] }
@@ -8,6 +10,8 @@ permissions:
 
 jobs:
   build-test:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,6 +28,8 @@ jobs:
   deploy-api:
     if: github.ref == 'refs/heads/main'
     needs: build-test
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     permissions:
       contents: read

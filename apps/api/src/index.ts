@@ -1,4 +1,6 @@
 import type { DurableObjectState, MessageBatch } from "@cloudflare/workers-types";
+import { routeAI } from "./ai/router";
+import { verifyAccess } from "./auth/access";
 
 export interface Env {
   DB: D1Database;
@@ -6,6 +8,10 @@ export interface Env {
   JOBS_QUEUE: Queue;
   SNAP_R2: R2Bucket;
   CORS_ORIGINS: string;
+  ACCESS_ISSUER?: string;
+  ACCESS_JWKS_URL?: string;
+  ACCESS_AUDIENCE?: string;
+  [key: string]: unknown;
 }
 
 type JsonValue = Record<string, any> | null;
@@ -60,10 +66,12 @@ const router: Record<string, Partial<Record<string, RouteHandler>>> = {
     GET: async ({ tools }) => tools.respond({ ok: true, ts: Date.now() }),
   },
   "/v1/whoami": {
-    GET: async ({ req, tools }) => {
-      const email = req.headers.get("cf-access-authenticated-user-email");
-      const ok = !!email;
-      return tools.respond(ok ? { ok, email } : { ok: false, error: "UNAUTHENTICATED" });
+    GET: async ({ req, env, tools }) => {
+      const verification = await verifyAccess(req, env);
+      if (!verification.ok) {
+        return tools.respond({ ok: false, error: verification.error }, verification.status);
+      }
+      return tools.respond({ ok: true, email: verification.email, scopes: verification.scopes });
     },
   },
   "/v1/lead": {
@@ -194,6 +202,38 @@ export default {
     const url = new URL(req.url);
     const path = url.pathname;
     const method = req.method.toUpperCase();
+
+    if (path === "/ai/generate" && method === "POST") {
+      const verification = await verifyAccess(req, env);
+      if (!verification.ok) {
+        return tools.respond({ ok: false, error: verification.error }, verification.status);
+      }
+      let payload: any;
+      try {
+        payload = await req.json();
+      } catch (error) {
+        console.error("Invalid AI request payload", error);
+        return tools.respond({ ok: false, error: "INVALID_JSON" }, 400);
+      }
+      const allowedTasks = new Set(["general", "qa", "analysis", "plan", "summarize", "draft"]);
+      if (!payload || typeof payload.task !== "string" || !allowedTasks.has(payload.task) || typeof payload.input !== "string") {
+        return tools.respond({ ok: false, error: "INVALID_AI_REQUEST" }, 400);
+      }
+      try {
+        const aiResponse = await routeAI({ ...payload, user: verification.email }, env, verification);
+        const headers = new Headers(aiResponse.headers);
+        for (const [key, value] of Object.entries(tools.corsHeaders)) {
+          headers.set(key, String(value));
+        }
+        if (!headers.has("content-type") && aiResponse.headers.get("content-type")) {
+          headers.set("content-type", aiResponse.headers.get("content-type")!);
+        }
+        return new Response(aiResponse.body, { status: aiResponse.status, headers });
+      } catch (error) {
+        console.error("AI routing failed", error);
+        return tools.respond({ ok: false, error: "AI_ROUTING_FAILED" }, 500);
+      }
+    }
 
     for (const route in router) {
       const pattern = new RegExp(`^${route.replace(/:\w+/g, "(?<param>[^/]+)")}$`);

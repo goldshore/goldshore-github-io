@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "tools": [
+    { "name": "search_web", "type": "http", "endpoint": "https://api.goldshore.org/tools/search", "auth": "access_jwt" },
+    { "name": "cloudflare_apply", "type": "http", "endpoint": "https://api.goldshore.org/admin/reconcile/cloudflare", "auth": "access_jwt" },
+    { "name": "github_comment", "type": "http", "endpoint": "https://api.goldshore.org/tools/github/comment", "auth": "access_jwt" },
+    { "name": "code_exec", "type": "queue", "queue": "goldshore-tasks" }
+  ],
+  "guardrails": {
+    "allowed_domains": ["goldshore.org", "github.com"],
+    "max_tool_depth": 4,
+    "timeouts_ms": { "tool": 15000, "overall": 120000 }
+  }
+}

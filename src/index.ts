@@ -1,16 +1,138 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
+import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 import type { AgentBindings } from './agent/prompt';
 import { loadSystemPrompt } from './agent/prompt';
 
 type Bindings = AgentBindings & {
   CORS_ORIGINS?: string;
+  ACCESS_JWKS_URL?: string;
+  ACCESS_ISSUER?: string;
+  ACCESS_AUDIENCE?: string;
+  ACCESS_AUD?: string;
 };
 
 type Variables = {
   identityEmail: string;
   scopes: string[];
 };
+
+type AccessVerificationResult = {
+  email: string;
+  scopes: string[];
+  payload: JWTPayload;
+};
+
+const jwksClientCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+
+function normalizeScopeClaim(value: unknown): string[] {
+  if (!value) {
+    return [];
+  }
+
+  const toTrimmed = (scope: string) => scope.trim();
+
+  if (typeof value === 'string') {
+    return Array.from(new Set(parseScopes(value).map(toTrimmed)));
+  }
+
+  if (Array.isArray(value)) {
+    const flattened = value
+      .filter((scope): scope is string => typeof scope === 'string')
+      .flatMap((scope) => parseScopes(scope));
+
+    return Array.from(new Set(flattened.map(toTrimmed)));
+  }
+
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    if ('scopes' in record) {
+      return normalizeScopeClaim(record.scopes);
+    }
+    if ('scope' in record) {
+      return normalizeScopeClaim(record.scope);
+    }
+  }
+
+  return [];
+}
+
+function extractEmailFromPayload(payload: JWTPayload): string | null {
+  const candidates: Array<unknown> = [
+    payload.email,
+    payload.sub,
+    payload['preferred_username' as keyof JWTPayload],
+  ];
+
+  const identityClaim = payload.identity;
+  if (identityClaim && typeof identityClaim === 'object') {
+    const identityEmail = (identityClaim as Record<string, unknown>).email;
+    candidates.push(identityEmail);
+  }
+
+  const customAccessEmail = payload[
+    'https://cloudflareaccess.com/access/user/email' as keyof JWTPayload
+  ];
+  if (customAccessEmail) {
+    candidates.push(customAccessEmail);
+  }
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.includes('@')) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
+function extractScopesFromPayload(payload: JWTPayload): string[] {
+  const scopeCandidates: unknown[] = [
+    payload.scope,
+    payload.scp,
+    payload.scopes,
+    payload['https://cloudflareaccess.com/access/scopes' as keyof JWTPayload],
+  ];
+
+  const uniqueScopes = new Set<string>();
+  for (const candidate of scopeCandidates) {
+    for (const scope of normalizeScopeClaim(candidate)) {
+      uniqueScopes.add(scope);
+    }
+  }
+
+  return Array.from(uniqueScopes);
+}
+
+async function verifyAccessJwt(token: string, env: Bindings): Promise<AccessVerificationResult> {
+  if (!env.ACCESS_JWKS_URL || !env.ACCESS_ISSUER) {
+    throw new Error('Access verification not configured.');
+  }
+
+  const jwksUrl = new URL(env.ACCESS_JWKS_URL);
+  let jwks = jwksClientCache.get(jwksUrl.href);
+  if (!jwks) {
+    jwks = createRemoteJWKSet(jwksUrl, {
+      cache: true,
+    });
+    jwksClientCache.set(jwksUrl.href, jwks);
+  }
+
+  const audience = env.ACCESS_AUDIENCE ?? env.ACCESS_AUD;
+  const { payload } = await jwtVerify(token, jwks, {
+    issuer: env.ACCESS_ISSUER,
+    audience,
+  });
+
+  const email = extractEmailFromPayload(payload);
+  if (!email) {
+    throw new Error('Access token missing email claim.');
+  }
+
+  const scopes = extractScopesFromPayload(payload);
+
+  return { email, scopes, payload };
+}
 
 const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
@@ -156,14 +278,14 @@ app.use('*', async (c, next) => {
   }
 
   const accessJwt = c.req.header('Cf-Access-Jwt-Assertion');
-  const identity = c.req.header('Cf-Access-Authenticated-User-Email');
-  const scopes = parseScopes(c.req.header('Cf-Access-Authenticated-User-Scopes'));
+  const identityHeader = c.req.header('Cf-Access-Authenticated-User-Email') ?? null;
+  const headerScopes = parseScopes(c.req.header('Cf-Access-Authenticated-User-Scopes'));
 
-  if (PUBLIC_ROUTES.has(path) && (!accessJwt || !identity)) {
+  if (PUBLIC_ROUTES.has(path) && !accessJwt) {
     return next();
   }
 
-  if (!accessJwt || !identity) {
+  if (!accessJwt) {
     return c.json(
       {
         ok: false,
@@ -174,8 +296,53 @@ app.use('*', async (c, next) => {
     );
   }
 
-  c.set('identityEmail', identity);
-  c.set('scopes', scopes);
+  let verification: AccessVerificationResult;
+  try {
+    verification = await verifyAccessJwt(accessJwt, c.env);
+  } catch (error) {
+    console.error('Access token verification failed.', error);
+    return c.json(
+      {
+        ok: false,
+        error: 'AUTH_REQUIRED',
+        hint: 'Authenticate via Access, then POST /v1/agent/plan with your goal.',
+      },
+      401,
+    );
+  }
+
+  if (identityHeader && identityHeader.toLowerCase() !== verification.email.toLowerCase()) {
+    return c.json(
+      {
+        ok: false,
+        error: 'AUTH_REQUIRED',
+        hint: 'Identity headers mismatch verified Access claims.',
+      },
+      401,
+    );
+  }
+
+  if (headerScopes.length > 0) {
+    const headerScopeSet = new Set(headerScopes);
+    const tokenScopeSet = new Set(verification.scopes);
+
+    if (
+      headerScopeSet.size !== tokenScopeSet.size ||
+      Array.from(headerScopeSet).some((scope) => !tokenScopeSet.has(scope))
+    ) {
+      return c.json(
+        {
+          ok: false,
+          error: 'AUTH_REQUIRED',
+          hint: 'Scope headers mismatch verified Access claims.',
+        },
+        401,
+      );
+    }
+  }
+
+  c.set('identityEmail', verification.email);
+  c.set('scopes', verification.scopes);
 
   await next();
 });
@@ -330,3 +497,5 @@ app.onError((err, c) => {
 });
 
 export default app;
+export { verifyAccessJwt };
+export type { AccessVerificationResult, Bindings };

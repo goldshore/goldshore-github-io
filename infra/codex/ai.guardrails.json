@@ -1,0 +1,19 @@
+{
+  "budgets": {
+    "default_usd_per_day": 25,
+    "admin_usd_per_day": 100
+  },
+  "caps": {
+    "max_tokens_per_request": 32000,
+    "max_concurrent_requests": 8
+  },
+  "pii_redaction": {
+    "enabled": true,
+    "patterns": ["\\b\\d{3}-\\d{2}-\\d{4}\\b", "\\b\\d{16}\\b"],
+    "replace_with": "[REDACTED]"
+  },
+  "logging": {
+    "sensitive_fields": ["api_key", "client_secret", "private_key"],
+    "retention_days": 14
+  }
+}

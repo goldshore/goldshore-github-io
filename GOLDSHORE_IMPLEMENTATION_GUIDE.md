@@ -4,8 +4,8 @@ This playbook summarises how the existing GoldShore repository is organised and 
 
 ## 1. Repository & workflow overview
 - Treat the repo as a single monorepo with discrete workspaces for the Worker, Astro front-end, D1 schema, and automation scripts as outlined in the root README. 【F:README.md†L1-L28】
-- Shipping the platform relies on three GitHub Actions workflows: `deploy.yml` for multi-environment releases, `ai_maint.yml` for nightly QA/AI curation, and `sync_dns.yml` for manual DNS replays. 【F:README.md†L29-L35】
-- Use the npm scripts defined at the workspace root (`build:web`, `process-images`) as the canonical build entry points that the CI pipeline already calls. 【F:package.json†L1-L17】【F:.github/workflows/deploy.yml†L33-L43】
+- Shipping the platform relies on `.github/workflows/cf-deploy.yml` for guarded releases, `.github/workflows/agent-cron.yml` for operational polling, and `.github/workflows/apply-policies.yml` for policy enforcement. 【F:.github/workflows/cf-deploy.yml†L1-L38】【F:.github/workflows/agent-cron.yml†L1-L25】【F:.github/workflows/apply-policies.yml†L1-L83】
+- Use the npm scripts defined at the workspace root (`build`, `lint`, `agent:poll`) as the canonical entry points mirrored by automation. 【F:package.json†L8-L21】【F:.github/workflows/cf-deploy.yml†L27-L35】【F:.github/workflows/agent-cron.yml†L16-L24】
 
 ## 2. Design & build process
 ### 2.1 Layout & component planning
@@ -40,7 +40,7 @@ This playbook summarises how the existing GoldShore repository is organised and 
 - For bespoke staging domains, append them to the `PRODUCTION_ASSETS`, `PREVIEW_ASSETS`, or `DEV_ASSETS` variables—wildcards are ignored automatically, so list concrete URLs only. 【F:apps/api-router/src/router.ts†L21-L63】
 
 ### 3.2 Build & release pipeline
-- GitHub Actions builds the site, runs the image pipeline, and deploys the Worker for each environment in a single matrix job; use this workflow as the source of truth for release sequencing and replicate it locally when debugging. 【F:.github/workflows/deploy.yml†L19-L53】
+- GitHub Actions builds the site on demand, runs the image pipeline, and orchestrates Cloudflare deploys from a single job; treat `.github/workflows/cf-deploy.yml` as the release blueprint when debugging. 【F:.github/workflows/cf-deploy.yml†L19-L38】
 - Ensure `wrangler.toml` advertises the canonical Worker name (`goldshore-org`) and extend it with bindings (KV, D1, R2) as the stack grows. 【F:wrangler.toml†L1-L3】
 
 ### 3.3 Security, testing & observability
@@ -53,7 +53,7 @@ This playbook summarises how the existing GoldShore repository is organised and 
 - Pair the build pipeline’s image processing (see §4) with Cloudflare Images or R2 when binaries outgrow GitHub Pages limits.
 
 ## 4. Asset & image management
-- Source images live in `apps/web/public/images/raw` and are transformed to AVIF/WEBP variants via the Sharp script before each deploy; fix the pipeline reuse bug by cloning the Sharp instance per format when you expand the script. 【F:apps/web/scripts/process-images.mjs†L5-L29】【F:.github/workflows/deploy.yml†L36-L43】
+- Source images live in `apps/web/public/images/raw` and are transformed to AVIF/WEBP variants via the Sharp script before each deploy; fix the pipeline reuse bug by cloning the Sharp instance per format when you expand the script. 【F:apps/web/scripts/process-images.mjs†L5-L29】【F:.github/workflows/cf-deploy.yml†L27-L35】
 - Document any new asset conventions in the README so the nightly AI maintenance job can lint against them.
 
 ## 5. AI-assisted maintenance & product ops
@@ -69,11 +69,11 @@ This playbook summarises how the existing GoldShore repository is organised and 
   - `/tiers` – Prototype admin entry form (extend into full dashboard). 【F:tiers.html†L1-L4】
 - **preview.goldshore.org** – Mirrors production content for stakeholders; served by the Worker’s preview origin mapping. 【F:apps/api-router/src/router.ts†L69-L75】
 - **dev.goldshore.org** – Developer sandbox with experimental assets and feature flags; route via the Worker’s dev origin mapping. 【F:apps/api-router/src/router.ts†L69-L75】
-- **www.goldshore.org** – CNAME alias to the apex handled in the DNS automation script. 【F:infra/scripts/upsert-goldshore-dns.sh†L20-L49】
+- **www.goldshore.org** – CNAME alias to the apex handled in the DNS enforcement script. 【F:infra/scripts/enforce-dns.sh†L1-L16】
 
 ### 6.2 DNS & SSL management
-- Run `infra/scripts/upsert-goldshore-dns.sh` during provisioning to upsert `A`/`CNAME` records for apex, `www`, `preview`, and `dev`—the script is idempotent and Cloudflare-proxied by default. 【F:infra/scripts/upsert-goldshore-dns.sh†L1-L51】
-- Use `sync_dns.yml` when records drift; it simply replays the script so infra changes stay version-controlled. 【F:README.md†L29-L35】
+- Run `infra/scripts/enforce-dns.sh` during provisioning to assert TXT and CNAME records for apex, `www`, `preview`, and `dev`—the stub echoes desired state and is ready for Cloudflare API calls. 【F:infra/scripts/enforce-dns.sh†L1-L16】
+- Trigger `.github/workflows/apply-policies.yml` when records drift; the Cloudflare stage reconciles Pages, Workers, and DNS requirements against the committed JSON. 【F:.github/workflows/apply-policies.yml†L1-L83】
 - Keep the Worker bound to the same zone so Access, caching, and SSL certificates stay unified across subdomains.
 
 ## 7. Implementation checklist
@@ -105,8 +105,8 @@ goldshore/
 └─ package.json                # Workspace scripts
 ```
 
-Use the workspace scripts for daily work: `npm run dev` for Astro, `npm run build` for production bundles, and `npm run qa`
-to mirror the CI checks before opening a PR. 【F:package.json†L8-L18】
+Use the workspace scripts for daily work: `npm run dev` for Astro, `npm run build` for production bundles, and `npm run lint`
+or `npm run typecheck` to mirror the CI checks before opening a PR. 【F:package.json†L9-L16】
 
 ## 1. Theme tokens & skyscraper hero
 
@@ -141,9 +141,8 @@ to mirror the CI checks before opening a PR. 【F:package.json†L8-L18】
 
 - Base layout ships a skip link, consistent container spacing, and high-contrast palette baked into `theme.css`. 【F:apps/web/src/layouts/Base.astro†L24-L33】【F:apps/web/src/styles/theme.css†L19-L116】
 - Components respect reduced-motion preferences and mobile breakpoints through scoped styles. 【F:apps/web/src/components/Hero.astro†L21-L34】【F:apps/web/src/components/Header.astro†L41-L63】
-- `npm run qa` mirrors CI by processing images, installing the Astro workspace, and building the static site; follow the prompt
-  to run Lighthouse locally. 【F:.github/workflows/local-qa.mjs†L1-L14】
-- CI enforces Lighthouse ≥0.9 for performance, accessibility, and SEO via `.github/workflows/qa.yml`. 【F:.github/workflows/qa.yml†L1-L28】
+- `npm run build` processes images and runs the Astro workspace locally so designers can validate accessibility tweaks before pushing.
+- Operational checks run continuously via `.github/workflows/agent-cron.yml`, which flags failing builds, DNS drift, and conflicted pull requests. 【F:.github/workflows/agent-cron.yml†L1-L25】
 
 ## 5. Cloudflare Worker & routing
 
@@ -154,13 +153,11 @@ to mirror the CI checks before opening a PR. 【F:package.json†L8-L18】
 
 ## 6. Deployment workflow
 
-- `.github/workflows/deploy.yml` installs workspaces, builds the site (running Sharp), deploys the Worker to production/preview/dev,
-  and syncs DNS. Use `workflow_dispatch` for manual redeploys. 【F:.github/workflows/deploy.yml†L1-L39】
+- `.github/workflows/cf-deploy.yml` installs workspaces only when app directories change, then defers to Cloudflare primitives for deployment orchestration. Use `workflow_dispatch` for manual redeploys. 【F:.github/workflows/cf-deploy.yml†L1-L38】
 
 ## 7. DNS & domain topology
 
-- `infra/scripts/upsert-goldshore-dns.sh` provisions proxied CNAMEs for apex, `www`, `preview`, and `dev`, matching the Worker
-  routes. Override `ZONE` (or legacy `ZONE_NAME`) for sister domains before execution. 【F:infra/scripts/upsert-goldshore-dns.sh†L1-L48】
+- `infra/scripts/enforce-dns.sh` documents the expected DMARC/SPF TXT entries alongside CNAMEs for apex, `www`, `preview`, and `dev`, matching the Worker routes. Override environment variables before execution. 【F:infra/scripts/enforce-dns.sh†L1-L16】
 
 ## 8. Admin access & security
 
@@ -180,13 +177,13 @@ to mirror the CI checks before opening a PR. 【F:package.json†L8-L18】
 
 ## 11. Developer ergonomics
 
-- Quickstart: `npm install`, `npm run dev`, `npm run qa` before submitting PRs.
-- Use the workspace deploy scripts (`deploy:prod`, `deploy:preview`, `deploy:dev`) for manual Worker pushes. 【F:package.json†L12-L16】
+- Quickstart: `npm install`, `npm run dev`, and `npm run lint` before submitting PRs.
+- Use the workspace scripts (`build:api`, `deploy:api`, `agent:poll`) for manual Worker pushes and operational checks. 【F:package.json†L13-L21】
 
 ## 12. Launch checklist
 
 1. Update or create content in `apps/web/src/pages`/`components` per sections 1–2.
 2. Drop new imagery into `public/images/raw` and run `npm run process-images`.
-3. Validate locally with `npm run qa` and spot-check Lighthouse.
-4. Push to a branch; GitHub Actions runs `qa.yml` and `deploy.yml` on merge.
+3. Validate locally with `npm run lint`/`npm run typecheck` and spot-check Lighthouse.
+4. Push to a branch; GitHub Actions runs `cf-deploy.yml` on merge and the agent cron follows up with operational checks.
 5. Confirm DNS + Worker routes via the Cloudflare dashboard and lock `/admin` behind Access.

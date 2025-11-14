@@ -1,3 +1,7 @@
-/infra/cf/ @marzton @goldshore
-/packages/api/ @marzton @goldshore
-/packages/workers/ @marzton @goldshore
+*                         @goldshore/core-team
+/infra/                   @goldshore/platform
+/docs/ops/                @goldshore/ops
+/infra/cf/                @marzton @goldshore
+/packages/api/            @marzton @goldshore
+/packages/workers/        @marzton @goldshore
+/apps/api-worker/         @goldshore/platform

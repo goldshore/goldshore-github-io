@@ -7,7 +7,7 @@ OPENAI_PROJECT_ID=proj-1234
 CF_API_TOKEN=cf-api-token
 CF_ACCOUNT_ID=cf-account-id
 CF_ZONE_ID=cf-zone-id
-GPT_PROXY_SECRET=local-dev-shared-secret
+GPT_PROXY_SECRET=your-shared-secret
 GPT_PROXY_TOKEN=local-dev-shared-secret
 GPT_ALLOWED_ORIGINS=https://localhost:8787
 # Optional: Cloudflare Access settings are typically provided only in deployed environments

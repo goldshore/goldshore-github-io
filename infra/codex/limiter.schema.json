@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Codex Limiter Configuration",
+  "type": "object",
+  "required": ["currency", "budgets"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "currency": {
+      "type": "string",
+      "minLength": 1
+    },
+    "usageSources": {
+      "type": "object",
+      "patternProperties": {
+        ".+": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["environment", "file", "value"]
+            },
+            "key": {
+              "type": "string",
+              "minLength": 1
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "amount": {
+              "type": "number"
+            },
+            "description": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {"type": {"const": "environment"}}
+              },
+              "then": {
+                "required": ["key"]
+              }
+            },
+            {
+              "if": {
+                "properties": {"type": {"const": "file"}}
+              },
+              "then": {
+                "required": ["path"]
+              }
+            },
+            {
+              "if": {
+                "properties": {"type": {"const": "value"}}
+              },
+              "then": {
+                "required": ["amount"]
+              }
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "budgets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "amount"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "amount": {
+            "type": "number"
+          },
+          "tolerance": {
+            "type": "number"
+          },
+          "usageSource": {
+            "type": "string",
+            "minLength": 1
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          },
+          "notes": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "actions": {
+      "type": "object",
+      "patternProperties": {
+        ".+": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "type": "string"
+            },
+            "webhookEnv": {
+              "type": "string"
+            },
+            "repository": {
+              "type": "string"
+            },
+            "labels": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "uniqueItems": true
+            },
+            "title": {
+              "type": "string"
+            },
+            "bodyTemplate": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

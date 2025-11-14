@@ -1,0 +1,34 @@
+{
+  "domain": "goldshore.org",
+  "last_reviewed": "2024-02-20",
+  "spf": {
+    "record": "v=spf1 include:_spf.google.com include:spf.messagingengine.com -all",
+    "policy": "reject",
+    "notes": "Google Workspace handles outbound mail; Fastmail fallback retained for legacy routing.",
+    "enforcement": {
+      "hard_fail": true,
+      "soft_fail_transition_complete": true
+    }
+  },
+  "dmarc": {
+    "record": "v=DMARC1; p=quarantine; sp=quarantine; aspf=s; adkim=s; rua=mailto:postmaster@goldshore.org; ruf=mailto:security@goldshore.org; fo=1",
+    "policy": "quarantine",
+    "alignment": {
+      "spf": "strict",
+      "dkim": "strict"
+    },
+    "reporting": {
+      "aggregate": "postmaster@goldshore.org",
+      "forensic": "security@goldshore.org",
+      "format": "afrf"
+    },
+    "pct": 100
+  },
+  "dkim": {
+    "selectors": [
+      "google",
+      "fm1"
+    ],
+    "rotation_schedule_days": 90
+  }
+}

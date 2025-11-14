@@ -1,0 +1,81 @@
+{
+  "$schema": "./limiter.schema.json",
+  "currency": "USD",
+  "usageSources": {
+    "monthly": {
+      "type": "environment",
+      "key": "CODEX_USAGE_USD",
+      "description": "Month-to-date Codex usage exported from the OpenAI billing dashboard."
+    }
+  },
+  "budgets": [
+    {
+      "id": "core-automation",
+      "label": "Core automation budget",
+      "amount": 250,
+      "tolerance": 25,
+      "usageSource": "monthly",
+      "actions": [
+        "notifyWebhook",
+        "openIssue"
+      ],
+      "notes": "Covers daily agent triage, scheduled audits, and Pages cache warmups."
+    },
+    {
+      "id": "research-burst",
+      "label": "Research burst buffer",
+      "amount": 325,
+      "tolerance": 15,
+      "usageSource": "monthly",
+      "actions": [
+        "notifyWebhook"
+      ],
+      "notes": "Reserved for short-lived research experiments and training prompts."
+    },
+    {
+      "id": "hard-ceiling",
+      "label": "Hard stop monthly ceiling",
+      "amount": 400,
+      "tolerance": 0,
+      "usageSource": "monthly",
+      "actions": [
+        "pauseAutomation",
+        "openIssue"
+      ],
+      "notes": "Absolute cap for the month. Exceeding this requires disabling expensive workflows."
+    }
+  ],
+  "actions": {
+    "notifyWebhook": {
+      "type": "webhook",
+      "description": "Post to the automation webhook so the on-call engineer can triage Codex spend.",
+      "webhookEnv": "AGENT_WEBHOOK_URL"
+    },
+    "openIssue": {
+      "type": "github_issue",
+      "repository": "goldshore/goldshore",
+      "labels": [
+        "ops",
+        "codex"
+      ],
+      "title": "Codex spend above {{budget.label}}",
+      "bodyTemplate": "Usage has crossed the {{budget.label}} guardrail. Remaining budget: ${{remaining}}."
+    },
+    "pauseAutomation": {
+      "type": "manual",
+      "description": "Disable high-cost Codex GitHub Actions workflows until spend falls back inside the ceiling."
+    }
+  },
+  "rateLimiter": {
+    "budgets": {
+      "openai_tokens_per_hour": 800000,
+      "github_api_calls_per_hour": 2000,
+      "webhook_events_per_hour": 300,
+      "deployments_per_day": 25
+    },
+    "actions": {
+      "on_soft_limit": "warn",
+      "on_hard_limit": "pause"
+    }
+  }
+}

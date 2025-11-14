@@ -1,38 +1,58 @@
-name = "goldshore"
-main = "apps/api-router/src/router.ts"
-compatibility_date = "2025-10-05"
+name = "goldshore-api"
+main = "apps/api-worker/dist/src/index.js"
+compatibility_date = "2024-11-20"
 workers_dev = false
-account_id = "f77de112d2019e5456a3198a8bb50bd2"
+minify = true
 
-[[secrets_store_secrets]]
-binding     = "OPENAI_API_KEY"
-store_id    = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "OPENAI_API_KEY"
+[build]
+command = "npm run -w @goldshore/api-worker build"
 
-[[secrets_store_secrets]]
-binding     = "OPENAI_PROJECT_ID"
-store_id    = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "OPENAI_PROJECT_ID"
+[[kv_namespaces]]
+binding = "KV_SESSIONS"
+id = "00000000000000000000000000000000"
+preview_id = "dev-kv-sessions"
 
-[[secrets_store_secrets]]
-binding     = "CF_API_TOKEN"
-store_id    = "b9824d3280c54573a24137c7e7143b33"
-secret_name = "CF_API_TOKEN"
+[[kv_namespaces]]
+binding = "KV_CACHE"
+id = "00000000000000000000000000000001"
+preview_id = "dev-kv-cache"
+
+[[durable_objects.bindings]]
+name = "DO_SESSIONS"
+class_name = "SessionDO"
+
+[[queues.producers]]
+binding = "Q_EVENTS"
+queue = "goldshore-events"
+
+[[queues.consumers]]
+queue = "goldshore-events"
+max_batch_size = 50
+max_wait_ms = 2000
+dead_letter_queue = "goldshore-dlq"
 
 [vars]
-APP_NAME = "GoldShore"
-PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
-PREVIEW_ASSETS = "https://goldshore-org-preview.pages.dev"
-DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
+GOLDSHORE_ENV = "production"
+GOLDSHORE_ORIGIN = "https://goldshore.org"
+GOLDSHORE_CORS = "https://goldshore.org,https://www.goldshore.org,https://admin.goldshore.org,https://preview.goldshore.org,http://localhost:5173,http://127.0.0.1:5173"
+JWT_AUDIENCE = "goldshore-api"
+JWT_ISSUER = "https://auth.goldshore.org"
+RATE_LIMIT_MAX = "120"
+RATE_LIMIT_WINDOW = "60"
 
-[env.production]
-routes = [
-  { pattern = "goldshore.org/*",     zone_name = "goldshore.org" },
-  { pattern = "www.goldshore.org/*", zone_name = "goldshore.org" }
-]
+[env.development.vars]
+GOLDSHORE_ENV = "development"
+GOLDSHORE_ORIGIN = "http://localhost:8787"
+GOLDSHORE_CORS = "http://localhost:8787,http://localhost:3000"
+JWT_AUDIENCE = "goldshore-api-dev"
+JWT_ISSUER = "https://auth-dev.goldshore.org"
 
-[env.preview]
-routes = [{ pattern = "preview.goldshore.org/*", zone_name = "goldshore.org" }]
+[observability]
+enabled = true
 
-[env.dev]
-routes = [{ pattern = "dev.goldshore.org/*", zone_name = "goldshore.org" }]
+[triggers]
+crons = ["*/30 * * * *"]
+
+[[routes]]
+pattern = "api.goldshore.org/*"
+zone_name = "goldshore.org"

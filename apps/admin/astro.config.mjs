@@ -12,10 +12,12 @@ export default defineConfig({
         'astro:config:setup': ({ injectScript }) => {
           injectScript('page', `
             const nonce = '__CSP_NONCE__';
-            if (nonce) {
+            if (nonce && nonce !== '__CSP_NONCE__') {
               const scripts = document.querySelectorAll('script');
               scripts.forEach(script => {
-                script.setAttribute('nonce', nonce);
+                if (!script.getAttribute('nonce')) {
+                  script.setAttribute('nonce', nonce);
+                }
               });
             }
           `);

@@ -1,0 +1,82 @@
+{
+  "script": "goldshore-api",
+  "description": "Cloudflare Worker powering Goldshore's authenticated API and event queue integrations.",
+  "compatibility_date": "2024-11-20",
+  "description": "Primary API Worker powering authenticated trading and CRM endpoints.",
+  "compatibility_date": "2025-10-20",
+  "environments": {
+    "production": {
+      "routes": [
+        "api.goldshore.org/*"
+      ],
+      "kv_namespaces": [
+        { "binding": "KV_SESSIONS", "id": "${KV_SESSIONS_ID}" },
+        { "binding": "KV_CACHE", "id": "${KV_CACHE_ID}" }
+      ],
+      "durable_objects": [
+        { "name": "DO_SESSIONS", "class_name": "SessionDO" }
+      ],
+      "queues": {
+        "producers": [
+          { "binding": "Q_EVENTS", "queue": "goldshore-events" }
+        ],
+        "consumers": [
+          {
+            "queue": "goldshore-events",
+            "max_batch_size": 50,
+            "max_wait_ms": 2000,
+            "dead_letter_queue": "goldshore-dlq"
+          }
+        ]
+      ],
+      "vars": {
+        "GOLDSHORE_ENV": "production",
+        "GOLDSHORE_ORIGIN": "https://goldshore.org",
+        "GOLDSHORE_CORS": "https://goldshore.org,https://www.goldshore.org,https://admin.goldshore.org,https://preview.goldshore.org,http://localhost:5173,http://127.0.0.1:5173",
+        "JWT_AUDIENCE": "goldshore-api",
+        "JWT_ISSUER": "https://auth.goldshore.org",
+        "RATE_LIMIT_MAX": "120",
+        "RATE_LIMIT_WINDOW": "60"
+      }
+    },
+    "preview": {
+      "routes": [
+        "api-preview.goldshore.org/*"
+      ],
+      "vars": {
+        "GOLDSHORE_ENV": "preview",
+        "GOLDSHORE_ORIGIN": "https://preview.goldshore.org",
+        "GOLDSHORE_CORS": "https://preview.goldshore.org,https://admin-preview.goldshore.org,http://localhost:8787",
+        "JWT_AUDIENCE": "goldshore-api-preview",
+        "JWT_ISSUER": "https://auth-preview.goldshore.org"
+      }
+    },
+    "development": {
+      "routes": [
+        "api-dev.goldshore.org/*"
+      ],
+      "vars": {
+        "GOLDSHORE_ENV": "development",
+        "GOLDSHORE_ORIGIN": "https://dev.goldshore.org",
+        "GOLDSHORE_CORS": "https://dev.goldshore.org,http://localhost:8787,http://127.0.0.1:8787",
+        "JWT_AUDIENCE": "goldshore-api-dev",
+        "JWT_ISSUER": "https://auth-dev.goldshore.org"
+      }
+    }
+  },
+  "triggers": {
+    "crons": ["*/30 * * * *"]
+  },
+  "migrations": [
+    { "tag": "v1", "new_classes": ["SessionDO"] }
+  ],
+  "secrets": [
+    "GOLDSHORE_JWT_SECRET",
+    "GITHUB_WEBHOOK_SECRET",
+    "GITHUB_APP_PRIVATE_KEY"
+  ],
+  "logpush": {
+    "dataset": "http_requests",
+    "destination": "r2://goldshore-observability/api/${DATE}.ndjson"
+  }
+}

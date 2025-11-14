@@ -1,0 +1,50 @@
+name = "goldshore-api"
+main = "dist/src/index.js"
+compatibility_date = "2024-11-20"
+minify = true
+
+[build]
+command = "npm run -w @goldshore/api-worker build"
+
+[[kv_namespaces]]
+binding = "KV_SESSIONS"
+id = "00000000000000000000000000000000"
+preview_id = "dev-kv-sessions"
+
+[[kv_namespaces]]
+binding = "KV_CACHE"
+id = "00000000000000000000000000000001"
+preview_id = "dev-kv-cache"
+
+[[durable_objects.bindings]]
+name = "DO_SESSIONS"
+class_name = "SessionDO"
+
+[[queues.producers]]
+binding = "Q_EVENTS"
+queue = "goldshore-events"
+
+[[queues.consumers]]
+queue = "goldshore-events"
+max_batch_size = 50
+max_wait_ms = 2000
+dead_letter_queue = "goldshore-dlq"
+
+[vars]
+GOLDSHORE_ENV = "development"
+GOLDSHORE_ORIGIN = "http://localhost:8787"
+GOLDSHORE_CORS = "http://localhost:8787,http://localhost:3000"
+JWT_AUDIENCE = "goldshore-api-dev"
+JWT_ISSUER = "https://auth-dev.goldshore.org"
+RATE_LIMIT_MAX = "120"
+RATE_LIMIT_WINDOW = "60"
+
+[observability]
+enabled = true
+
+[triggers]
+crons = ["*/30 * * * *"]
+
+[[routes]]
+pattern = "api.goldshore.org/*"
+zone_name = "goldshore.org"

@@ -1,0 +1,65 @@
+{
+  "script": "goldshore-admin-gateway",
+  "description": "Worker routing layer enforcing Access for the Goldshore admin console and proxying to Pages deployments.",
+  "compatibility_date": "2025-01-15",
+  "environments": {
+    "production": {
+      "routes": [
+        "admin.goldshore.org/*"
+      ],
+      "vars": {
+        "APP_NAME": "Goldshore Admin Gateway",
+        "PAGES_ORIGIN": "https://goldshore-admin.pages.dev",
+        "ASSET_CACHE_TTL": "300",
+        "ACCESS_AUD": "goldshore-admin",
+        "ACCESS_TAG": "admin"
+      },
+      "services": [
+        {
+          "binding": "API",
+          "service": "goldshore-api-gateway",
+          "environment": "production"
+        }
+      ]
+    },
+    "preview": {
+      "routes": [
+        "admin-preview.goldshore.org/*"
+      ],
+      "vars": {
+        "APP_NAME": "Goldshore Admin Preview Gateway",
+        "PAGES_ORIGIN": "https://goldshore-admin-preview.pages.dev",
+        "ASSET_CACHE_TTL": "120",
+        "ACCESS_AUD": "goldshore-admin-preview",
+        "ACCESS_TAG": "admin"
+      },
+      "services": [
+        {
+          "binding": "API",
+          "service": "goldshore-api-gateway",
+          "environment": "preview"
+        }
+      ]
+    },
+    "development": {
+      "routes": [
+        "admin-dev.goldshore.org/*"
+      ],
+      "vars": {
+        "APP_NAME": "Goldshore Admin Dev Gateway",
+        "PAGES_ORIGIN": "https://goldshore-admin-preview.pages.dev",
+        "ASSET_CACHE_TTL": "60",
+        "ACCESS_AUD": "goldshore-admin-dev",
+        "ACCESS_TAG": "admin"
+      }
+    }
+  },
+  "logpush": {
+    "dataset": "http_requests",
+    "destinations": [
+      "r2://goldshore-logs/admin/${DATE}.json",
+      "r2://goldshore-observability/admin-gateway/${DATE}.ndjson"
+    ],
+    "ownership_challenge": "${LOGPUSH_ADMIN_TOKEN}"
+  }
+}

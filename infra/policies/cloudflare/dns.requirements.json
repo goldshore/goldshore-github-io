@@ -1,0 +1,122 @@
+{
+  "zone": "goldshore.org",
+  "last_reviewed": "2024-03-30",
+  "description": "Declarative DNS inventory for Goldshore managed via Cloudflare. All records are expected to be proxied (orange cloud).",
+  "last_reviewed": "2024-02-20",
+  "description": "Declarative DNS inventory for Goldshore managed through the upsert script and Cloudflare API.",
+  "records": [
+    {
+      "type": "CNAME",
+      "name": "@",
+      "content": "goldshore-web.pages.dev",
+      "proxied": true,
+      "ttl": 3600,
+      "required": true,
+      "note": "Root domain served from the Pages production deployment."
+      "content": "goldshore-org.pages.dev",
+      "proxied": true,
+      "ttl": 3600,
+      "required": true,
+      "note": "Root domain served from the Pages production deployment via the Worker."
+    },
+    {
+      "type": "CNAME",
+      "name": "www",
+      "content": "goldshore.org",
+      "proxied": true,
+      "ttl": 3600,
+      "required": true,
+      "note": "Primary vanity domain alias."
+    },
+    {
+      "type": "CNAME",
+      "name": "preview",
+      "content": "preview.goldshore-web.pages.dev",
+      "proxied": true,
+      "ttl": 3600,
+      "required": true,
+      "note": "Stakeholder preview hostname served from the Pages preview deployment."
+    },
+    {
+      "type": "CNAME",
+      "name": "dev",
+      "content": "dev.goldshore-web.pages.dev",
+      "proxied": true,
+      "ttl": 3600,
+      "required": true,
+      "note": "Developer sandbox mapped to the Pages development environment."
+    },
+    {
+      "type": "CNAME",
+      "name": "admin",
+      "content": "goldshore-admin.pages.dev",
+      "proxied": true,
+      "ttl": 3600,
+      "required": true,
+      "note": "Admin console behind Cloudflare Access."
+    },
+    {
+      "type": "CNAME",
+      "name": "admin-preview",
+      "content": "admin-preview.goldshore-admin.pages.dev",
+      "proxied": true,
+      "ttl": 3600,
+      "required": true,
+      "note": "Preview build of the admin console."
+    },
+    {
+      "type": "CNAME",
+      "name": "admin-dev",
+      "content": "admin-dev.goldshore-admin.pages.dev",
+      "proxied": true,
+      "ttl": 3600,
+      "required": true,
+      "note": "Development sandbox for the admin console."
+    },
+    {
+      "type": "CNAME",
+      "name": "api",
+      "content": "goldshore-api.goldshore.workers.dev",
+      "proxied": true,
+      "ttl": 300,
+      "required": true,
+      "note": "Primary API Worker entrypoint."
+    },
+    {
+      "type": "CNAME",
+      "name": "api-preview",
+      "content": "goldshore-api.goldshore.workers.dev",
+      "proxied": true,
+      "ttl": 300,
+      "required": true,
+      "note": "Preview host routed to the same Worker with preview configuration."
+    },
+    {
+      "type": "CNAME",
+      "name": "api-dev",
+      "content": "goldshore-api.goldshore.workers.dev",
+      "proxied": true,
+      "ttl": 300,
+      "required": true,
+      "note": "Development host for local and QA testing."
+    },
+    {
+      "type": "TXT",
+      "name": "@",
+      "content": "v=spf1 include:_spf.google.com -all",
+      "proxied": false,
+      "ttl": 3600,
+      "required": true,
+      "note": "Outbound email SPF policy."
+    },
+    {
+      "type": "TXT",
+      "name": "_dmarc",
+      "content": "v=DMARC1; p=quarantine; sp=quarantine; aspf=s; adkim=s; rua=mailto:postmaster@goldshore.org; ruf=mailto:security@goldshore.org; fo=1",
+      "proxied": false,
+      "ttl": 3600,
+      "required": true,
+      "note": "DMARC enforcement for the zone."
+    }
+  ]
+}

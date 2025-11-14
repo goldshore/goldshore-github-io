@@ -1,0 +1,54 @@
+{
+  "project": "goldshore-web",
+  "description": "Goldshore marketing site deployed via Cloudflare Pages with an edge routing worker in front.",
+  "production_branch": "main",
+  "preview_branches": [
+    "preview",
+    "develop"
+  ],
+  "deployment_configs": {
+    "production": {
+      "compatibility_date": "2025-10-05",
+      "environment_variables": {
+        "NODE_VERSION": "20",
+        "ASSET_BASE_URL": "https://goldshore-web.pages.dev",
+        "WORKER_HOSTNAME": "goldshore.org",
+        "API_BASE_URL": "https://api.goldshore.org"
+      },
+      "routes": [
+        "goldshore.org/*",
+        "www.goldshore.org/*"
+      ],
+      "analytics": {
+        "provider": "cloudflare",
+        "enable_reporting": true
+      }
+    },
+    "preview": {
+      "compatibility_date": "2025-10-05",
+      "environment_variables": {
+        "ASSET_BASE_URL": "https://preview.goldshore-web.pages.dev",
+        "WORKER_HOSTNAME": "preview.goldshore.org",
+        "API_BASE_URL": "https://api-preview.goldshore.org"
+      },
+      "preview_ttl_hours": 168,
+      "routes": [
+        "preview.goldshore.org/*"
+      ]
+    },
+    "development": {
+      "compatibility_date": "2025-10-05",
+      "environment_variables": {
+        "ASSET_BASE_URL": "https://dev.goldshore-web.pages.dev",
+        "WORKER_HOSTNAME": "dev.goldshore.org",
+        "API_BASE_URL": "https://api-dev.goldshore.org"
+      }
+    }
+  },
+  "build_config": {
+    "build_command": "npm run build:web",
+    "destination_dir": "apps/web/dist",
+    "web_analytics_tag": "goldshore-web",
+    "web_analytics_token": "${CF_WEB_ANALYTICS_TOKEN}"
+  }
+}

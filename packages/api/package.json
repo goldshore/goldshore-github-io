@@ -1,13 +1,13 @@
 {
-  "name": "@goldshore/api",
+  "name": "@goldshore/api-pages",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "dev": "npm run -w @goldshore/api-worker dev",
+    "deploy": "npm run -w @goldshore/api-worker deploy",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "echo 'lint not yet configured for @goldshore/api'"
+    "lint": "echo 'lint not yet configured for @goldshore/api-pages'"
   },
   "dependencies": {},
   "devDependencies": {

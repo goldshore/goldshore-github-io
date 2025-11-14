@@ -1,0 +1,261 @@
+{
+  "$schema": "https://schemas.goldshore.org/cloudflare/account-config-v1.json",
+  "account": {
+    "name": "goldshore",
+    "id": "${CLOUDFLARE_ACCOUNT_ID}"
+  },
+  "zone": {
+    "name": "goldshore.org",
+    "id": "${CLOUDFLARE_ZONE_ID}",
+    "plan": "pro",
+    "vanity_name_servers": [
+      "abby.ns.cloudflare.com",
+      "brad.ns.cloudflare.com"
+    ]
+  },
+  "environments": {
+    "production": {
+      "pages_project": "goldshore-web",
+      "notes": "Primary public site served directly from the Pages project."
+    },
+    "preview": {
+      "pages_project": "goldshore-web",
+      "notes": "Stakeholder previews mapped to preview Pages deployments."
+    },
+    "development": {
+      "pages_project": "goldshore-web",
+      "notes": "Internal developer sandbox."
+    }
+  },
+  "pages_projects": [
+    {
+      "name": "goldshore-web",
+      "production_branch": "main",
+      "preview_branches": [
+        "preview",
+        "develop"
+      ],
+      "custom_domains": [
+        {
+          "hostname": "goldshore.org",
+          "environment": "production"
+        },
+        {
+          "hostname": "www.goldshore.org",
+          "environment": "production"
+        },
+        {
+          "hostname": "preview.goldshore.org",
+          "environment": "preview"
+        },
+        {
+          "hostname": "dev.goldshore.org",
+          "environment": "development"
+        }
+      ],
+      "deployment_configs": {
+        "production": {
+          "compatibility_date": "2024-02-19",
+          "environment_variables": {
+            "NODE_VERSION": "20",
+            "WORKER_HOSTNAME": "goldshore.org"
+          }
+        },
+        "preview": {
+          "compatibility_date": "2024-02-19",
+          "environment_variables": {
+            "WORKER_HOSTNAME": "preview.goldshore.org"
+          }
+        }
+      }
+    },
+    {
+      "name": "goldshore-admin",
+      "production_branch": "main",
+      "preview_branches": [
+        "admin-preview"
+      ],
+      "custom_domains": [
+        {
+          "hostname": "admin.goldshore.org",
+          "environment": "production"
+        },
+        {
+          "hostname": "admin-preview.goldshore.org",
+          "environment": "preview"
+        },
+        {
+          "hostname": "admin-dev.goldshore.org",
+          "environment": "development"
+        }
+      ],
+      "source": {
+        "type": "github",
+        "config": {
+          "owner": "goldshore",
+          "repo_name": "goldshore",
+          "production_branch": "main"
+        }
+      },
+      "deployment_configs": {
+        "production": {
+          "compatibility_date": "2024-02-19",
+          "environment_variables": {
+            "WORKER_HOSTNAME": "admin.goldshore.org",
+            "ACCESS_APP_AUD": "goldshore-admin"
+          }
+        },
+        "preview": {
+          "compatibility_date": "2024-02-19",
+          "environment_variables": {
+            "WORKER_HOSTNAME": "admin-preview.goldshore.org"
+          }
+        }
+      }
+    }
+  ],
+  "workers": [
+    {
+      "name": "goldshore-api",
+      "main_entrypoint": "apps/api-worker/dist/src/index.js",
+      "compatibility_date": "2024-11-20",
+      "placement": {
+        "mode": "smart"
+      },
+      "routes": [
+        "api.goldshore.org/*",
+        "api-preview.goldshore.org/*",
+        "api-dev.goldshore.org/*"
+      ],
+      "triggers": {
+        "crons": [
+          "*/30 * * * *"
+        ]
+      },
+      "migrations": [
+        {
+          "tag": "v1",
+          "new_classes": [
+            "SessionDO"
+          ]
+        }
+      ],
+      "bindings": {
+        "kv_namespaces": [
+          {
+            "binding": "KV_SESSIONS",
+            "id": "${KV_SESSIONS_ID}"
+          },
+          {
+            "binding": "KV_CACHE",
+            "id": "${KV_CACHE_ID}"
+          }
+        ],
+        "D1": [
+          {
+            "binding": "DB",
+            "database": "goldshore_db"
+          },
+          {
+            "binding": "D1_CORE",
+            "database": "goldshore-core"
+          }
+        ],
+        "R2": [
+          {
+            "binding": "SNAP_R2",
+            "bucket": "goldshore-bucket"
+          },
+          {
+            "binding": "R2_PUBLIC",
+            "bucket": "goldshore-public"
+          }
+        ],
+        "durable_objects": [
+          {
+            "name": "DO_SESSIONS",
+            "class_name": "SessionDO"
+          },
+          {
+            "name": "DO_RATE_LIMITER",
+            "class_name": "RateLimiterDO"
+          }
+        ],
+        "queues": {
+          "producers": [
+            {
+              "binding": "JOBS_QUEUE",
+              "queue": "jobs"
+            },
+            {
+              "binding": "Q_EVENTS",
+              "queue": "goldshore-events"
+            }
+          ],
+          "consumers": [
+            {
+              "queue": "jobs",
+              "max_batch_size": 10,
+              "max_batch_timeout": 5,
+              "max_retries": 3
+            },
+            {
+              "queue": "goldshore-events",
+              "max_batch_size": 50,
+              "max_wait_ms": 2000,
+              "dead_letter_queue": "goldshore-dlq"
+            }
+          ]
+        },
+        "vars": {
+          "GOLDSHORE_ENV": "production",
+          "GOLDSHORE_ORIGIN": "https://goldshore.org",
+          "GOLDSHORE_CORS": "https://goldshore.org,https://www.goldshore.org,https://admin.goldshore.org,https://preview.goldshore.org,http://localhost:5173,http://127.0.0.1:5173",
+          "JWT_AUDIENCE": "goldshore-api",
+          "JWT_ISSUER": "https://auth.goldshore.org",
+          "RATE_LIMIT_MAX": "120",
+          "RATE_LIMIT_WINDOW": "60"
+          "FF_ENABLE_TRADING": "true",
+          "FF_ENABLE_SENTIMENT": "true",
+          "ACCESS_AUD": "goldshore-admin",
+          "CODEX_JWT_REQUIRED": "true",
+          "CODEX_JWT_ALG": "HS256",
+          "CODEX_JWT_ISS": "goldshore-api",
+          "CODEX_JWT_AUD": "goldshore-codex",
+          "CODEX_JWT_SECRET_KID": "kid-1",
+          "CODEX_JWT_HS256_KEY": "${{ secrets.CODEX_JWT_HS256_KEY }}",
+          "OPENAI_TPM_LIMIT": "180000",
+          "OPENAI_RPM_LIMIT": "3500",
+          "OPENAI_DPM_LIMIT": "9000000",
+          "RATE_LIMIT_WINDOW_MS": "60000",
+          "RATE_LIMIT_BUCKET_SIZE": "3400",
+          "RATE_LIMIT_TOKEN_BUDGET": "170000",
+          "GITHUB_APP_ID": "",
+          "GITHUB_CLIENT_ID": "",
+          "GITHUB_CLIENT_SECRET": ""
+        }
+      }
+    }
+  ],
+  "resources": {
+    "queues": [
+      {
+        "name": "goldshore-events"
+      },
+      {
+        "name": "goldshore-dlq",
+        "type": "dead_letter"
+      }
+    ]
+  },
+  "access_applications": [
+    {
+      "name": "Goldshore Admin",
+      "domain": "admin.goldshore.org",
+      "aud": "goldshore-admin",
+      "policies": [
+        "infra/policies/cloudflare/pages.goldshore-admin.json"
+      ]
+    }
+  ]
+}

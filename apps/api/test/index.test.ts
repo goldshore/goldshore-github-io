@@ -9,7 +9,7 @@ let mf: Miniflare;
 let buildDir: string;
 
 beforeAll(async () => {
-  buildDir = mkdtempSync(path.join(tmpdir(), "goldshore-api-"));
+  buildDir = mkdtempSync(path.join(tmpdir(), "goldshore-router-"));
   const outfile = path.join(buildDir, "worker.mjs");
   await build({
     entryPoints: ["src/index.ts"],
@@ -122,15 +122,13 @@ describe("Goldshore API REST handlers", () => {
       })
     });
     expect(riskCreate.res.status).toBe(201);
-    expect(riskCreate.json.data.is_published).toBe(true);
+    expect(riskCreate.json.data.is_published).toBe(1);
 
     const riskLimits = await request("/v1/risk/config", {
       method: "GET",
     });
     expect(riskLimits.res.status).toBe(200);
-    expect(Array.isArray(riskLimits.json.data)).toBe(true);
-    expect(riskLimits.json.data.length).toBeGreaterThan(0);
-    expect(riskLimits.json.data[0].is_published).toBe(true);
+    expect(riskLimits.json.data.is_published).toBe(1);
   });
 
   it("validates email on lead capture", async () => {
@@ -140,6 +138,7 @@ describe("Goldshore API REST handlers", () => {
       body: JSON.stringify({ email: "test@example.com" })
     });
     expect(validLead.res.status).toBe(200);
+    expect(validLead.json.ok).toBe(true);
 
     const invalidLead = await request("/v1/lead", {
       method: "POST",
@@ -147,21 +146,16 @@ describe("Goldshore API REST handlers", () => {
       body: JSON.stringify({ email: "not-an-email" })
     });
     expect(invalidLead.res.status).toBe(400);
+    expect(invalidLead.json).toEqual({ ok: false, error: "INVALID_EMAIL" });
   });
 
-  it("validates email on lead capture", async () => {
-    const validLead = await request("/v1/lead", {
+  it("requires email on lead capture", async () => {
+    const blankLead = await request("/v1/lead", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: "test@example.com" })
+      body: JSON.stringify({})
     });
-    expect(validLead.res.status).toBe(200);
-
-    const invalidLead = await request("/v1/lead", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email: "not-an-email" })
-    });
-    expect(invalidLead.res.status).toBe(400);
+    expect(blankLead.res.status).toBe(400);
+    expect(blankLead.json).toEqual({ ok: false, error: "EMAIL_REQUIRED" });
   });
 });

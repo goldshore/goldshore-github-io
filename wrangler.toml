@@ -1,22 +1,27 @@
-name = "goldshore-api"
-main = "src/index.ts"
-compatibility_date = "2024-06-20"
-workers_dev = true
-
-[assets]
-directory = "public"
-binding = "ASSETS"
-
-routes = [
-  { pattern = "api.goldshore.org/*", zone_name = "goldshore.org" }
-]
+# Cloudflare Pages configuration. Worker deployments should use wrangler.worker.toml.
+pages_build_output_dir = "./apps/web/dist"
+pages_build_command = "npm run build:web"
+project_name = "goldshore"
+compatibility_date = "2025-10-05"
 
 [vars]
-AGENT_SYSTEM_PROMPT = ""
-CORS_ORIGINS = "https://goldshore.org,https://web.goldshore.org"
-ACCESS_ISSUER = "https://goldshore.cloudflareaccess.com/cdn-cgi/access/sso/oidc/07665be501c60fa585bd8c697d77ebf86ce14f993fa7745ab52f54ad93f523fc"
-ACCESS_JWKS_URL = "https://goldshore.cloudflareaccess.com/cdn-cgi/access/sso/oidc/07665be501c60fa585bd8c697d77ebf86ce14f993fa7745ab52f54ad93f523fc/jwks"
+APP_NAME = "GoldShore"
+PRODUCTION_ASSETS = "https://goldshore-org.pages.dev"
+PREVIEW_ASSETS = "https://goldshore-org-preview.pages.dev"
+DEV_ASSETS = "https://goldshore-org-dev.pages.dev"
+GPT_ALLOWED_ORIGINS = "https://goldshore.org, https://www.goldshore.org, https://preview.goldshore.org, https://dev.goldshore.org, https://trade.goldshore.org"
 
-[[env.preview.routes]]
-pattern = "*.goldshore-api.workers.dev/*"
-custom_domain = false
+# Secrets such as FORMSPREE_ENDPOINT, TURNSTILE_SECRET, OPENAI_API_KEY, and
+# GPT_SHARED_SECRET (or legacy GPT_PROXY_SECRET) are provided via
+# `wrangler secret put …` or `.dev.vars` in local development.
+
+[env.production.vars]
+ASSETS_ORIGIN = "https://goldshore.org"
+CF_ACCESS_AUD = "3d5916af31a595ca00d8b1ab0157361a953779d939d9df2f63b1802b87a0248e"
+CF_ACCESS_ISS = "https://rmarston.cloudflareaccess.com"
+CF_ACCESS_JWKS_URL = "https://rmarston.cloudflareaccess.com/cdn-cgi/access/certs"
+
+# (Only add bindings you actually use)
+[[analytics_engine_datasets]]
+binding = "GOLD_ANALYTICS"
+dataset = "goldshore-events"

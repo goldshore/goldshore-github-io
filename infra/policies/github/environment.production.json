@@ -1,0 +1,44 @@
+{
+  "name": "production",
+  "wait_timer": 0,
+  "reviewers": [
+    {
+      "type": "team",
+      "slug": "operations"
+    },
+    {
+      "type": "team",
+      "slug": "security"
+    }
+  ],
+  "deployment_branch_policy": {
+    "protected_branches": true,
+    "custom_branch_policies": true,
+    "custom_branches": [
+      "release/*"
+    ]
+  },
+  "protection_rules": [
+    {
+      "type": "branch_policy"
+    },
+    {
+      "type": "wait_timer",
+      "wait_timer": 900
+    }
+  ],
+  "secrets": [
+    {
+      "name": "CLOUDFLARE_API_TOKEN",
+      "source": "organization"
+    },
+    {
+      "name": "CF_ACCOUNT_ID",
+      "source": "organization"
+    },
+    {
+      "name": "ACCESS_AUD_GOLDSHORE_ADMIN",
+      "source": "repository"
+    }
+  ]
+}
